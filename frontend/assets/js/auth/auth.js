@@ -46,3 +46,17 @@ export function requireAuth() {
   }
   return session;
 }
+
+export function homePathForRole(role) {
+  return role === "PHARMACY_ADMIN" ? "pharmacy-dashboard.html" : "index.html";
+}
+
+/** Call at the top of login/register pages: bounces an already-authenticated
+ * user straight to their role's home page instead of showing the auth form. */
+export function redirectIfAuthenticated() {
+  const session = getSession();
+  if (session) {
+    window.location.href = homePathForRole(session.role);
+  }
+  return session;
+}
