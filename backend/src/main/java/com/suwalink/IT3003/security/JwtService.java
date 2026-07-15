@@ -1,6 +1,7 @@
 package com.suwalink.IT3003.security;
 
 import com.suwalink.IT3003.entity.Role;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -34,5 +35,23 @@ public class JwtService {
             .expiration(Date.from(now.plusMillis(expirationMs)))
             .signWith(key)
             .compact();
+    }
+
+    public String extractEmail(String token) {
+        return Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .getSubject();
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 }
