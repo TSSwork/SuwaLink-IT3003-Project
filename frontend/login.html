@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in · SuwaLink</title>
+  <link rel="stylesheet" href="assets/css/main.css" />
+</head>
+<body>
+  <div class="md-shell">
+    <header class="md-topbar">
+      <a class="md-topbar__brand" href="index.html">SuwaLink</a>
+    </header>
+
+    <main class="md-auth-layout">
+      <div class="md-auth-layout__card md-card">
+        <h1 class="md-type-headline" style="margin: 0 0 var(--md-space-6)">Sign in</h1>
+
+        <div id="notice-banner" class="md-banner md-banner--notice" role="status" hidden></div>
+        <div id="error-banner" class="md-banner md-banner--error" role="alert" hidden></div>
+
+        <form id="login-form" novalidate>
+          <div class="md-field">
+            <label class="md-field__label" for="email">Email <span class="md-field__required">*</span></label>
+            <input class="md-field__input" id="email" name="email" type="email" autocomplete="email" required />
+            <span class="md-field__helper" data-error-for="email"></span>
+          </div>
+          <div class="md-field">
+            <label class="md-field__label" for="password">Password <span class="md-field__required">*</span></label>
+            <input class="md-field__input" id="password" name="password" type="password" autocomplete="current-password" required />
+            <span class="md-field__helper" data-error-for="password"></span>
+          </div>
+          <button class="md-btn md-btn--filled md-btn--full" type="submit">
+            <span class="md-btn__label">Sign in</span>
+          </button>
+        </form>
+
+        <p class="md-type-body-small" style="margin-top: var(--md-space-6)">
+          Don't have an account? <a href="register.html">Create one</a>
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/pages/loginPage.js"></script>
+</body>
+</html>
