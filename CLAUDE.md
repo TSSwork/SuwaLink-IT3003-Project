@@ -4,4 +4,4 @@
 - PITCH_MVP.md - Explains the project
 - DESIGN.md - Explains the design of the project
 - SPECS.md - Explains the specifications of the project
-- PROHIBITED.md - Explains the prohibited actions
+- PROHIBITED.md - Explains the prohibited actions - (If only file exists)
