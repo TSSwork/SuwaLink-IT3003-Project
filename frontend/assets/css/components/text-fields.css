@@ -1,0 +1,47 @@
+.md-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-space-1);
+  margin-bottom: var(--md-space-4);
+}
+
+.md-field__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.md-field__required {
+  color: var(--md-sys-color-error);
+}
+
+.md-field__input {
+  height: 48px;
+  padding: 0 var(--md-space-4);
+  border-radius: var(--md-shape-small);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  font-size: 1rem;
+  transition: border-color var(--md-motion-fast) var(--md-ease-standard);
+}
+
+.md-field__input:focus-visible {
+  outline: none;
+  border-color: var(--md-sys-color-primary);
+  border-width: 2px;
+  padding-inline: calc(var(--md-space-4) - 1px);
+}
+
+.md-field--error .md-field__input {
+  border-color: var(--md-sys-color-error);
+}
+
+.md-field__helper {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.md-field--error .md-field__helper {
+  color: var(--md-sys-color-error);
+}

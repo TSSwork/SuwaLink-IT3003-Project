@@ -1,0 +1,127 @@
+/*
+  MD3 color roles generated from the "Olive Garden Feast" brand palette
+  (Olive Leaf #606C38, Black Forest #283618, Cornsilk #FEFAE0,
+  Sunlit Clay #DDA15E, Copperwood #BC6C25), per CONTEXT/DESIGN.md.
+
+  Hand-rolled tokens (hsl-based tonal steps), not a naive dark-mode invert.
+  Error uses MD3 baseline red; Success uses an MD3-style extended green
+  since core MD3 has no official success role.
+*/
+
+:root {
+  color-scheme: light;
+
+  /* Primary: Olive Leaf, hue ~75 */
+  --md-sys-color-primary: hsl(75, 33%, 32%);
+  --md-sys-color-on-primary: hsl(75, 20%, 99%);
+  --md-sys-color-primary-container: hsl(75, 38%, 88%);
+  --md-sys-color-on-primary-container: hsl(83, 45%, 12%);
+
+  /* Secondary: Sunlit Clay, hue ~32 */
+  --md-sys-color-secondary: hsl(32, 58%, 47%);
+  --md-sys-color-on-secondary: hsl(32, 20%, 99%);
+  --md-sys-color-secondary-container: hsl(32, 60%, 90%);
+  --md-sys-color-on-secondary-container: hsl(28, 55%, 16%);
+
+  /* Tertiary: Copperwood, hue ~28 */
+  --md-sys-color-tertiary: hsl(28, 67%, 40%);
+  --md-sys-color-on-tertiary: hsl(28, 20%, 99%);
+  --md-sys-color-tertiary-container: hsl(28, 62%, 89%);
+  --md-sys-color-on-tertiary-container: hsl(28, 55%, 14%);
+
+  /* Background & surface: Cornsilk, hue ~52 */
+  --md-sys-color-background: hsl(52, 82%, 94%);
+  --md-sys-color-on-background: hsl(83, 45%, 12%);
+  --md-sys-color-surface: hsl(52, 60%, 98%);
+  --md-sys-color-on-surface: hsl(83, 45%, 12%);
+  --md-sys-color-surface-variant: hsl(70, 20%, 89%);
+  --md-sys-color-on-surface-variant: hsl(75, 12%, 32%);
+  --md-sys-color-surface-container: hsl(55, 45%, 95%);
+  --md-sys-color-surface-container-high: hsl(55, 40%, 92%);
+
+  --md-sys-color-outline: hsl(72, 10%, 47%);
+  --md-sys-color-outline-variant: hsl(70, 20%, 82%);
+
+  /* Error: MD3 baseline, not custom */
+  --md-sys-color-error: hsl(4, 62%, 44%);
+  --md-sys-color-on-error: hsl(0, 0%, 100%);
+  --md-sys-color-error-container: hsl(6, 78%, 91%);
+  --md-sys-color-on-error-container: hsl(5, 60%, 20%);
+
+  /* Success: MD3-style extended green, not a custom invented hue */
+  --md-sys-color-success: hsl(123, 41%, 33%);
+  --md-sys-color-on-success: hsl(0, 0%, 100%);
+  --md-sys-color-success-container: hsl(122, 45%, 89%);
+  --md-sys-color-on-success-container: hsl(124, 45%, 14%);
+
+  /* Shape scale (CONTEXT/DESIGN.md) */
+  --md-shape-small: 8px;
+  --md-shape-medium: 12px;
+  --md-shape-large: 16px;
+  --md-shape-extra-large: 28px;
+  --md-shape-full: 999px;
+
+  /* 8dp spacing scale */
+  --md-space-1: 4px;
+  --md-space-2: 8px;
+  --md-space-3: 12px;
+  --md-space-4: 16px;
+  --md-space-6: 24px;
+  --md-space-8: 32px;
+  --md-space-10: 40px;
+  --md-space-12: 48px;
+  --md-space-16: 64px;
+
+  --md-elevation-1: 0 1px 2px hsl(83 45% 12% / 0.12), 0 1px 3px hsl(83 45% 12% / 0.08);
+  --md-elevation-2: 0 2px 6px hsl(83 45% 12% / 0.14);
+
+  --md-motion-fast: 120ms;
+  --md-motion-standard: 200ms;
+  --md-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --md-sys-color-primary: hsl(75, 40%, 72%);
+    --md-sys-color-on-primary: hsl(80, 40%, 16%);
+    --md-sys-color-primary-container: hsl(80, 30%, 24%);
+    --md-sys-color-on-primary-container: hsl(75, 40%, 90%);
+
+    --md-sys-color-secondary: hsl(32, 55%, 72%);
+    --md-sys-color-on-secondary: hsl(30, 45%, 18%);
+    --md-sys-color-secondary-container: hsl(30, 40%, 28%);
+    --md-sys-color-on-secondary-container: hsl(32, 55%, 90%);
+
+    --md-sys-color-tertiary: hsl(28, 60%, 70%);
+    --md-sys-color-on-tertiary: hsl(28, 50%, 16%);
+    --md-sys-color-tertiary-container: hsl(28, 45%, 26%);
+    --md-sys-color-on-tertiary-container: hsl(28, 60%, 90%);
+
+    --md-sys-color-background: hsl(83, 16%, 10%);
+    --md-sys-color-on-background: hsl(60, 30%, 92%);
+    --md-sys-color-surface: hsl(83, 14%, 12%);
+    --md-sys-color-on-surface: hsl(60, 30%, 92%);
+    --md-sys-color-surface-variant: hsl(75, 10%, 24%);
+    --md-sys-color-on-surface-variant: hsl(70, 14%, 78%);
+    --md-sys-color-surface-container: hsl(83, 12%, 16%);
+    --md-sys-color-surface-container-high: hsl(83, 12%, 20%);
+
+    --md-sys-color-outline: hsl(72, 8%, 56%);
+    --md-sys-color-outline-variant: hsl(75, 10%, 30%);
+
+    --md-sys-color-error: hsl(5, 82%, 80%);
+    --md-sys-color-on-error: hsl(5, 60%, 20%);
+    --md-sys-color-error-container: hsl(5, 55%, 30%);
+    --md-sys-color-on-error-container: hsl(6, 78%, 91%);
+
+    --md-sys-color-success: hsl(122, 40%, 72%);
+    --md-sys-color-on-success: hsl(124, 45%, 14%);
+    --md-sys-color-success-container: hsl(123, 35%, 24%);
+    --md-sys-color-on-success-container: hsl(122, 45%, 89%);
+
+    --md-elevation-1: 0 1px 2px hsl(0 0% 0% / 0.4), 0 1px 3px hsl(0 0% 0% / 0.3);
+    --md-elevation-2: 0 2px 6px hsl(0 0% 0% / 0.4);
+  }
+}
