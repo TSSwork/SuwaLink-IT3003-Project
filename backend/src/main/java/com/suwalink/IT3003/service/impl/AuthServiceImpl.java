@@ -1,17 +1,22 @@
 package com.suwalink.IT3003.service.impl;
 
 import com.suwalink.IT3003.dto.request.CustomerRegisterRequest;
+import com.suwalink.IT3003.dto.request.LoginRequest;
 import com.suwalink.IT3003.dto.request.PharmacyRegisterRequest;
 import com.suwalink.IT3003.dto.response.AuthResponse;
 import com.suwalink.IT3003.entity.Pharmacy;
 import com.suwalink.IT3003.entity.Role;
 import com.suwalink.IT3003.entity.User;
 import com.suwalink.IT3003.exception.EmailAlreadyExistsException;
+import com.suwalink.IT3003.exception.PharmacyNotVerifiedException;
 import com.suwalink.IT3003.repository.PharmacyRepository;
 import com.suwalink.IT3003.repository.UserRepository;
 import com.suwalink.IT3003.security.JwtService;
 import com.suwalink.IT3003.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final PharmacyRepository pharmacyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     @Transactional
@@ -55,6 +61,32 @@ public class AuthServiceImpl implements AuthService {
             .build();
 
         pharmacyRepository.save(pharmacy);
+    }
+
+    @Override
+    public AuthResponse login(LoginRequest request) {
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+        if (user.getRole() == Role.PHARMACY_ADMIN) {
+            Pharmacy pharmacy = pharmacyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Pharmacy admin missing pharmacy record"));
+            if (!pharmacy.isVerified()) {
+                throw new PharmacyNotVerifiedException();
+            }
+        }
+
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
+
+        return AuthResponse.builder()
+            .token(token)
+            .role(user.getRole())
+            .id(user.getId())
+            .name(user.getName())
+            .build();
     }
 
     private User registerUser(String name, String email, String phone, String rawPassword, Role role) {
