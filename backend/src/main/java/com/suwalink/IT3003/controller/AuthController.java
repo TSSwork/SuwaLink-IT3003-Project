@@ -1,6 +1,7 @@
 package com.suwalink.IT3003.controller;
 
 import com.suwalink.IT3003.dto.request.CustomerRegisterRequest;
+import com.suwalink.IT3003.dto.request.LoginRequest;
 import com.suwalink.IT3003.dto.request.PharmacyRegisterRequest;
 import com.suwalink.IT3003.dto.response.ApiResponse;
 import com.suwalink.IT3003.dto.response.AuthResponse;
@@ -35,5 +36,11 @@ public class AuthController {
         authService.registerPharmacy(request);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success("Registered. Awaiting verification."));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 }
