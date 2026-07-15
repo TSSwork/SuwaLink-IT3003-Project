@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pharmacy dashboard · SuwaLink</title>
+  <link rel="stylesheet" href="assets/css/main.css" />
+</head>
+<body>
+  <div class="md-shell">
+    <header class="md-topbar">
+      <a class="md-topbar__brand" href="index.html">SuwaLink</a>
+      <div class="md-topbar__actions">
+        <button id="logout-btn" class="md-btn md-btn--outlined">Logout</button>
+      </div>
+    </header>
+
+    <main class="md-page">
+      <h1 class="md-type-headline">Pharmacy dashboard</h1>
+
+      <div id="loading-state">
+        <div class="md-skeleton" style="height: 24px; width: 200px; margin-bottom: var(--md-space-3)"></div>
+        <div class="md-skeleton" style="height: 16px; width: 320px; margin-bottom: var(--md-space-2)"></div>
+        <div class="md-skeleton" style="height: 16px; width: 280px"></div>
+      </div>
+
+      <div id="error-state" class="md-banner md-banner--error" role="alert" hidden></div>
+
+      <div id="profile-card" class="md-card md-card--flat" hidden style="max-width: 480px">
+        <p class="md-type-title" id="profile-name"></p>
+        <p class="md-type-body" style="color: var(--md-sys-color-on-surface-variant); margin: var(--md-space-2) 0 0">
+          Licence No. <span class="md-type-mono" id="profile-licence"></span>
+        </p>
+        <p class="md-type-body" style="color: var(--md-sys-color-on-surface-variant); margin: var(--md-space-1) 0 0">
+          <span id="profile-address"></span>
+        </p>
+        <p class="md-type-body-small" id="profile-verified" style="margin-top: var(--md-space-4)"></p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/pages/pharmacyDashboardPage.js"></script>
+</body>
+</html>

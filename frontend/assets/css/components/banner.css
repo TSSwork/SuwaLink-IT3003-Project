@@ -1,0 +1,32 @@
+/* Inline status banner: used for form-level errors and notices,
+   per CONTEXT/DESIGN.md ("informative rather than alarming"). */
+
+.md-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--md-space-3);
+  padding: var(--md-space-4);
+  border-radius: var(--md-shape-medium);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: var(--md-space-4);
+}
+
+.md-banner--error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.md-banner--notice {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.md-banner--success {
+  background: var(--md-sys-color-success-container);
+  color: var(--md-sys-color-on-success-container);
+}
+
+.md-banner[hidden] {
+  display: none;
+}
