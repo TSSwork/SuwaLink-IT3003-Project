@@ -6,11 +6,11 @@ services:
     restart: no
     environment:
       MYSQL_ROOT_PASSWORD: suwalink_password
-      MYSQL_DATABASE: suwlink_db
-      MYSQL_USER: suwaliink_user
+      MYSQL_DATABASE: suwalink_db
+      MYSQL_USER: suwalink_user
       MYSQL_PASSWORD: suwalink_password
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 
