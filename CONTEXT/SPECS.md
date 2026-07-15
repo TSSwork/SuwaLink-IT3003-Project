@@ -1002,3 +1002,4 @@ Every feature should be designed before it is implemented, every API should be c
 to reduce token usage ai can use there skills
 - find-skills -  to find appropriate skills and download them to local directory and implement features, if find skills are not available, implement the feature using existing knowledge
 - ponytail - think like senior dev that reduce unnecessary code and refactor existing code to be more maintainable, if no suitable skills are available, implement the feature using existing knowledge
+- if other appropriate skill files are available, use them to implement the feature

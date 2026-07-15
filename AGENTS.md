@@ -1,0 +1,3 @@
+# Read
+
+- read CLAUDE.md
