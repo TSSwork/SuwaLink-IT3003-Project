@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql/mysql-server:8.0
+    restart: no
+    environment:
+      MYSQL_ROOT_PASSWORD: suwalink_password
+      MYSQL_DATABASE: suwlink_db
+      MYSQL_USER: suwaliink_user
+      MYSQL_PASSWORD: suwalink_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
