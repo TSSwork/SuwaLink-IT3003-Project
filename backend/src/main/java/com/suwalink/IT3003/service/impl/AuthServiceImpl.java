@@ -28,19 +28,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse registerCustomer(CustomerRegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException(request.getEmail());
-        }
+        User saved = registerUser(
+            request.getName(), request.getEmail(), request.getPhone(), request.getPassword(), Role.CUSTOMER);
 
-        User user = User.builder()
-            .name(request.getName())
-            .email(request.getEmail())
-            .phone(request.getPhone())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .role(Role.CUSTOMER)
-            .build();
-
-        User saved = userRepository.save(user);
         String token = jwtService.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
 
         return AuthResponse.builder()
@@ -54,19 +44,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void registerPharmacy(PharmacyRegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException(request.getEmail());
-        }
-
-        User user = User.builder()
-            .name(request.getName())
-            .email(request.getEmail())
-            .phone(request.getPhone())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .role(Role.PHARMACY_ADMIN)
-            .build();
-
-        User savedUser = userRepository.save(user);
+        User savedUser = registerUser(
+            request.getName(), request.getEmail(), request.getPhone(), request.getPassword(), Role.PHARMACY_ADMIN);
 
         Pharmacy pharmacy = Pharmacy.builder()
             .licenceNo(request.getLicenceNo())
@@ -76,5 +55,21 @@ public class AuthServiceImpl implements AuthService {
             .build();
 
         pharmacyRepository.save(pharmacy);
+    }
+
+    private User registerUser(String name, String email, String phone, String rawPassword, Role role) {
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException(email);
+        }
+
+        User user = User.builder()
+            .name(name)
+            .email(email)
+            .phone(phone)
+            .password(passwordEncoder.encode(rawPassword))
+            .role(role)
+            .build();
+
+        return userRepository.save(user);
     }
 }
