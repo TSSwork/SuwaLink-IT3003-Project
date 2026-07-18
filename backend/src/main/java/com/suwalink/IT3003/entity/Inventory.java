@@ -3,23 +3,16 @@ package com.suwalink.IT3003.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Audited // This allows you to see the history of price/stock changes
 @Table(name = "inventory")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@EntityListeners(AuditingEntityListener.class)
-public class Inventory {
+public class Inventory extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -49,25 +42,15 @@ public class Inventory {
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private Image image;
 
-    // --- AUDIT & VERSIONING ---
+    @Enumerated(EnumType.STRING)
+    @Column(name = "abc_category", nullable = false)
+    @Builder.Default
+    private AbcCategory abcCategory = AbcCategory.C; // Default to Cheap
 
-    @Version
-    @Column(name = "version")
-    private Long version;
+    @Column(name = "reorder_level", nullable = false)
+    @Builder.Default
+    private Integer reorderLevel = 10; // Minimum stock before system warns the user
 
-    @CreatedBy
-    @Column(name = "created_by", updatable = false)
-    private String createdBy;
-
-    @LastModifiedBy
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "ideal_stock_level")
+    private Integer idealStockLevel; // Maximum stock to avoid wastage
 }

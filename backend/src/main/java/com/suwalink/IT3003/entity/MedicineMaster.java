@@ -1,24 +1,17 @@
 package com.suwalink.IT3003.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.hibernate.envers.Audited; // <--- Correct Import
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.envers.Audited;
 
 @Entity
 @Audited // Tracks full revision history
 @Table(name = "medicine_master")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@EntityListeners(AuditingEntityListener.class)
-public class MedicineMaster {
+public class MedicineMaster extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -41,31 +34,27 @@ public class MedicineMaster {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "category", nullable = false)
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "therapeutic_category_id", nullable = false)
+    private Category therapeuticCategory; // Therapeutic category, e.g., "Painkillers"
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manufacturer_id", nullable = false)
+    private Manufacturer manufacturer; // The company that makes the drug (GSK, Cipla)
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "legal_category", nullable = false)
+    private PrescriptionStatus legalCategory; // OTC vs Prescription
+
+    @Column(name = "requires_cold_chain", nullable = false)
+    @Builder.Default
+    private boolean requiresColdChain = false; // For fridge items
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ved_category", nullable = false)
+    @Builder.Default
+    private VedCategory vedCategory = VedCategory.E; // Default to Essential
 
     @Column(name = "image_url")
     private String imageUrl;
-
-    // --- AUDIT & VERSIONING ---
-
-    @Version
-    @Column(name = "version", nullable = false)
-    private Long version; // Concurrency protection
-
-    @CreatedBy
-    @Column(name = "created_by", updatable = false)
-    private String createdBy;
-
-    @LastModifiedBy
-    @Column(name = "updated_by", nullable = false)
-    private String updatedBy;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 }
