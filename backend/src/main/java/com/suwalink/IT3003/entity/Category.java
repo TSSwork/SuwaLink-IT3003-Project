@@ -40,7 +40,7 @@ public class Category extends BaseAuditEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    private Category parentCategory; // For hierarchy: e.g., "Syrups" inside "Pediatrics"
+    private Category parentCategory; // self-reference for category hierarchy // For hierarchy: e.g., "Syrups" inside "Pediatrics"
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default

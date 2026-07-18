@@ -20,7 +20,7 @@ public class Manufacturer extends BaseAuditEntity {
     private String name; // e.g., "State Pharmaceuticals Manufacturing Corporation"
 
     @Column(name = "license_number")
-    private String licenseNumber; // NMRA License
+    private String licenseNumber; // NMRA license // NMRA License
 
     @Column(name = "country", nullable = false)
     private String country; // e.g., "Sri Lanka", "India", "UK"
