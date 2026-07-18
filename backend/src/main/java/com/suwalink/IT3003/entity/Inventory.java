@@ -46,4 +46,8 @@ public class Inventory extends BaseAuditEntity {
     @JoinColumn(name = "image_id")
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private Image image;
+
+    @Column(name = "available", nullable = false)
+    @Builder.Default
+    private boolean available = true;
 }

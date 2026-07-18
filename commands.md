@@ -39,16 +39,19 @@ Backend must be running first (`./mvnw spring-boot:run`).
 
 ## Liquibase (migrations)
 
-Configured via `liquibase-maven-plugin` in `backend/pom.xml` + `backend/src/main/resources/liquibase.properties`. Diffs the live MySQL schema against the Hibernate entity model (`referenceUrl=hibernate:spring:com.suwalink.IT3003.entity?dialect=org.hibernate.dialect.MySQLDialect&hibernate.implicit_naming_strategy=...`) and writes changesets to `src/main/resources/db/changelog/001-baseline.xml`.
+Schema is now version-controlled via Liquibase, not `ddl-auto` (`spring.jpa.hibernate.ddl-auto=validate` in `application.properties` — Hibernate only checks the schema matches, it never creates/alters tables anymore). Migrations live in `backend/src/main/resources/db/changelog/`:
+- `db.changelog-master.xml` — the changelog Spring Boot loads on every boot (`spring.liquibase.change-log`)
+- `sql/001-baseline.sql` — the initial schema (12 tables incl. Envers `_aud`/`revinfo` audit tables), captured from Hibernate's own generated DDL via `mysqldump --no-data`, not hand-written
+
+**Applying migrations is automatic** — `./mvnw spring-boot:run` runs them on every startup, no separate command needed. The test profile (`application-test.properties`) explicitly disables Liquibase (`spring.liquibase.enabled=false`) since tests run against H2 and this changelog is MySQL-specific.
+
+**Adding a new migration** (when you change an entity): create `sql/00N-description.sql` with the raw `ALTER TABLE`/etc., add a matching `<changeSet>` to `db.changelog-master.xml`. This is manual — Liquibase doesn't auto-generate migrations from entity changes.
 
 ```bash
-cd backend && ./mvnw liquibase:diff        # generate a changelog from entity/DB drift
-cd backend && ./mvnw liquibase:status      # list pending changesets
-cd backend && ./mvnw liquibase:update      # apply changelog to the DB in liquibase.properties (localhost:3308/suwalink_db)
-cd backend && ./mvnw liquibase:rollback -Dliquibase.rollbackCount=1   # undo last changeset
+cd backend && ./mvnw liquibase:diff   # prints (doesn't write) a text diff between entities and the live DB — useful for spotting drift before hand-writing a migration; needs MySQL running on 3308
 ```
 
-Note: `liquibase.properties` currently points at the same dev DB as `application.properties` — no separate staging config yet.
+Note: `liquibase.properties` (used only by the `diff` command above) points at the same dev DB as `application.properties` — no separate staging config yet.
 
 ## Smoke-test curl commands
 

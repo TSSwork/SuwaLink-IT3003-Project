@@ -9,4 +9,16 @@
         <sqlFile path="sql/001-baseline.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="002-inventory-availability" author="suwalink">
+        <sqlFile path="sql/002-inventory-availability.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="003-seed-reference-data" author="suwalink">
+        <sqlFile path="sql/003-seed-reference-data.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="004-admin-role" author="suwalink">
+        <sqlFile path="sql/004-admin-role.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

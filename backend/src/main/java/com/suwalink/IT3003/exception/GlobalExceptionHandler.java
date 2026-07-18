@@ -28,6 +28,22 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(InventoryAccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleInventoryAccessDenied(InventoryAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
