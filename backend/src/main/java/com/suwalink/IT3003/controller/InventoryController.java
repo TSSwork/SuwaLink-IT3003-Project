@@ -33,49 +33,58 @@ public class InventoryController {
 
     @PostMapping
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
-    public ResponseEntity<ApiResponse<InventoryResponse>> addInventoryItem(
-            @Valid @RequestBody CreateInventoryRequest request) {
+    public ResponseEntity<ApiResponse<InventoryResponse>>
+    addInventoryItem(@Valid @RequestBody CreateInventoryRequest request) {
         InventoryResponse response = inventoryService.addInventoryItem(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("Inventory item added", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Inventory item added", response));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
-    public ResponseEntity<ApiResponse<List<InventoryResponse>>> listMyInventory() {
+    public ResponseEntity<ApiResponse<List<InventoryResponse>>>
+    listMyInventory() {
         return ResponseEntity.ok(ApiResponse.success("Inventory items", inventoryService.listMyInventory()));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<InventoryResponse>>> search(@RequestParam String query) {
+    public ResponseEntity<ApiResponse<List<InventoryResponse>>>
+    search(@RequestParam String query) {
         return ResponseEntity.ok(ApiResponse.success("Search results", inventoryService.search(query)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
-    public ResponseEntity<ApiResponse<InventoryResponse>> getInventoryItem(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<InventoryResponse>>
+    getInventoryItem(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success("Inventory item", inventoryService.getInventoryItem(id)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
-    public ResponseEntity<ApiResponse<InventoryResponse>> updateInventoryItem(
-            @PathVariable UUID id, @Valid @RequestBody UpdateInventoryRequest request) {
+    public ResponseEntity<ApiResponse<InventoryResponse>>
+    updateInventoryItem(
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateInventoryRequest request
+    ) {
         InventoryResponse response = inventoryService.updateInventoryItem(id, request);
         return ResponseEntity.ok(ApiResponse.success("Inventory item updated", response));
     }
 
     @PatchMapping("/{id}/availability")
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
-    public ResponseEntity<ApiResponse<InventoryResponse>> setAvailability(
-            @PathVariable UUID id, @Valid @RequestBody UpdateAvailabilityRequest request) {
+    public ResponseEntity<ApiResponse<InventoryResponse>>
+    setAvailability(
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateAvailabilityRequest request
+    ) {
         InventoryResponse response = inventoryService.setAvailability(id, request.getAvailable());
         return ResponseEntity.ok(ApiResponse.success("Inventory item availability updated", response));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> removeInventoryItem(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>>
+    removeInventoryItem(@PathVariable UUID id) {
         inventoryService.removeInventoryItem(id);
         return ResponseEntity.ok(ApiResponse.success("Inventory item removed"));
     }

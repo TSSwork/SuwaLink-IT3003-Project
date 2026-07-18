@@ -29,30 +29,36 @@ public class MedicineMasterController {
     private final MedicineMasterService medicineMasterService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MedicineMasterResponse>> create(
-            @Valid @RequestBody MedicineMasterRequest request) {
+    public ResponseEntity<ApiResponse<MedicineMasterResponse>>
+    create(@Valid @RequestBody MedicineMasterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success("Medicine created", medicineMasterService.create(request)));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<MedicineMasterResponse>>> list() {
+    public ResponseEntity<ApiResponse<List<MedicineMasterResponse>>>
+    list() {
         return ResponseEntity.ok(ApiResponse.success("Medicines", medicineMasterService.list()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<MedicineMasterResponse>> get(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<MedicineMasterResponse>>
+    get(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success("Medicine", medicineMasterService.get(id)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<MedicineMasterResponse>> update(
-            @PathVariable UUID id, @Valid @RequestBody MedicineMasterRequest request) {
+    public ResponseEntity<ApiResponse<MedicineMasterResponse>>
+    update(
+        @PathVariable UUID id,
+        @Valid @RequestBody MedicineMasterRequest request
+    ) {
         return ResponseEntity.ok(ApiResponse.success("Medicine updated", medicineMasterService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>>
+    delete(@PathVariable UUID id) {
         medicineMasterService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Medicine deleted"));
     }

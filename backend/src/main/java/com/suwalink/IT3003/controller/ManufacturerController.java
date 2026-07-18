@@ -29,24 +29,28 @@ public class ManufacturerController {
     private final ManufacturerService manufacturerService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ManufacturerResponse>> create(@Valid @RequestBody ManufacturerRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("Manufacturer created", manufacturerService.create(request)));
+    public ResponseEntity<ApiResponse<ManufacturerResponse>>
+    create(@Valid @RequestBody ManufacturerRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Manufacturer created", manufacturerService.create(request)));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ManufacturerResponse>>> list() {
+    public ResponseEntity<ApiResponse<List<ManufacturerResponse>>>
+    list() {
         return ResponseEntity.ok(ApiResponse.success("Manufacturers", manufacturerService.list()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ManufacturerResponse>> get(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<ManufacturerResponse>>
+    get(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success("Manufacturer", manufacturerService.get(id)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ManufacturerResponse>> update(
-            @PathVariable UUID id, @Valid @RequestBody ManufacturerRequest request) {
+        @PathVariable UUID id,
+        @Valid @RequestBody ManufacturerRequest request
+    ) {
         return ResponseEntity.ok(ApiResponse.success("Manufacturer updated", manufacturerService.update(id, request)));
     }
 
