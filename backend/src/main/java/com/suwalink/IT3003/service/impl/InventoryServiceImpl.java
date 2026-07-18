@@ -98,6 +98,13 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.delete(inventory);
     }
 
+    @Override
+    public List<InventoryResponse> search(String query) {
+        return inventoryRepository.searchAvailableByMedicineName(query).stream()
+            .map(this::toResponse)
+            .toList();
+    }
+
     private Pharmacy currentPharmacy() {
         UUID userId = currentUserProvider.getCurrentUser().getId();
         return pharmacyRepository.findByUserId(userId)
@@ -131,6 +138,12 @@ public class InventoryServiceImpl implements InventoryService {
             .manufacturer(medicine.getManufacturer().getName())
             .build();
 
+        InventoryResponse.PharmacySummary pharmacySummary = InventoryResponse.PharmacySummary.builder()
+            .id(inventory.getPharmacy().getId())
+            .name(inventory.getPharmacy().getUser().getName())
+            .address(inventory.getPharmacy().getAddress())
+            .build();
+
         return InventoryResponse.builder()
             .id(inventory.getId())
             .unitPrice(inventory.getUnitPrice())
@@ -140,6 +153,7 @@ public class InventoryServiceImpl implements InventoryService {
             .available(inventory.isAvailable())
             .imageUrl(inventory.getImage() != null ? inventory.getImage().getUrl() : null)
             .medicine(medicineSummary)
+            .pharmacy(pharmacySummary)
             .build();
     }
 }

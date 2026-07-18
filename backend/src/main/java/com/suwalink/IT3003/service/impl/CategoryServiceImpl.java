@@ -3,6 +3,7 @@ package com.suwalink.IT3003.service.impl;
 import com.suwalink.IT3003.dto.request.CategoryRequest;
 import com.suwalink.IT3003.dto.response.CategoryResponse;
 import com.suwalink.IT3003.entity.Category;
+import com.suwalink.IT3003.exception.DuplicateResourceException;
 import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.CategoryRepository;
 import com.suwalink.IT3003.service.CategoryService;
@@ -21,6 +22,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponse create(CategoryRequest request) {
+        if (categoryRepository.existsByName(request.getName())) {
+            throw new DuplicateResourceException("A category named '" + request.getName() + "' already exists");
+        }
+
         Category category = Category.builder()
             .name(request.getName())
             .description(request.getDescription())

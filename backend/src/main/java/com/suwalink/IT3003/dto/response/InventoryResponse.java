@@ -23,6 +23,16 @@ public class InventoryResponse {
     private final boolean available;
     private final String imageUrl;
     private final MedicineSummary medicine;
+    private final PharmacySummary pharmacy;
+
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class PharmacySummary {
+        private final UUID id;
+        private final String name;
+        private final String address;
+    }
 
     @Getter
     @Builder

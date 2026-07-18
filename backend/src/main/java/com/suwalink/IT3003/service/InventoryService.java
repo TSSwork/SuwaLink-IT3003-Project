@@ -19,4 +19,6 @@ public interface InventoryService {
     InventoryResponse setAvailability(UUID id, boolean available);
 
     void removeInventoryItem(UUID id);
+
+    List<InventoryResponse> search(String query);
 }
