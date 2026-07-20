@@ -21,6 +21,18 @@ public class Image {
     @Column(name = "url", nullable = false)
     private String url; // The actual link to the image file
 
+    @Column(name = "original_filename", nullable = false)
+    private String originalFilename;
+
+    @Column(name = "generated_filename", nullable = false)
+    private String generatedFilename;
+
+    @Column(name = "file_path", nullable = false)
+    private String filePath;
+
+    @Column(name = "mime_type", nullable = false)
+    private String mimeType;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "image_type", nullable = false)
     private ImageType imageType;

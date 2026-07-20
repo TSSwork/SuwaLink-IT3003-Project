@@ -3,6 +3,7 @@ package com.suwalink.IT3003.service.impl;
 import com.suwalink.IT3003.dto.request.ManufacturerRequest;
 import com.suwalink.IT3003.dto.response.ManufacturerResponse;
 import com.suwalink.IT3003.entity.Manufacturer;
+import com.suwalink.IT3003.exception.DuplicateResourceException;
 import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.ManufacturerRepository;
 import com.suwalink.IT3003.service.ManufacturerService;
@@ -21,6 +22,10 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Override
     @Transactional
     public ManufacturerResponse create(ManufacturerRequest request) {
+        if (manufacturerRepository.existsByName(request.getName())) {
+            throw new DuplicateResourceException("A manufacturer named '" + request.getName() + "' already exists");
+        }
+
         Manufacturer manufacturer = Manufacturer.builder()
             .name(request.getName())
             .licenseNumber(request.getLicenseNumber())
@@ -46,6 +51,10 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Transactional
     public ManufacturerResponse update(UUID id, ManufacturerRequest request) {
         Manufacturer manufacturer = findOrThrow(id);
+        if (!manufacturer.getName().equals(request.getName())
+                && manufacturerRepository.existsByName(request.getName())) {
+            throw new DuplicateResourceException("A manufacturer named '" + request.getName() + "' already exists");
+        }
         manufacturer.setName(request.getName());
         manufacturer.setLicenseNumber(request.getLicenseNumber());
         manufacturer.setCountry(request.getCountry());

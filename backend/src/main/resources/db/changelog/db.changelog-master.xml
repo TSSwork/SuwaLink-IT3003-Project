@@ -21,4 +21,8 @@
         <sqlFile path="sql/004-admin-role.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="005-image-metadata" author="suwalink">
+        <sqlFile path="sql/005-image-metadata.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

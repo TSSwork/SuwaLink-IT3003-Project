@@ -49,6 +49,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse update(UUID id, CategoryRequest request) {
         Category category = findOrThrow(id);
+        if (!category.getName().equals(request.getName()) && categoryRepository.existsByName(request.getName())) {
+            throw new DuplicateResourceException("A category named '" + request.getName() + "' already exists");
+        }
         category.setName(request.getName());
         category.setDescription(request.getDescription());
         category.setParentCategory(resolveParent(request.getParentCategoryId()));
