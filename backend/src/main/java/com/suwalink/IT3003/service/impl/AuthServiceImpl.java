@@ -7,6 +7,7 @@ import com.suwalink.IT3003.dto.response.AuthResponse;
 import com.suwalink.IT3003.entity.Pharmacy;
 import com.suwalink.IT3003.entity.Role;
 import com.suwalink.IT3003.entity.User;
+import com.suwalink.IT3003.exception.DuplicateResourceException;
 import com.suwalink.IT3003.exception.EmailAlreadyExistsException;
 import com.suwalink.IT3003.exception.PharmacyNotVerifiedException;
 import com.suwalink.IT3003.repository.PharmacyRepository;
@@ -50,6 +51,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void registerPharmacy(PharmacyRegisterRequest request) {
+        if (pharmacyRepository.existsByLicenceNo(request.getLicenceNo())) {
+            throw new DuplicateResourceException(
+                "A pharmacy with licence number '" + request.getLicenceNo() + "' already exists");
+        }
+
         User savedUser = registerUser(
             request.getName(), request.getEmail(), request.getPhone(), request.getPassword(), Role.PHARMACY_ADMIN);
 

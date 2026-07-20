@@ -26,13 +26,13 @@ public class Pharmacy {
 
     @Id
     @UuidGenerator
-    @Column(updatable = false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @Column(name = "licence_no", nullable = false, unique = true)
     private String licenceNo;
 
-    @Column(nullable = false)
+    @Column(name = "address", nullable = false)
     private String address;
 
     @Column(name = "is_verified", nullable = false)

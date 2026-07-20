@@ -23,23 +23,22 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register/customer")
-    public ResponseEntity<ApiResponse<AuthResponse>> registerCustomer(
-            @Valid @RequestBody CustomerRegisterRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>>
+    registerCustomer(@Valid @RequestBody CustomerRegisterRequest request) {
         AuthResponse response = authService.registerCustomer(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("Registration successful", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Registration successful", response));
     }
 
     @PostMapping("/register/pharmacy")
-    public ResponseEntity<ApiResponse<Void>> registerPharmacy(
-            @Valid @RequestBody PharmacyRegisterRequest request) {
+    public ResponseEntity<ApiResponse<Void>>
+    registerPharmacy(@Valid @RequestBody PharmacyRegisterRequest request) {
         authService.registerPharmacy(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("Registered. Awaiting verification."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Registered. Awaiting verification."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>>
+    login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }

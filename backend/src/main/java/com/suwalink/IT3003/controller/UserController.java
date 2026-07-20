@@ -22,7 +22,8 @@ public class UserController {
     private final PharmacyRepository pharmacyRepository;
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> me() {
+    public ResponseEntity<ApiResponse<UserProfileResponse>>
+    me() {
         User user = currentUserProvider.getCurrentUser();
 
         UserProfileResponse.UserProfileResponseBuilder profile = UserProfileResponse.builder()
@@ -41,7 +42,8 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Current user profile", profile.build()));
     }
 
-    private UserProfileResponse.PharmacyInfo toPharmacyInfo(Pharmacy pharmacy) {
+    private UserProfileResponse.PharmacyInfo
+    toPharmacyInfo(Pharmacy pharmacy) {
         return UserProfileResponse.PharmacyInfo.builder()
             .id(pharmacy.getId())
             .licenceNo(pharmacy.getLicenceNo())
