@@ -1,0 +1,2 @@
+ALTER TABLE inventory ADD COLUMN available BIT(1) NOT NULL DEFAULT 1;
+ALTER TABLE inventory_aud ADD COLUMN available BIT(1) DEFAULT NULL;

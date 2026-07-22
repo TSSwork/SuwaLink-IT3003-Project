@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-baseline" author="suwalink">
+        <sqlFile path="sql/001-baseline.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="002-inventory-availability" author="suwalink">
+        <sqlFile path="sql/002-inventory-availability.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="003-seed-reference-data" author="suwalink">
+        <sqlFile path="sql/003-seed-reference-data.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="004-admin-role" author="suwalink">
+        <sqlFile path="sql/004-admin-role.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="005-image-metadata" author="suwalink">
+        <sqlFile path="sql/005-image-metadata.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+</databaseChangeLog>

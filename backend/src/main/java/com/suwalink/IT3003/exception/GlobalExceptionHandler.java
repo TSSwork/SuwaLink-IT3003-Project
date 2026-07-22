@@ -28,6 +28,46 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiErrorResponse> handleDuplicateResource(DuplicateResourceException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(InventoryAccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleInventoryAccessDenied(InventoryAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidFile(InvalidFileException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handleFileStorage(FileStorageException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ApiErrorResponse.builder()
+                .message("Could not process the uploaded image")
+                .build());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
