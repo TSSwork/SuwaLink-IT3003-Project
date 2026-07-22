@@ -4,5 +4,4 @@ public enum Role {
     ADMIN,
     CUSTOMER,
     PHARMACY_ADMIN,
-    ADMIN
 }
