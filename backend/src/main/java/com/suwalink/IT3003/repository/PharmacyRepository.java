@@ -10,4 +10,5 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, UUID> {
     boolean existsByLicenceNo(String licenceNo);
 
     Optional<Pharmacy> findByUserId(UUID userId);
+    long countByVerified(boolean verified);
 }
