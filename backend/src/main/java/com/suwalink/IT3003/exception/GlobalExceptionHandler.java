@@ -52,6 +52,14 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(PrescriptionAccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handlePrescriptionAccessDenied(PrescriptionAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(InvalidFileException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidFile(InvalidFileException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -25,4 +25,8 @@
         <sqlFile path="sql/005-image-metadata.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="006-prescription-requests" author="suwalink">
+        <sqlFile path="sql/006-prescription-requests.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
