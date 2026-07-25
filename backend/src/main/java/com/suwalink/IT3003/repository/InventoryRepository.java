@@ -1,6 +1,8 @@
 package com.suwalink.IT3003.repository;
 
 import com.suwalink.IT3003.entity.Inventory;
+import com.suwalink.IT3003.entity.PrescriptionStatus;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
