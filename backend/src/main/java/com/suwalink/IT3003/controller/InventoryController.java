@@ -48,8 +48,17 @@ public class InventoryController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<InventoryResponse>>>
-    search(@RequestParam String query) {
-        return ResponseEntity.ok(ApiResponse.success("Search results", inventoryService.search(query)));
+    search(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID manufacturerId,
+            @RequestParam(required = false) PrescriptionStatus legalCategory,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
+    ) {
+        List<InventoryResponse> results = inventoryService.search(
+                query, categoryId, manufacturerId, legalCategory, minPrice, maxPrice);
+        return ResponseEntity.ok(ApiResponse.success("Search results", results));
     }
 
     @GetMapping("/{id}")
