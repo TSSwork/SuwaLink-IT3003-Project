@@ -14,8 +14,20 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     Optional<Inventory> findByIdAndPharmacyId(UUID id, UUID pharmacyId);
 
-    @Query("SELECT i FROM Inventory i WHERE i.available = true AND ("
-        + "LOWER(i.medicineMaster.brandName) LIKE LOWER(CONCAT('%', :query, '%')) "
-        + "OR LOWER(i.medicineMaster.genericName) LIKE LOWER(CONCAT('%', :query, '%')))")
-    List<Inventory> searchAvailableByMedicineName(@Param("query") String query);
+    @Query("SELECT i FROM Inventory i WHERE i.available = true "
+            + "AND (:query IS NULL OR :query = '' "
+            + "     OR LOWER(i.medicineMaster.brandName) LIKE LOWER(CONCAT('%', :query, '%')) "
+            + "     OR LOWER(i.medicineMaster.genericName) LIKE LOWER(CONCAT('%', :query, '%'))) "
+            + "AND (:categoryId IS NULL OR i.medicineMaster.therapeuticCategory.id = :categoryId) "
+            + "AND (:manufacturerId IS NULL OR i.medicineMaster.manufacturer.id = :manufacturerId) "
+            + "AND (:legalCategory IS NULL OR i.medicineMaster.legalCategory = :legalCategory) "
+            + "AND (:minPrice IS NULL OR i.unitPrice >= :minPrice) "
+            + "AND (:maxPrice IS NULL OR i.unitPrice <= :maxPrice)")
+    List<Inventory> search(
+            @Param("query") String query,
+            @Param("categoryId") UUID categoryId,
+            @Param("manufacturerId") UUID manufacturerId,
+            @Param("legalCategory") PrescriptionStatus legalCategory,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice);
 }

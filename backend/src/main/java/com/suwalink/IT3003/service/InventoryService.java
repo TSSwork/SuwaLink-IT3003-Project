@@ -20,5 +20,11 @@ public interface InventoryService {
 
     void removeInventoryItem(UUID id);
 
-    List<InventoryResponse> search(String query);
+    List<InventoryResponse> search(
+            String query,
+            UUID categoryId,
+            UUID manufacturerId,
+            PrescriptionStatus legalCategory,
+            BigDecimal minPrice,
+            BigDecimal maxPrice);
 }
