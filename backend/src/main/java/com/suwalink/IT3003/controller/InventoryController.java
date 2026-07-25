@@ -5,8 +5,10 @@ import com.suwalink.IT3003.dto.request.UpdateAvailabilityRequest;
 import com.suwalink.IT3003.dto.request.UpdateInventoryRequest;
 import com.suwalink.IT3003.dto.response.ApiResponse;
 import com.suwalink.IT3003.dto.response.InventoryResponse;
+import com.suwalink.IT3003.entity.PrescriptionStatus;
 import com.suwalink.IT3003.service.InventoryService;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +50,17 @@ public class InventoryController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<InventoryResponse>>>
-    search(@RequestParam String query) {
-        return ResponseEntity.ok(ApiResponse.success("Search results", inventoryService.search(query)));
+    search(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID manufacturerId,
+            @RequestParam(required = false) PrescriptionStatus legalCategory,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
+    ) {
+        List<InventoryResponse> results = inventoryService.search(
+                query, categoryId, manufacturerId, legalCategory, minPrice, maxPrice);
+        return ResponseEntity.ok(ApiResponse.success("Search results", results));
     }
 
     @GetMapping("/{id}")
@@ -63,8 +74,8 @@ public class InventoryController {
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
     public ResponseEntity<ApiResponse<InventoryResponse>>
     updateInventoryItem(
-        @PathVariable UUID id,
-        @Valid @RequestBody UpdateInventoryRequest request
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateInventoryRequest request
     ) {
         InventoryResponse response = inventoryService.updateInventoryItem(id, request);
         return ResponseEntity.ok(ApiResponse.success("Inventory item updated", response));
@@ -74,8 +85,8 @@ public class InventoryController {
     @PreAuthorize("hasRole('PHARMACY_ADMIN')")
     public ResponseEntity<ApiResponse<InventoryResponse>>
     setAvailability(
-        @PathVariable UUID id,
-        @Valid @RequestBody UpdateAvailabilityRequest request
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateAvailabilityRequest request
     ) {
         InventoryResponse response = inventoryService.setAvailability(id, request.getAvailable());
         return ResponseEntity.ok(ApiResponse.success("Inventory item availability updated", response));
