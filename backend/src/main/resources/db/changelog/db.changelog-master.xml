@@ -35,5 +35,11 @@
                  splitStatements="true"
                  stripComments="true"/>
     </changeSet>
+    <changeSet id="006-notifications" author="suwalink">
+        <sqlFile path="sql/006-notifications.sql"
+                 relativeToChangelogFile="true"
+                 splitStatements="true"
+                 stripComments="true"/>
+    </changeSet>
 
 </databaseChangeLog>
