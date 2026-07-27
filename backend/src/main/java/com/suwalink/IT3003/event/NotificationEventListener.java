@@ -12,10 +12,12 @@ public class NotificationEventListener {
     public NotificationEventListener(NotificationService notificationService) {
         this.notificationService = notificationService;
     }
+
     @EventListener
     public void handlePharmacyVerifiedEvent(PharmacyVerifiedEvent event) {
         String title = "Pharmacy Verified";
         String message = "Your pharmacy profile has been successfully verified by the Admin!";
+        
         notificationService.createNotification(event.getPharmacyUserId(), title, message);
     }
 }
