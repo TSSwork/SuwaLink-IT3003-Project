@@ -1,12 +1,13 @@
 package com.suwalink.IT3003.controller;
 
 import com.suwalink.IT3003.dto.NotificationResponse;
+import com.suwalink.IT3003.dto.response.ApiResponse;
 import com.suwalink.IT3003.entity.Notification;
 import com.suwalink.IT3003.entity.User;
+import com.suwalink.IT3003.security.CurrentUserProvider;
 import com.suwalink.IT3003.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,26 +21,33 @@ import java.util.stream.Collectors;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final CurrentUserProvider currentUserProvider;
 
     @GetMapping
-    public ResponseEntity<List<NotificationResponse>> getUserNotifications(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getUserNotifications() {
+        User currentUser = currentUserProvider.getCurrentUser();
         List<NotificationResponse> responses = notificationService.getUserNotifications(currentUser)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+        
+        return ResponseEntity.ok(ApiResponse.success("Notifications fetched successfully", responses));
     }
 
     @GetMapping("/unread-count")
-    public ResponseEntity<Map<String, Long>> getUnreadCount(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getUnreadCount() {
+        User currentUser = currentUserProvider.getCurrentUser();
         long count = notificationService.getUnreadCount(currentUser);
-        return ResponseEntity.ok(Map.of("count", count));
+        
+        return ResponseEntity.ok(ApiResponse.success("Unread count fetched successfully", Map.of("count", count)));
     }
 
     @PutMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable UUID id, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable UUID id) {
+        User currentUser = currentUserProvider.getCurrentUser();
         notificationService.markAsRead(id, currentUser);
-        return ResponseEntity.ok().build();
+        
+        return ResponseEntity.ok(ApiResponse.success("Notification marked as read"));
     }
 
     private NotificationResponse mapToResponse(Notification notification) {
