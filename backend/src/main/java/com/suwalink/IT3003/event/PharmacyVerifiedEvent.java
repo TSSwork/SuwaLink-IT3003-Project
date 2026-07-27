@@ -1,17 +1,17 @@
 package com.suwalink.IT3003.event;
 
-import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import java.util.UUID;
 
-public class PharmacyVerifiedEvent extends ApplicationEvent {
+public class PharmacyVerifiedEvent {
     
-    private final Long pharmacyUserId; 
+    private final UUID pharmacyUserId; 
 
-    public PharmacyVerifiedEvent(Object source, Long pharmacyUserId) {
-        super(source);
+    public PharmacyVerifiedEvent(Object source, UUID pharmacyUserId) {
         this.pharmacyUserId = pharmacyUserId;
     }
 
-    public Long getPharmacyUserId() {
+    public UUID getPharmacyUserId() {
         return pharmacyUserId;
     }
 }
