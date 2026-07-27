@@ -27,9 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!res.ok) return;
             
-            const data = await res.json();
-            if (data.count > 0) {
-                badge.textContent = data.count;
+            const json = await res.json();
+            if (json.data && json.data.count > 0) {
+                badge.textContent = json.data.count;
                 badge.hidden = false;
             } else {
                 badge.hidden = true;
@@ -47,7 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!res.ok) return;
 
-            const notifications = await res.json();
+            const json = await res.json();
+            const notifications = json.data; 
+            
             list.innerHTML = '';
 
             if (!notifications || notifications.length === 0) {
@@ -57,13 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             notifications.forEach(notif => {
                 const item = document.createElement('div');
-                item.className = `notification-item ${notif.read ? '' : 'unread'}`;
+                item.className = `notification-item ${notif.isRead ? '' : 'unread'}`;
                 item.innerHTML = `
                     <div style="font-size: 14px; margin-bottom: 4px;">${notif.title}</div>
                     <div style="font-size: 12px; color: gray;">${notif.message}</div>
                 `;
                 
-                if (!notif.read) {
+                if (!notif.isRead) {
                     item.addEventListener('click', () => markAsRead(notif.id, item));
                 }
                 
@@ -77,13 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function markAsRead(id, element) {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`/api/notifications/${id}/read`, {
+            const res = await fetch(`/api/notifications/${id}/read`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
-            element.classList.remove('unread');
-            fetchUnreadCount();
+            if(res.ok){
+                element.classList.remove('unread');
+                fetchUnreadCount();
+            }
         } catch (error) {
             console.error("Error marking as read:", error);
         }
