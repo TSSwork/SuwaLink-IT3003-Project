@@ -31,4 +31,13 @@ public class NotificationEventListener {
             notificationService.createNotification(pharmacyUserId, title, message);
         }
     }
+
+    @EventListener
+    public void handlePharmacyRespondedEvent(PharmacyRespondedEvent event) {
+        String title = "Pharmacy Responded";
+        String message = event.getPharmacyName() + " has responded to your prescription. Please check your dashboard.";
+        
+        // අදාළ Patient ට Notification එක යවනවා
+        notificationService.createNotification(event.getPatientUserId(), title, message);
+    }
 }
