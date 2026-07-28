@@ -25,6 +25,9 @@
         <sqlFile path="sql/005-image-metadata.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="006-prescription-requests" author="suwalink">
+        <sqlFile path="sql/006-prescription-requests.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
     <!--
   Add this <changeSet> inside backend/src/main/resources/db/changelog/db.changelog-master.xml,
   after your existing 001-baseline changeSet. Update the "id" and "path" if you renumber the SQL file.
