@@ -10,6 +10,8 @@ import com.suwalink.IT3003.repository.UserRepository;
 import com.suwalink.IT3003.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.suwalink.IT3003.event.PharmacyVerifiedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final PharmacyRepository pharmacyRepository;
+    private final ApplicationEventPublisher eventPublisher;
     @Override
     public DashboardResponse getDashboard(){
         return DashboardResponse.builder()
@@ -51,6 +54,8 @@ public class AdminServiceImpl implements AdminService {
         pharmacy.setVerified(true);
 
         pharmacyRepository.save(pharmacy);
+        eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId()));
+    }
     }
     @Override
     public List<UserResponse> getAllUsers() {

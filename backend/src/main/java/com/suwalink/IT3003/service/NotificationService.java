@@ -1,0 +1,51 @@
+package com.suwalink.IT3003.service;
+
+import com.suwalink.IT3003.entity.Notification;
+import com.suwalink.IT3003.entity.NotificationType;
+import com.suwalink.IT3003.entity.User;
+import com.suwalink.IT3003.repository.NotificationRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class NotificationService {
+
+    private final NotificationRepository notificationRepository;
+
+    @Transactional
+    public void createNotification(User recipient, String title, String message, NotificationType type) {
+        Notification notification = Notification.builder()
+                .recipient(recipient)
+                .title(title)
+                .message(message)
+                .type(type)
+                .isRead(false)
+                .build();
+        notificationRepository.save(notification);
+    }
+
+    public List<Notification> getUserNotifications(User user) {
+        return notificationRepository.findByRecipientOrderByCreatedAtDesc(user);
+    }
+
+    public long getUnreadCount(User user) {
+        return notificationRepository.countByRecipientAndIsReadFalse(user);
+    }
+
+    @Transactional
+    public void markAsRead(UUID notificationId, User currentUser) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        
+        // Ensure the notification belongs to the current user
+        if (notification.getRecipient().getId().equals(currentUser.getId())) {
+            notification.setRead(true);
+            notificationRepository.save(notification);
+        }
+    }
+}
