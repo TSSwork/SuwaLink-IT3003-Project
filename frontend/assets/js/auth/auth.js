@@ -29,6 +29,22 @@ export async function login({ email, password }) {
   return data;
 }
 
+export async function forgotPassword({ email }) {
+  return request("/api/auth/forgot-password", {
+    method: "POST",
+    auth: false,
+    body: { email },
+  });
+}
+
+export async function resetPassword({ email, otp, newPassword }) {
+  return request("/api/auth/reset-password", {
+    method: "POST",
+    auth: false,
+    body: { email, otp, newPassword },
+  });
+}
+
 export function logout() {
   clearSession();
   window.location.href = "index.html";

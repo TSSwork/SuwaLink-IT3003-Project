@@ -1,8 +1,10 @@
 package com.suwalink.IT3003.service;
 
 import com.suwalink.IT3003.dto.request.CustomerRegisterRequest;
+import com.suwalink.IT3003.dto.request.ForgotPasswordRequest;
 import com.suwalink.IT3003.dto.request.LoginRequest;
 import com.suwalink.IT3003.dto.request.PharmacyRegisterRequest;
+import com.suwalink.IT3003.dto.request.ResetPasswordRequest;
 import com.suwalink.IT3003.dto.response.AuthResponse;
 
 public interface AuthService {
@@ -12,4 +14,8 @@ public interface AuthService {
     void registerPharmacy(PharmacyRegisterRequest request);
 
     AuthResponse login(LoginRequest request);
+
+    void forgotPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 }
