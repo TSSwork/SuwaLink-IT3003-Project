@@ -60,6 +60,14 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(PrescriptionRequestClosedException.class)
+    public ResponseEntity<ApiErrorResponse> handlePrescriptionRequestClosed(PrescriptionRequestClosedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(InvalidFileException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidFile(InvalidFileException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
