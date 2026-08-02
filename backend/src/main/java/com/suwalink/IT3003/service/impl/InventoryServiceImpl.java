@@ -101,6 +101,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponse> search(
             String query,
             UUID categoryId,
