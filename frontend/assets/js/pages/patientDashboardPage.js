@@ -285,6 +285,42 @@ function initPatientDashboard() {
     date.textContent = new Date(res.createdAt).toLocaleString();
     card.appendChild(date);
 
+    const errorText = document.createElement("p");
+    errorText.className = "md-type-body-small";
+    errorText.style.color = "var(--md-sys-color-error)";
+    errorText.hidden = true;
+    card.appendChild(errorText);
+
+    if (res.status === "CONFIRMED") {
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "md-btn md-btn--outlined";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.style.marginTop = "var(--md-space-4)";
+
+      cancelBtn.addEventListener("click", async () => {
+        errorText.hidden = true;
+        cancelBtn.disabled = true;
+        cancelBtn.classList.add("md-btn--loading");
+
+        try {
+          await request(`/api/reservations/${res.id}/cancel`, { method: "PATCH" });
+          status.className = "status-badge status-badge--cancelled";
+          status.textContent = "CANCELLED";
+          cancelBtn.remove();
+        } catch (err) {
+          errorText.textContent =
+            err instanceof ApiError ? err.message : "Couldn't cancel this reservation. Please try again.";
+          errorText.hidden = false;
+        } finally {
+          cancelBtn.classList.remove("md-btn--loading");
+          cancelBtn.disabled = false;
+        }
+      });
+
+      card.appendChild(cancelBtn);
+    }
+
     return card;
   }
 }
