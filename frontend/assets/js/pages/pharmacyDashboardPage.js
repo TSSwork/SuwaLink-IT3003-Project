@@ -16,9 +16,11 @@ async function loadProfile() {
     document.getElementById("profile-name").textContent = profile.name;
     document.getElementById("profile-licence").textContent = profile.pharmacy?.licenceNo ?? "—";
     document.getElementById("profile-address").textContent = profile.pharmacy?.address ?? "";
-    document.getElementById("profile-verified").textContent = profile.pharmacy?.verified
+    document.getElementById("profile-verified").textContent = profile.pharmacy?.status === "VERIFIED"
       ? "Verified pharmacy"
-      : "Awaiting admin verification";
+      : profile.pharmacy?.status === "REJECTED"
+        ? "Application rejected"
+        : "Awaiting admin verification";
 
     loadingState.hidden = true;
     profileCard.hidden = false;

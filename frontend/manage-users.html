@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Manage Users</title>
 
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
 
 </head>
 
@@ -32,32 +32,25 @@
 
     <h1>Users</h1>
 
+    <p id="error-state" style="color:#c0392b" hidden></p>
+
     <table>
-
-        <tr>
-
-            <th>Name</th>
-
-            <th>Email</th>
-
-            <th>Role</th>
-
-        </tr>
-
-        <tr>
-
-            <td>Chamith</td>
-
-            <td>cmadushan061@gmail.com</td>
-
-            <td>CUSTOMER</td>
-
-        </tr>
-
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="users-body">
+        </tbody>
     </table>
 
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="module" src="assets/js/pages/manageUsersPage.js"></script>
 </body>
 
 </html>

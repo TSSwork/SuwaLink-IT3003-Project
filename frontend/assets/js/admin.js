@@ -1,14 +1,21 @@
-fetch("http://localhost:8080/api/admin/dashboard",{
-    headers:{
-        Authorization:"Bearer "+localStorage.getItem("token")
-    }
-})
-    .then(response=>response.json())
-    .then(data=>{
+import { requireAuth } from "./auth/auth.js";
+import { request } from "./api/apiService.js";
 
-        document.getElementById("customers").innerText=data.totalCustomers;
-        document.getElementById("pharmacies").innerText=data.totalPharmacies;
-        document.getElementById("verified").innerText=data.verifiedPharmacies;
-        document.getElementById("pending").innerText=data.pendingPharmacies;
+$(function () {
+  const session = requireAuth();
+  if (!session) return;
+  if (session.role !== "ADMIN") {
+    window.location.href = "index.html";
+    return;
+  }
 
-    });
+  request("/api/admin/dashboard")
+    .then((data) => {
+      $("#customers").text(data.totalCustomers);
+      $("#pharmacies").text(data.totalPharmacies);
+      $("#verified").text(data.verifiedPharmacies);
+      $("#pending").text(data.pendingPharmacies);
+      $("#rejected").text(data.rejectedPharmacies);
+    })
+    .catch((err) => console.error("Failed to load dashboard:", err));
+});
