@@ -81,6 +81,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReservationResponse> getMyReservations() {
         User patient = currentUserProvider.getCurrentUser();
         return reservationRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()

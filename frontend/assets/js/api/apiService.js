@@ -9,23 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * @param {string} path e.g. "/api/auth/login"
- * @param {{method?: string, body?: object, auth?: boolean}} options
- */
-export async function request(path, { method = "GET", body, auth = true } = {}) {
-  const headers = { "Content-Type": "application/json" };
-  if (auth) {
-    const token = getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
+async function handleResponse(response, auth) {
   let envelope = null;
   try {
     envelope = await response.json();
@@ -48,4 +32,47 @@ export async function request(path, { method = "GET", body, auth = true } = {}) 
   }
 
   return envelope.data;
+}
+
+/**
+ * @param {string} path e.g. "/api/auth/login"
+ * @param {{method?: string, body?: object, auth?: boolean}} options
+ */
+export async function request(path, { method = "GET", body, auth = true } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (auth) {
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  return handleResponse(response, auth);
+}
+
+/**
+ * Like `request`, but sends a raw FormData body (multipart/form-data) instead of JSON —
+ * for endpoints that accept a file upload (e.g. POST /api/prescriptions). Always attaches
+ * the Authorization header if a session exists; never sets Content-Type manually so the
+ * browser can attach its own multipart boundary.
+ * @param {string} path
+ * @param {FormData} formData
+ * @param {{method?: string}} options
+ */
+export async function requestMultipart(path, formData, { method = "POST" } = {}) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: formData,
+  });
+
+  return handleResponse(response, true);
 }

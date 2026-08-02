@@ -1,5 +1,6 @@
 import { request, ApiError } from "../api/apiService.js";
-import { getCurrentAuth, logout } from "../auth/auth.js";
+import { getCurrentAuth, logout, homePathForRole } from "../auth/auth.js";
+import { createReserveControl } from "../components/reserveControl.js";
 
 initNav();
 initSearchPage();
@@ -12,7 +13,7 @@ function initNav() {
     const dashboardLink = document.createElement("a");
     dashboardLink.className = "md-btn md-btn--text";
     dashboardLink.textContent = session.role === "PHARMACY_ADMIN" ? "Dashboard" : "My account";
-    dashboardLink.href = session.role === "PHARMACY_ADMIN" ? "pharmacy-dashboard.html" : "index.html";
+    dashboardLink.href = homePathForRole(session.role);
 
     const logoutBtn = document.createElement("button");
     logoutBtn.className = "md-btn md-btn--outlined";
@@ -115,69 +116,25 @@ function initSearchPage() {
     stock.textContent = `${item.stockQuantity} in stock`;
     card.appendChild(stock);
 
-    const cardError = document.createElement("p");
-    cardError.className = "md-type-body-small search-result-card__error";
-    cardError.hidden = true;
-    card.appendChild(cardError);
-
     if (session?.role === "CUSTOMER") {
-      const reserveRow = document.createElement("div");
-      reserveRow.className = "search-result-card__reserve-row";
-
-      const qtyInput = document.createElement("input");
-      qtyInput.type = "number";
-      qtyInput.className = "search-result-card__qty";
-      qtyInput.min = "1";
-      qtyInput.max = String(item.stockQuantity);
-      qtyInput.value = "1";
-      qtyInput.setAttribute("aria-label", "Quantity");
-      reserveRow.appendChild(qtyInput);
-
-      const reserveBtn = document.createElement("button");
-      reserveBtn.type = "button";
-      reserveBtn.className = "md-btn md-btn--filled";
-      reserveBtn.innerHTML = '<span class="md-btn__label">Reserve</span>';
-      reserveBtn.disabled = item.stockQuantity === 0 || !item.available;
-      reserveRow.appendChild(reserveBtn);
-
-      reserveBtn.addEventListener("click", async () => {
-        const quantity = Number(qtyInput.value);
-        cardError.hidden = true;
-
-        if (!Number.isInteger(quantity) || quantity < 1 || quantity > item.stockQuantity) {
-          cardError.textContent = `Enter a quantity between 1 and ${item.stockQuantity}.`;
-          cardError.hidden = false;
-          return;
-        }
-
-        reserveBtn.disabled = true;
-        reserveBtn.classList.add("md-btn--loading");
-
-        try {
-          const reservation = await request("/api/reservations", {
-            method: "POST",
-            body: { inventoryItemId: item.id, quantity },
-          });
-
+      const control = createReserveControl({
+        inventoryItemId: item.id,
+        initialQuantity: 1,
+        maxQuantity: item.stockQuantity,
+        disabled: item.stockQuantity === 0 || !item.available,
+        onReserved: (reservation) => {
           successBanner.textContent =
             `Reserved ${reservation.quantity} × ${reservation.medicineBrandName} at ${reservation.pharmacyName}.`;
           successBanner.hidden = false;
 
-          item.stockQuantity -= quantity;
+          item.stockQuantity -= reservation.quantity;
           stock.textContent = `${item.stockQuantity} in stock`;
-          qtyInput.max = String(item.stockQuantity);
-          qtyInput.value = "1";
-        } catch (err) {
-          cardError.textContent =
-            err instanceof ApiError ? err.message : "Couldn't reserve this item. Please try again.";
-          cardError.hidden = false;
-        } finally {
-          reserveBtn.classList.remove("md-btn--loading");
-          reserveBtn.disabled = item.stockQuantity === 0;
-        }
+          control.setMax(item.stockQuantity);
+        },
       });
 
-      card.appendChild(reserveRow);
+      card.appendChild(control.error);
+      card.appendChild(control.row);
     } else {
       const signInLink = document.createElement("a");
       signInLink.className = "md-btn md-btn--text";

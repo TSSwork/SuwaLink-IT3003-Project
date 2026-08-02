@@ -1,4 +1,4 @@
-import { login, redirectIfAuthenticated } from "../auth/auth.js";
+import { login, redirectIfAuthenticated, homePathForRole } from "../auth/auth.js";
 import { ApiError } from "../api/apiService.js";
 import { required, email as validateEmail } from "../utils/validators.js";
 
@@ -33,7 +33,7 @@ function initLoginPage() {
   }
 
   function redirectByRole(role) {
-    window.location.href = role === "PHARMACY_ADMIN" ? "pharmacy-dashboard.html" : "index.html";
+    window.location.href = homePathForRole(role);
   }
 
   form.addEventListener("submit", async (event) => {

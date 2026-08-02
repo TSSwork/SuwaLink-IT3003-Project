@@ -64,7 +64,9 @@ export function requireAuth() {
 }
 
 export function homePathForRole(role) {
-  return role === "PHARMACY_ADMIN" ? "pharmacy-dashboard.html" : "index.html";
+  if (role === "PHARMACY_ADMIN") return "pharmacy-dashboard.html";
+  if (role === "CUSTOMER") return "patient-dashboard.html";
+  return "index.html";
 }
 
 /** Call at the top of login/register pages: bounces an already-authenticated
