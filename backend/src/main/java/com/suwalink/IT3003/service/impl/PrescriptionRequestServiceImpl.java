@@ -80,6 +80,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PrescriptionRequestResponse> getMyRequests() {
         User patient = currentUserProvider.getCurrentUser();
         return prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()
@@ -88,6 +89,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PrescriptionRequestResponse getById(UUID id) {
         PrescriptionRequest prescriptionRequest = findOrThrow(id);
         User currentUser = currentUserProvider.getCurrentUser();
@@ -137,6 +139,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PrescriptionRequestResponse> listPending() {
         return prescriptionRequestRepository.findByStatusOrderByCreatedAtDesc(PrescriptionRequestStatus.PENDING)
             .stream()

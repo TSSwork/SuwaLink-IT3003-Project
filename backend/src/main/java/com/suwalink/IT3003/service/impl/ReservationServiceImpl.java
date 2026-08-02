@@ -81,6 +81,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReservationResponse> getMyReservations() {
         User patient = currentUserProvider.getCurrentUser();
         return reservationRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()
@@ -89,6 +90,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReservationResponse> getPharmacyReservations() {
         Pharmacy pharmacy = currentPharmacy();
         return reservationRepository.findByPharmacyIdOrderByCreatedAtDesc(pharmacy.getId()).stream()

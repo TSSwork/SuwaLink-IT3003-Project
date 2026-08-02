@@ -155,11 +155,22 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
 ## What's deliberately NOT built here (don't assume it exists)
 
 - No refresh tokens, no session/token DB table.
-- No admin-verification UI/endpoint — `is_verified` exists and login respects it, but flipping
-  it to `true` is a separate module's job.
-- No inventory, prescription, or reservation logic/tables.
-- No password reset / email verification flow.
 - No httpOnly-cookie auth.
+- No email verification flow (password reset now exists — see below).
+
+## What's now built elsewhere (this doc used to say these didn't exist — they do now)
+
+- Pharmacy verification: `is_verified` (boolean) was replaced by a `PharmacyStatus` enum
+  (`PENDING`/`VERIFIED`/`REJECTED`). Admins approve/reject via `PUT /api/admin/pharmacies/{id}/approve`
+  and `.../reject` (see `READ_ADMIN_MODULE.md`); login still checks `status == VERIFIED`.
+- Password reset via email OTP: `POST /api/auth/forgot-password` and `POST /api/auth/reset-password`
+  (both `permitAll`). `forgotPassword` always returns the same generic success response whether or
+  not the email is registered, to avoid leaking which emails have accounts. Requires
+  `GMAIL_USERNAME`/`GMAIL_APP_PASSWORD` env vars to actually send mail (see `application.properties`);
+  without them, `/forgot-password` returns a `502` instead of crashing.
+- Inventory, prescription-request, prescription-response, and reservation logic/tables all exist
+  now — see `READ_INVENTORY_MODULE.md`, `READ_PRESCRIPTION_MODULE.md`, and the
+  `PrescriptionResponse`/`Reservation` entities/controllers.
 
 ## Frontend integration (`frontend/`)
 

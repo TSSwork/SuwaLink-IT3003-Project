@@ -64,6 +64,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponse> listMyInventory() {
         Pharmacy pharmacy = currentPharmacy();
         return inventoryRepository.findByPharmacyId(pharmacy.getId()).stream()
@@ -72,6 +73,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public InventoryResponse getInventoryItem(UUID id) {
         return toResponse(ownedInventoryItem(id));
     }
@@ -104,6 +106,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponse> search(
             String query,
             UUID categoryId,
