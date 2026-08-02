@@ -44,6 +44,7 @@ public class MedicineMasterServiceImpl implements MedicineMasterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MedicineMasterResponse> list() {
         return medicineMasterRepository.findAll().stream().map(this::toResponse).toList();
     }
