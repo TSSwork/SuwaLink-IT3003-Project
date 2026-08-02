@@ -1,6 +1,6 @@
 CREATE TABLE notifications (
     id VARCHAR(36) NOT NULL PRIMARY KEY,
-    recipient_id VARCHAR(36) NOT NULL,
+    recipient_id BINARY(16) NOT NULL,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     type VARCHAR(50) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE notifications_aud (
     id VARCHAR(36) NOT NULL,
     rev INT NOT NULL,
     revtype TINYINT,
-    recipient_id VARCHAR(36),
+    recipient_id BINARY(16),
     title VARCHAR(255),
     message TEXT,
     type VARCHAR(50),

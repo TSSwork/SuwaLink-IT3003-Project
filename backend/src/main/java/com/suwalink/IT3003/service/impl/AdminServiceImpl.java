@@ -56,7 +56,6 @@ public class AdminServiceImpl implements AdminService {
         pharmacyRepository.save(pharmacy);
         eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId()));
     }
-    }
     @Override
     public List<UserResponse> getAllUsers() {
 
