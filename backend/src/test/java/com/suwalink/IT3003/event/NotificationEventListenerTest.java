@@ -14,6 +14,7 @@ import com.suwalink.IT3003.entity.Manufacturer;
 import com.suwalink.IT3003.entity.MedicineMaster;
 import com.suwalink.IT3003.entity.NotificationType;
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.entity.PrescriptionStatus;
 import com.suwalink.IT3003.entity.Reservation;
 import com.suwalink.IT3003.entity.ReservationStatus;
@@ -139,7 +140,7 @@ class NotificationEventListenerTest {
                 .id(UUID.randomUUID())
                 .licenceNo("LIC-1")
                 .address("Addr")
-                .verified(true)
+                .status(PharmacyStatus.VERIFIED)
                 .user(pharmacyUser)
                 .build();
         Manufacturer manufacturer = Manufacturer.builder()

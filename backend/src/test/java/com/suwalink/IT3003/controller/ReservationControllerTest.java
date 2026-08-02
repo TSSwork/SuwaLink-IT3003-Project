@@ -13,6 +13,7 @@ import com.suwalink.IT3003.entity.Inventory;
 import com.suwalink.IT3003.entity.Manufacturer;
 import com.suwalink.IT3003.entity.MedicineMaster;
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.entity.PrescriptionStatus;
 import com.suwalink.IT3003.entity.UnitOfMeasure;
 import com.suwalink.IT3003.repository.CategoryRepository;
@@ -232,7 +233,7 @@ class ReservationControllerTest {
                 .filter(p -> p.getUser().getEmail().equals(email))
                 .findFirst()
                 .orElseThrow();
-        pharmacy.setVerified(true);
+        pharmacy.setStatus(PharmacyStatus.VERIFIED);
         pharmacyRepository.save(pharmacy);
 
         return loginAndGetToken(email);

@@ -10,6 +10,8 @@ import com.suwalink.IT3003.entity.PrescriptionRequest;
 import com.suwalink.IT3003.entity.PrescriptionRequestStatus;
 import com.suwalink.IT3003.entity.Role;
 import com.suwalink.IT3003.entity.User;
+import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.event.PrescriptionAddedEvent;
 import com.suwalink.IT3003.exception.PrescriptionAccessDeniedException;
 import com.suwalink.IT3003.exception.ResourceNotFoundException;
@@ -33,8 +35,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Lets a patient submit, view, edit, and delete their own prescription requests, and lets
- * pharmacies browse pending ones. Tagging inventory against a request (and notifying
- * pharmacies) is a separate, not-yet-built module - see README/READ_PRESCRIPTION_MODULE.md.
+ * pharmacies browse pending ones. Tagging inventory against a request (and notifying the patient
+ * back once a pharmacy responds) is a separate, not-yet-built module - see
+ * README/READ_PRESCRIPTION_MODULE.md.
  */
 @Slf4j
 @Service
@@ -62,17 +65,22 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .status(PrescriptionRequestStatus.PENDING)
             .build();
 
-        PrescriptionRequest saved = prescriptionRequestRepository.save(prescriptionRequest);
+        PrescriptionRequestResponse response = toResponse(prescriptionRequestRepository.save(prescriptionRequest));
 
-        List<UUID> pharmacyUserIds = pharmacyRepository.findByVerifiedTrue().stream()
-            .map(pharmacy -> pharmacy.getUser().getId())
+        // No geolocation/matching module exists yet (MVP), so every verified pharmacy is notified.
+        List<UUID> verifiedPharmacyUserIds = pharmacyRepository.findByStatus(PharmacyStatus.VERIFIED).stream()
+            .map(Pharmacy::getUser)
+            .map(User::getId)
             .toList();
-        eventPublisher.publishEvent(new PrescriptionAddedEvent(this, pharmacyUserIds));
+        if (!verifiedPharmacyUserIds.isEmpty()) {
+            eventPublisher.publishEvent(new PrescriptionAddedEvent(this, verifiedPharmacyUserIds));
+        }
 
-        return toResponse(saved);
+        return response;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PrescriptionRequestResponse> getMyRequests() {
         User patient = currentUserProvider.getCurrentUser();
         return prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()
@@ -81,6 +89,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PrescriptionRequestResponse getById(UUID id) {
         PrescriptionRequest prescriptionRequest = findOrThrow(id);
         User currentUser = currentUserProvider.getCurrentUser();
@@ -130,6 +139,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PrescriptionRequestResponse> listPending() {
         return prescriptionRequestRepository.findByStatusOrderByCreatedAtDesc(PrescriptionRequestStatus.PENDING)
             .stream()

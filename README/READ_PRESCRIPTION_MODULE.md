@@ -5,14 +5,18 @@ pharmacies can later respond with matching stock. Builds on the auth module
 (`READ_AUTHENTICATION_ENDPOINT.md`) for who's calling, and the inventory module's `ImageService`
 (`READ_INVENTORY_MODULE.md`) for storing the photo on disk.
 
-**Not built here** (separate, future modules — don't assume they exist):
+**Now built in separate modules** (this doc only covers the request itself — see the module for
+details):
 
-- Tagging a pharmacy's inventory against a request (`status` moving to `RESPONDED`).
-- Notifying pharmacies when a request comes in, or notifying the patient of a response.
-- Reservations.
+- Tagging a pharmacy's inventory against a request (`status` moving to `RESPONDED`) — see the
+  `PrescriptionResponse`/`PrescriptionResponseController` module.
+- Reserving matched inventory — see the `Reservation`/`ReservationController` module.
+- Notifications (new prescription request, pharmacy responded, reservation created/cancelled) —
+  fire via `PrescriptionAddedEvent`/`PharmacyRespondedEvent`/`ReservationCreatedEvent`/
+  `ReservationCancelledEvent`, handled in `NotificationEventListener`.
 
-This module is CRUD only: a patient can create, view, edit, and delete their own requests;
-a pharmacy can browse pending ones and view one in detail.
+This module itself is CRUD + close: a patient can create, view, edit, delete, and close their own
+requests; a pharmacy can browse pending ones and view one in detail.
 
 ## Entity
 
@@ -31,8 +35,9 @@ a pharmacy can browse pending ones and view one in detail.
 
 `PrescriptionRequestStatus` is a different enum from `PrescriptionStatus` — the latter already
 existed and classifies a *medicine's* legal category (OTC/prescription/controlled) on
-`MedicineMaster`. Don't confuse the two; only `RESPONDED`/`CLOSED` transitions are unused right
-now since the modules that would set them aren't built yet.
+`MedicineMaster`. Don't confuse the two. `RESPONDED` is set by the `PrescriptionResponse` module
+when a pharmacy responds; `CLOSED` is set by the patient via `PATCH /api/prescriptions/{id}/close`
+(see below) once they're done with the request.
 
 ## Image storage
 
@@ -89,6 +94,10 @@ Same multipart shape as create, except `image` is optional — omit it to keep t
 
 Hard delete — removes the row and the underlying image file. `200` with no data on success.
 
+### `PATCH /api/prescriptions/{id}/close` — `CUSTOMER`, must be the owner
+
+Sets `status` to `CLOSED`. `403` if the caller doesn't own the request.
+
 ## Response shape (`PrescriptionRequestResponse`)
 
 ```json
@@ -105,9 +114,9 @@ Hard delete — removes the row and the underlying image file. `200` with no dat
 }
 ```
 
-There's deliberately no `taggedDrugs`/response list on this DTO — that's the not-yet-built
-tagging module's job to add once it exists, likely as its own endpoint/DTO rather than bloating
-this one.
+There's deliberately no `taggedDrugs`/response list on this DTO — pharmacy responses live in their
+own `PrescriptionResponseResponse` DTO (a separate `GET` on the `PrescriptionResponseController`),
+rather than being nested here.
 
 ## For other developers
 

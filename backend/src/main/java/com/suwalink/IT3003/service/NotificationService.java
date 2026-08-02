@@ -3,6 +3,7 @@ package com.suwalink.IT3003.service;
 import com.suwalink.IT3003.entity.Notification;
 import com.suwalink.IT3003.entity.NotificationType;
 import com.suwalink.IT3003.entity.User;
+import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,12 +41,15 @@ public class NotificationService {
     @Transactional
     public void markAsRead(UUID notificationId, User currentUser) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
-        
-        // Ensure the notification belongs to the current user
-        if (notification.getRecipient().getId().equals(currentUser.getId())) {
-            notification.setRead(true);
-            notificationRepository.save(notification);
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found: " + notificationId));
+
+        // Ensure the notification belongs to the current user; report unowned notifications the
+        // same way as missing ones rather than silently no-oping with a false "success".
+        if (!notification.getRecipient().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Notification not found: " + notificationId);
         }
+
+        notification.setRead(true);
+        notificationRepository.save(notification);
     }
 }

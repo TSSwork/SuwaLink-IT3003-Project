@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.repository.PharmacyRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,7 +107,7 @@ class AuthControllerLoginTest {
             .filter(p -> p.getUser().getEmail().equals(email))
             .findFirst()
             .orElseThrow();
-        pharmacy.setVerified(true);
+        pharmacy.setStatus(PharmacyStatus.VERIFIED);
         pharmacyRepository.save(pharmacy);
     }
 }

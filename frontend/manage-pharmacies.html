@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Manage Pharmacies</title>
-    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
 
@@ -22,28 +22,24 @@
 
     <h1>Manage Pharmacies</h1>
 
+    <p id="error-state" style="color:#c0392b" hidden></p>
+
     <table>
-
-        <tr>
-            <th>Name</th>
-            <th>Licence</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-
-        <tr>
-            <td>ABC Pharmacy</td>
-            <td>LIC12345</td>
-            <td>Pending</td>
-            <td>
-                <button>Approve</button>
-                <button>Reject</button>
-            </td>
-        </tr>
-
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Licence</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="pharmacies-body">
+        </tbody>
     </table>
 
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="module" src="assets/js/pages/managePharmaciesPage.js"></script>
 </body>
 </html>

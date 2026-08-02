@@ -2,6 +2,8 @@ package com.suwalink.IT3003.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -35,9 +37,10 @@ public class Pharmacy {
     @Column(name = "address", nullable = false)
     private String address;
 
-    @Column(name = "is_verified", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
-    private boolean verified = false;
+    private PharmacyStatus status = PharmacyStatus.PENDING;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)

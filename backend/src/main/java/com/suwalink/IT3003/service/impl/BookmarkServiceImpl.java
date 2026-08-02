@@ -61,6 +61,7 @@ public class BookmarkServiceImpl implements BookmarkService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookmarkResponse> listMyBookmarks() {
         User user = currentUserProvider.getCurrentUser();
 

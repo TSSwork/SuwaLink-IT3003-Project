@@ -48,7 +48,7 @@ public class UserController {
             .id(pharmacy.getId())
             .licenceNo(pharmacy.getLicenceNo())
             .address(pharmacy.getAddress())
-            .verified(pharmacy.isVerified())
+            .status(pharmacy.getStatus().name())
             .build();
     }
 }

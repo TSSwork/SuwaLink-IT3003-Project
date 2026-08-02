@@ -17,4 +17,5 @@ public class DashboardResponse {
     private long totalPharmacies;
     private long verifiedPharmacies;
     private long pendingPharmacies;
+    private long rejectedPharmacies;
 }

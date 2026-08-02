@@ -37,6 +37,11 @@ public class Image {
     @Column(name = "image_type", nullable = false)
     private ImageType imageType;
 
+    // Nullable: null means uploaded before ownership tracking existed. Used to stop a pharmacy
+    // from attaching another pharmacy's already-uploaded image to their own inventory item.
+    @Column(name = "uploaded_by_user_id")
+    private UUID uploadedByUserId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

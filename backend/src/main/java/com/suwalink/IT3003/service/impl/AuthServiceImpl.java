@@ -7,6 +7,7 @@ import com.suwalink.IT3003.dto.request.PharmacyRegisterRequest;
 import com.suwalink.IT3003.dto.request.ResetPasswordRequest;
 import com.suwalink.IT3003.dto.response.AuthResponse;
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.entity.Role;
 import com.suwalink.IT3003.entity.User;
 import com.suwalink.IT3003.exception.DuplicateResourceException;
@@ -19,6 +20,8 @@ import com.suwalink.IT3003.repository.UserRepository;
 import com.suwalink.IT3003.security.JwtService;
 import com.suwalink.IT3003.service.AuthService;
 import com.suwalink.IT3003.service.MailService;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -76,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
         Pharmacy pharmacy = Pharmacy.builder()
             .licenceNo(request.getLicenceNo())
             .address(request.getAddress())
-            .verified(false)
+            .status(PharmacyStatus.PENDING)
             .user(savedUser)
             .build();
 
@@ -94,7 +97,10 @@ public class AuthServiceImpl implements AuthService {
         if (user.getRole() == Role.PHARMACY_ADMIN) {
             Pharmacy pharmacy = pharmacyRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new IllegalStateException("Pharmacy admin missing pharmacy record"));
-            if (!pharmacy.isVerified()) {
+            if (pharmacy.getStatus() == PharmacyStatus.REJECTED) {
+                throw new PharmacyNotVerifiedException("Your pharmacy application was rejected");
+            }
+            if (pharmacy.getStatus() != PharmacyStatus.VERIFIED) {
                 throw new PharmacyNotVerifiedException();
             }
         }
@@ -112,15 +118,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new ResourceNotFoundException("No account found with that email"));
+        // Deliberately don't reveal whether the email is registered - always behave the same way
+        // to the caller (see AuthController, which returns one generic message either way).
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            String otp = generateOtp();
+            user.setResetOtp(otp);
+            user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
+            userRepository.save(user);
 
-        String otp = generateOtp();
-        user.setResetOtp(otp);
-        user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
-        userRepository.save(user);
-
-        mailService.sendPasswordResetOtp(user.getEmail(), otp);
+            mailService.sendPasswordResetOtp(user.getEmail(), otp);
+        });
     }
 
     @Override
@@ -135,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
         if (LocalDateTime.now().isAfter(user.getResetOtpExpiry())) {
             throw new InvalidOtpException("This code has expired. Please request a new one");
         }
-        if (!user.getResetOtp().equals(request.getOtp())) {
+        if (!constantTimeEquals(user.getResetOtp(), request.getOtp())) {
             throw new InvalidOtpException("Invalid code");
         }
 
@@ -148,6 +155,11 @@ public class AuthServiceImpl implements AuthService {
     private String generateOtp() {
         int otp = 100000 + RANDOM.nextInt(900000);
         return String.valueOf(otp);
+    }
+
+    private boolean constantTimeEquals(String expected, String actual) {
+        return MessageDigest.isEqual(
+            expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8));
     }
 
     private User registerUser(String name, String email, String phone, String rawPassword, Role role) {

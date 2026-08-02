@@ -6,6 +6,7 @@ import com.suwalink.IT3003.entity.ImageType;
 import com.suwalink.IT3003.exception.FileStorageException;
 import com.suwalink.IT3003.exception.InvalidFileException;
 import com.suwalink.IT3003.repository.ImageRepository;
+import com.suwalink.IT3003.security.CurrentUserProvider;
 import com.suwalink.IT3003.service.ImageService;
 import dev.matrixlab.webp4j.WebPCodec;
 import java.awt.image.BufferedImage;
@@ -28,6 +29,7 @@ public class ImageServiceImpl implements ImageService {
     private static final float WEBP_QUALITY = 80.0f;
 
     private final ImageRepository imageRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -57,6 +59,7 @@ public class ImageServiceImpl implements ImageService {
             .filePath(uploadDir + "/" + generatedFilename)
             .mimeType("image/webp")
             .imageType(imageType)
+            .uploadedByUserId(currentUserProvider.getCurrentUser().getId())
             .build();
 
         return toResponse(imageRepository.save(image));

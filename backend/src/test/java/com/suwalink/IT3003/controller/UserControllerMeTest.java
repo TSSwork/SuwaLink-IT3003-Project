@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.repository.PharmacyRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +56,7 @@ class UserControllerMeTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.role").value("PHARMACY_ADMIN"))
             .andExpect(jsonPath("$.data.pharmacy.licenceNo").value("LIC-ME-1"))
-            .andExpect(jsonPath("$.data.pharmacy.verified").value(true));
+            .andExpect(jsonPath("$.data.pharmacy.status").value("VERIFIED"));
     }
 
     @Test
@@ -87,7 +88,7 @@ class UserControllerMeTest {
             .filter(p -> p.getUser().getEmail().equals(email))
             .findFirst()
             .orElseThrow();
-        pharmacy.setVerified(true);
+        pharmacy.setStatus(PharmacyStatus.VERIFIED);
         pharmacyRepository.save(pharmacy);
     }
 
