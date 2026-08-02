@@ -6,6 +6,7 @@
   <title>Pharmacy dashboard · SuwaLink</title>
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/components/notifications.css" />
+  <link rel="stylesheet" href="assets/css/pages/pharmacy-dashboard.css" />
 </head>
 <body>
   <div class="md-shell">
@@ -35,24 +36,73 @@
     <main class="md-page">
       <h1 class="md-type-headline">Pharmacy dashboard</h1>
 
-      <div id="loading-state">
-        <div class="md-skeleton" style="height: 24px; width: 200px; margin-bottom: var(--md-space-3)"></div>
-        <div class="md-skeleton" style="height: 16px; width: 320px; margin-bottom: var(--md-space-2)"></div>
-        <div class="md-skeleton" style="height: 16px; width: 280px"></div>
+      <div class="md-tabs" role="tablist">
+        <button class="md-tab" role="tab" id="tab-profile" aria-selected="true" aria-controls="panel-profile" data-tab="profile">
+          Profile
+        </button>
+        <button class="md-tab" role="tab" id="tab-inventory" aria-selected="false" aria-controls="panel-inventory" data-tab="inventory">
+          Inventory
+        </button>
       </div>
 
-      <div id="error-state" class="md-banner md-banner--error" role="alert" hidden></div>
+      <section id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" data-panel="profile">
+        <div id="loading-state">
+          <div class="md-skeleton" style="height: 24px; width: 200px; margin-bottom: var(--md-space-3)"></div>
+          <div class="md-skeleton" style="height: 16px; width: 320px; margin-bottom: var(--md-space-2)"></div>
+          <div class="md-skeleton" style="height: 16px; width: 280px"></div>
+        </div>
 
-      <div id="profile-card" class="md-card md-card--flat" hidden style="max-width: 480px">
-        <p class="md-type-title" id="profile-name"></p>
-        <p class="md-type-body" style="color: var(--md-sys-color-on-surface-variant); margin: var(--md-space-2) 0 0">
-          Licence No. <span class="md-type-mono" id="profile-licence"></span>
+        <div id="error-state" class="md-banner md-banner--error" role="alert" hidden></div>
+
+        <div id="profile-card" class="md-card md-card--flat" hidden style="max-width: 480px">
+          <p class="md-type-title" id="profile-name"></p>
+          <p class="md-type-body" style="color: var(--md-sys-color-on-surface-variant); margin: var(--md-space-2) 0 0">
+            Licence No. <span class="md-type-mono" id="profile-licence"></span>
+          </p>
+          <p class="md-type-body" style="color: var(--md-sys-color-on-surface-variant); margin: var(--md-space-1) 0 0">
+            <span id="profile-address"></span>
+          </p>
+          <p class="md-type-body-small" id="profile-verified" style="margin-top: var(--md-space-4)"></p>
+        </div>
+      </section>
+
+      <section id="panel-inventory" role="tabpanel" aria-labelledby="tab-inventory" data-panel="inventory" hidden>
+        <div id="inventory-error-banner" class="md-banner md-banner--error" role="alert" hidden></div>
+        <div id="inventory-success-banner" class="md-banner md-banner--success" role="status" hidden></div>
+
+        <form id="add-inventory-form" novalidate>
+          <div class="md-field">
+            <label class="md-field__label" for="inventory-medicine">Medicine <span class="md-field__required">*</span></label>
+            <select class="md-field__input" id="inventory-medicine" name="medicineMasterId" required>
+              <option value="" disabled selected>Select a medicine</option>
+            </select>
+            <span class="md-field__helper" data-error-for="inventory-medicine"></span>
+          </div>
+          <div class="md-field">
+            <label class="md-field__label" for="inventory-price">Unit price (LKR) <span class="md-field__required">*</span></label>
+            <input class="md-field__input" id="inventory-price" name="unitPrice" type="number" min="0.01" step="0.01" required />
+            <span class="md-field__helper" data-error-for="inventory-price"></span>
+          </div>
+          <div class="md-field">
+            <label class="md-field__label" for="inventory-stock">Stock quantity <span class="md-field__required">*</span></label>
+            <input class="md-field__input" id="inventory-stock" name="stockQuantity" type="number" min="0" step="1" required />
+            <span class="md-field__helper" data-error-for="inventory-stock"></span>
+          </div>
+          <div class="md-field">
+            <label class="md-field__label" for="inventory-expiry">Expiry date <span class="md-field__required">*</span></label>
+            <input class="md-field__input" id="inventory-expiry" name="expireDate" type="date" required />
+            <span class="md-field__helper" data-error-for="inventory-expiry"></span>
+          </div>
+          <button class="md-btn md-btn--filled" type="submit">
+            <span class="md-btn__label">Add to inventory</span>
+          </button>
+        </form>
+
+        <p id="inventory-empty-state" class="md-type-body" style="color: var(--md-sys-color-on-surface-variant)" hidden>
+          You haven't added any medicines to your inventory yet.
         </p>
-        <p class="md-type-body" style="color: var(--md-sys-color-on-surface-variant); margin: var(--md-space-1) 0 0">
-          <span id="profile-address"></span>
-        </p>
-        <p class="md-type-body-small" id="profile-verified" style="margin-top: var(--md-space-4)"></p>
-      </div>
+        <div id="inventory-list" class="pharmacy-dashboard__list"></div>
+      </section>
     </main>
   </div>
 

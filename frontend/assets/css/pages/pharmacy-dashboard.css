@@ -1,0 +1,56 @@
+.pharmacy-dashboard__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-space-4);
+  margin-top: var(--md-space-6);
+}
+
+.inventory-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--md-space-3);
+}
+
+.inventory-card__meta {
+  color: var(--md-sys-color-on-surface-variant);
+  margin: var(--md-space-1) 0 var(--md-space-3);
+}
+
+.inventory-card__actions {
+  display: flex;
+  gap: var(--md-space-3);
+  margin-top: var(--md-space-4);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inventory-card__edit-field {
+  width: 120px;
+  height: 40px;
+  padding: 0 var(--md-space-2);
+  border-radius: var(--md-shape-small);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.875rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px var(--md-space-3);
+  border-radius: var(--md-shape-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge--available {
+  background: var(--md-sys-color-success-container);
+  color: var(--md-sys-color-on-success-container);
+}
+
+.status-badge--unavailable {
+  background: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-on-surface-variant);
+}

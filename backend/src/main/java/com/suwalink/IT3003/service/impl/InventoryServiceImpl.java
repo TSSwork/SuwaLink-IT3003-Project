@@ -61,6 +61,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponse> listMyInventory() {
         Pharmacy pharmacy = currentPharmacy();
         return inventoryRepository.findByPharmacyId(pharmacy.getId()).stream()
