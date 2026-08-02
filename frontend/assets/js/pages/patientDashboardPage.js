@@ -1,6 +1,7 @@
 import { requireAuth, logout, homePathForRole } from "../auth/auth.js";
 import { requestMultipart, request, ApiError } from "../api/apiService.js";
 import { API_BASE_URL } from "../config/env.js";
+import { createReserveControl } from "../components/reserveControl.js";
 
 const session = requireAuth();
 if (session) {
@@ -94,6 +95,131 @@ function initPatientDashboard() {
     image.alt = "Prescription image";
     image.addEventListener("click", () => window.open(`${API_BASE_URL}${req.imageUrl}`, "_blank"));
     card.appendChild(image);
+
+    const actions = document.createElement("div");
+    actions.className = "request-card__actions";
+
+    const viewResponsesBtn = document.createElement("button");
+    viewResponsesBtn.type = "button";
+    viewResponsesBtn.className = "md-btn md-btn--outlined";
+    viewResponsesBtn.textContent = "View responses";
+    actions.appendChild(viewResponsesBtn);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "md-btn md-btn--text";
+    closeBtn.textContent = "Close request";
+    closeBtn.hidden = req.status === "CLOSED";
+    actions.appendChild(closeBtn);
+
+    card.appendChild(actions);
+
+    const responseList = document.createElement("div");
+    responseList.className = "response-list";
+    responseList.hidden = true;
+    card.appendChild(responseList);
+
+    let responsesLoaded = false;
+
+    viewResponsesBtn.addEventListener("click", async () => {
+      responseList.hidden = !responseList.hidden;
+      if (responseList.hidden || responsesLoaded) return;
+
+      responseList.innerHTML = "";
+      const loadingText = document.createElement("p");
+      loadingText.className = "md-type-body-small";
+      loadingText.textContent = "Loading responses…";
+      responseList.appendChild(loadingText);
+
+      try {
+        const responses = await request(`/api/prescriptions/${req.id}/responses`);
+        responsesLoaded = true;
+        responseList.innerHTML = "";
+
+        if (responses.length === 0) {
+          const none = document.createElement("p");
+          none.className = "md-type-body-small";
+          none.style.color = "var(--md-sys-color-on-surface-variant)";
+          none.textContent = "No pharmacies have responded yet.";
+          responseList.appendChild(none);
+          return;
+        }
+
+        responses.forEach((res) => responseList.appendChild(renderResponse(res)));
+      } catch (err) {
+        responseList.innerHTML = "";
+        const errText = document.createElement("p");
+        errText.className = "md-type-body-small";
+        errText.style.color = "var(--md-sys-color-error)";
+        errText.textContent =
+          err instanceof ApiError ? err.message : "Couldn't load responses. Please try again.";
+        responseList.appendChild(errText);
+      }
+    });
+
+    closeBtn.addEventListener("click", async () => {
+      try {
+        await request(`/api/prescriptions/${req.id}/close`, { method: "PATCH" });
+        status.className = "status-badge status-badge--closed";
+        status.textContent = "CLOSED";
+        closeBtn.hidden = true;
+      } catch (err) {
+        const errText = document.createElement("p");
+        errText.className = "md-type-body-small";
+        errText.style.color = "var(--md-sys-color-error)";
+        errText.textContent =
+          err instanceof ApiError ? err.message : "Couldn't close this request. Please try again.";
+        actions.appendChild(errText);
+      }
+    });
+
+    function renderResponse(res) {
+      const wrapper = document.createElement("div");
+
+      const pharmacyName = document.createElement("p");
+      pharmacyName.className = "md-type-title";
+      pharmacyName.textContent = res.pharmacyName;
+      wrapper.appendChild(pharmacyName);
+
+      if (res.message) {
+        const message = document.createElement("p");
+        message.className = "md-type-body-small";
+        message.style.color = "var(--md-sys-color-on-surface-variant)";
+        message.textContent = res.message;
+        wrapper.appendChild(message);
+      }
+
+      res.items.forEach((item) => {
+        const itemRow = document.createElement("div");
+        itemRow.className = "response-item";
+
+        const info = document.createElement("p");
+        info.className = "md-type-body-small";
+        info.textContent =
+          `${item.medicineBrandName} — ${item.quantity} available at LKR ${item.unitPrice.toFixed(2)} each`;
+        itemRow.appendChild(info);
+
+        const control = createReserveControl({
+          inventoryItemId: item.inventoryItemId,
+          initialQuantity: item.quantity,
+          prescriptionResponseItemId: item.id,
+          onReserved: (reservation) => {
+            const reservedNote = document.createElement("p");
+            reservedNote.className = "md-type-body-small";
+            reservedNote.style.color = "var(--md-sys-color-success)";
+            reservedNote.textContent = `Reserved ${reservation.quantity} × ${reservation.medicineBrandName}.`;
+            itemRow.appendChild(reservedNote);
+            control.row.remove();
+          },
+        });
+
+        itemRow.appendChild(control.row);
+        wrapper.appendChild(itemRow);
+        wrapper.appendChild(control.error);
+      });
+
+      return wrapper;
+    }
 
     return card;
   }

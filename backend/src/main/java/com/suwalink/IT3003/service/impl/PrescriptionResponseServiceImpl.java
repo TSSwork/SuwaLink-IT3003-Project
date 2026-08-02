@@ -88,6 +88,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PrescriptionResponseResponse> listForRequest(UUID requestId) {
         PrescriptionRequest prescriptionRequest = prescriptionRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription request not found: " + requestId));
