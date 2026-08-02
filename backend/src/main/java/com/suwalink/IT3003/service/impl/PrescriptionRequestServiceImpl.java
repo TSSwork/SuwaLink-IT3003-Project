@@ -10,9 +10,11 @@ import com.suwalink.IT3003.entity.PrescriptionRequest;
 import com.suwalink.IT3003.entity.PrescriptionRequestStatus;
 import com.suwalink.IT3003.entity.Role;
 import com.suwalink.IT3003.entity.User;
+import com.suwalink.IT3003.event.PrescriptionAddedEvent;
 import com.suwalink.IT3003.exception.PrescriptionAccessDeniedException;
 import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.ImageRepository;
+import com.suwalink.IT3003.repository.PharmacyRepository;
 import com.suwalink.IT3003.repository.PrescriptionRequestRepository;
 import com.suwalink.IT3003.security.CurrentUserProvider;
 import com.suwalink.IT3003.service.ImageService;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +45,8 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     private final ImageRepository imageRepository;
     private final ImageService imageService;
     private final CurrentUserProvider currentUserProvider;
+    private final PharmacyRepository pharmacyRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -57,7 +62,14 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .status(PrescriptionRequestStatus.PENDING)
             .build();
 
-        return toResponse(prescriptionRequestRepository.save(prescriptionRequest));
+        PrescriptionRequest saved = prescriptionRequestRepository.save(prescriptionRequest);
+
+        List<UUID> pharmacyUserIds = pharmacyRepository.findByVerifiedTrue().stream()
+            .map(pharmacy -> pharmacy.getUser().getId())
+            .toList();
+        eventPublisher.publishEvent(new PrescriptionAddedEvent(this, pharmacyUserIds));
+
+        return toResponse(saved);
     }
 
     @Override
@@ -123,6 +135,14 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .stream()
             .map(this::toResponse)
             .toList();
+    }
+
+    @Override
+    @Transactional
+    public PrescriptionRequestResponse close(UUID id) {
+        PrescriptionRequest prescriptionRequest = ownedRequest(id);
+        prescriptionRequest.setStatus(PrescriptionRequestStatus.CLOSED);
+        return toResponse(prescriptionRequestRepository.save(prescriptionRequest));
     }
 
     private Image uploadImage(MultipartFile file) {

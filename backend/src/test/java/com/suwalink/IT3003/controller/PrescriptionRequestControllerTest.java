@@ -3,6 +3,7 @@ package com.suwalink.IT3003.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -159,6 +160,26 @@ class PrescriptionRequestControllerTest {
 
         mockMvc.perform(get("/api/prescriptions/" + id).header("Authorization", "Bearer " + token))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void close_byOwner_setsStatusClosed() throws Exception {
+        String token = registerCustomerAndLogin("presc.close@example.com");
+        String id = createPrescription(token, 28, "To be closed");
+
+        mockMvc.perform(patch("/api/prescriptions/" + id + "/close").header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.status").value("CLOSED"));
+    }
+
+    @Test
+    void close_byNonOwner_isForbidden() throws Exception {
+        String owner = registerCustomerAndLogin("presc.close.owner@example.com");
+        String stranger = registerCustomerAndLogin("presc.close.stranger@example.com");
+        String id = createPrescription(owner, 28, "Owned by someone else");
+
+        mockMvc.perform(patch("/api/prescriptions/" + id + "/close").header("Authorization", "Bearer " + stranger))
+            .andExpect(status().isForbidden());
     }
 
     private MockMultipartFile samplePrescriptionImage() throws IOException {

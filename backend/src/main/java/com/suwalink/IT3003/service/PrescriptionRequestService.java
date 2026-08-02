@@ -19,4 +19,6 @@ public interface PrescriptionRequestService {
     void delete(UUID id);
 
     List<PrescriptionRequestResponse> listPending();
+
+    PrescriptionRequestResponse close(UUID id);
 }
