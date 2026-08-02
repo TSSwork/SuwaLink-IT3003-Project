@@ -1,0 +1,81 @@
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--md-space-4);
+  margin-bottom: var(--md-space-2);
+}
+
+.search-form__query {
+  flex: 1 1 240px;
+  margin-bottom: 0;
+}
+
+.search-form__price {
+  flex: 0 1 140px;
+  margin-bottom: 0;
+}
+
+.search-form__submit {
+  height: 48px;
+}
+
+.search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--md-space-4);
+  margin-top: var(--md-space-6);
+}
+
+.search-result-card__pharmacy {
+  color: var(--md-sys-color-on-surface-variant);
+  margin: var(--md-space-1) 0 var(--md-space-4);
+}
+
+.search-result-card__price {
+  font-weight: 700;
+  color: var(--md-sys-color-primary);
+}
+
+.search-result-card__stock {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.search-result-card__error {
+  color: var(--md-sys-color-error);
+  margin-top: var(--md-space-2);
+}
+
+.search-result-card__reserve-row {
+  display: flex;
+  align-items: center;
+  gap: var(--md-space-3);
+  margin-top: var(--md-space-4);
+}
+
+.search-result-card__qty {
+  width: 64px;
+  height: 40px;
+  padding: 0 var(--md-space-2);
+  border-radius: var(--md-shape-small);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.search-result-skeleton {
+  margin-bottom: var(--md-space-4);
+}
+
+@media (max-width: 480px) {
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-form__submit {
+    width: 100%;
+  }
+}
