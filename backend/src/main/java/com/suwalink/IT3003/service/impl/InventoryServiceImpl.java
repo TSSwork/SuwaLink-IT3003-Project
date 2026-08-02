@@ -46,6 +46,9 @@ public class InventoryServiceImpl implements InventoryService {
         if (request.getImageId() != null) {
             image = imageRepository.findById(request.getImageId())
                     .orElseThrow(() -> new ResourceNotFoundException("Image not found: " + request.getImageId()));
+            if (!pharmacy.getUser().getId().equals(image.getUploadedByUserId())) {
+                throw new InventoryAccessDeniedException();
+            }
         }
 
         Inventory inventory = Inventory.builder()

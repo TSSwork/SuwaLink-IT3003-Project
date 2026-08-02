@@ -208,7 +208,7 @@ class PrescriptionRequestControllerTest {
             .filter(p -> p.getUser().getEmail().equals(email))
             .findFirst()
             .orElseThrow();
-        pharmacy.setVerified(true);
+        pharmacy.setStatus(com.suwalink.IT3003.entity.PharmacyStatus.VERIFIED);
         pharmacyRepository.save(pharmacy);
     }
 

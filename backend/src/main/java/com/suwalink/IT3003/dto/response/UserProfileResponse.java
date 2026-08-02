@@ -25,6 +25,6 @@ public class UserProfileResponse {
         private final UUID id;
         private final String licenceNo;
         private final String address;
-        private final boolean verified;
+        private final String status;
     }
 }

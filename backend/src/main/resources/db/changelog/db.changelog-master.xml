@@ -52,4 +52,18 @@
                  stripComments="true"/>
     </changeSet>
 
+    <changeSet id="010-pharmacy-status" author="suwalink">
+        <sqlFile path="sql/010-pharmacy-status.sql"
+                 relativeToChangelogFile="true"
+                 splitStatements="true"
+                 stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="011-image-owner" author="suwalink">
+        <sqlFile path="sql/011-image-owner.sql"
+                 relativeToChangelogFile="true"
+                 splitStatements="true"
+                 stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

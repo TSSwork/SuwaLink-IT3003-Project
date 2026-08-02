@@ -4,14 +4,18 @@ import com.suwalink.IT3003.dto.response.DashboardResponse;
 import com.suwalink.IT3003.dto.response.PharmacyResponse;
 import com.suwalink.IT3003.dto.response.UserResponse;
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.entity.Role;
+import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.PharmacyRepository;
 import com.suwalink.IT3003.repository.UserRepository;
 import com.suwalink.IT3003.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.suwalink.IT3003.event.PharmacyRejectedEvent;
 import com.suwalink.IT3003.event.PharmacyVerifiedEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,13 +29,15 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public DashboardResponse getDashboard(){
         return DashboardResponse.builder()
-                .totalCustomers(0)
-                .totalPharmacies(0)
-                .verifiedPharmacies(0)
-                .pendingPharmacies(0)
+                .totalCustomers(userRepository.countByRole(Role.CUSTOMER))
+                .totalPharmacies(pharmacyRepository.count())
+                .verifiedPharmacies(pharmacyRepository.countByStatus(PharmacyStatus.VERIFIED))
+                .pendingPharmacies(pharmacyRepository.countByStatus(PharmacyStatus.PENDING))
+                .rejectedPharmacies(pharmacyRepository.countByStatus(PharmacyStatus.REJECTED))
                 .build();
     }
     @Override
+    @Transactional(readOnly = true)
     public List<PharmacyResponse> getAllPharmacies() {
         return pharmacyRepository.findAll()
                 .stream()
@@ -41,20 +47,33 @@ public class AdminServiceImpl implements AdminService {
                         .email(pharmacy.getUser().getEmail())
                         .licenceNo(pharmacy.getLicenceNo())
                         .address(pharmacy.getAddress())
-                        .verified(pharmacy.isVerified())
+                        .status(pharmacy.getStatus().name())
                         .build())
                 .toList();
     }
     @Override
+    @Transactional
     public void approvePharmacy(UUID pharmacyId) {
 
         Pharmacy pharmacy = pharmacyRepository.findById(pharmacyId)
-                .orElseThrow(() -> new RuntimeException("Pharmacy not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pharmacy not found: " + pharmacyId));
 
-        pharmacy.setVerified(true);
+        pharmacy.setStatus(PharmacyStatus.VERIFIED);
 
         pharmacyRepository.save(pharmacy);
         eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId()));
+    }
+    @Override
+    @Transactional
+    public void rejectPharmacy(UUID pharmacyId) {
+
+        Pharmacy pharmacy = pharmacyRepository.findById(pharmacyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pharmacy not found: " + pharmacyId));
+
+        pharmacy.setStatus(PharmacyStatus.REJECTED);
+
+        pharmacyRepository.save(pharmacy);
+        eventPublisher.publishEvent(new PharmacyRejectedEvent(this, pharmacy.getUser().getId()));
     }
     @Override
     public List<UserResponse> getAllUsers() {

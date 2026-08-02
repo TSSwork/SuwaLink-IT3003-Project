@@ -34,6 +34,14 @@ public class AdminController {
         return ResponseEntity.ok("Pharmacy Approved");
     }
 
+    @PutMapping("/pharmacies/{id}/reject")
+    public ResponseEntity<String> reject(@PathVariable UUID id){
+
+        adminService.rejectPharmacy(id);
+
+        return ResponseEntity.ok("Pharmacy Rejected");
+    }
+
     @GetMapping("/users")
     public List<UserResponse> getUsers(){
 
