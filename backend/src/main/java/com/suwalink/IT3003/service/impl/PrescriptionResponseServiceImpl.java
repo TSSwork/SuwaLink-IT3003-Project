@@ -115,6 +115,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PrescriptionResponseResponse> listMyResponses() {
         Pharmacy pharmacy = currentPharmacy();
         return prescriptionResponseRepository.findByPharmacyIdOrderByCreatedAtDesc(pharmacy.getId())

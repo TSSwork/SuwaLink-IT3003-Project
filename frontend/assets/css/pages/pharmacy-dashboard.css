@@ -54,3 +54,41 @@
   background: var(--md-sys-color-surface-variant);
   color: var(--md-sys-color-on-surface-variant);
 }
+
+.pharmacy-dashboard__textarea {
+  height: 96px;
+  padding: var(--md-space-3) var(--md-space-4);
+  resize: vertical;
+}
+
+.request-card__image {
+  max-width: 160px;
+  max-height: 160px;
+  border-radius: var(--md-shape-medium);
+  margin-top: var(--md-space-3);
+  cursor: pointer;
+}
+
+.response-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--md-space-3);
+  flex-wrap: wrap;
+  margin-top: var(--md-space-2);
+}
+
+.status-badge--confirmed {
+  background: var(--md-sys-color-success-container);
+  color: var(--md-sys-color-on-success-container);
+}
+
+.status-badge--cancelled {
+  background: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.status-badge--completed {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}

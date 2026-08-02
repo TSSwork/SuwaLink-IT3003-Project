@@ -43,6 +43,12 @@
         <button class="md-tab" role="tab" id="tab-inventory" aria-selected="false" aria-controls="panel-inventory" data-tab="inventory">
           Inventory
         </button>
+        <button class="md-tab" role="tab" id="tab-prescriptions" aria-selected="false" aria-controls="panel-prescriptions" data-tab="prescriptions">
+          Prescriptions
+        </button>
+        <button class="md-tab" role="tab" id="tab-reservations" aria-selected="false" aria-controls="panel-reservations" data-tab="reservations">
+          Reservations
+        </button>
       </div>
 
       <section id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" data-panel="profile">
@@ -102,6 +108,31 @@
           You haven't added any medicines to your inventory yet.
         </p>
         <div id="inventory-list" class="pharmacy-dashboard__list"></div>
+      </section>
+
+      <section id="panel-prescriptions" role="tabpanel" aria-labelledby="tab-prescriptions" data-panel="prescriptions" hidden>
+        <h2 class="md-type-title">Incoming requests</h2>
+        <div id="prescriptions-incoming-error-banner" class="md-banner md-banner--error" role="alert" hidden></div>
+        <div id="prescriptions-respond-success-banner" class="md-banner md-banner--success" role="status" hidden></div>
+        <p id="prescriptions-incoming-empty-state" class="md-type-body" style="color: var(--md-sys-color-on-surface-variant)" hidden>
+          No pending prescription requests right now.
+        </p>
+        <div id="prescriptions-incoming-list" class="pharmacy-dashboard__list"></div>
+
+        <h2 class="md-type-title" style="margin-top: var(--md-space-8)">My responses</h2>
+        <div id="prescriptions-my-responses-error-banner" class="md-banner md-banner--error" role="alert" hidden></div>
+        <p id="prescriptions-my-responses-empty-state" class="md-type-body" style="color: var(--md-sys-color-on-surface-variant)" hidden>
+          You haven't responded to any prescription requests yet.
+        </p>
+        <div id="prescriptions-my-responses-list" class="pharmacy-dashboard__list"></div>
+      </section>
+
+      <section id="panel-reservations" role="tabpanel" aria-labelledby="tab-reservations" data-panel="reservations" hidden>
+        <div id="reservations-error-banner" class="md-banner md-banner--error" role="alert" hidden></div>
+        <p id="reservations-empty-state" class="md-type-body" style="color: var(--md-sys-color-on-surface-variant)" hidden>
+          No reservations yet.
+        </p>
+        <div id="reservations-list" class="pharmacy-dashboard__list"></div>
       </section>
     </main>
   </div>

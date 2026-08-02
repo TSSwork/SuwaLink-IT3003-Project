@@ -12,6 +12,8 @@ public interface AdminService {
     List<PharmacyResponse> getAllPharmacies();
     void approvePharmacy(UUID pharmacyId);
 
+    void rejectPharmacy(UUID pharmacyId);
+
     List<UserResponse> getAllUsers();
 
     void deleteUser(UUID id);
