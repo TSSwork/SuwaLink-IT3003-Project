@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -63,6 +64,13 @@ public class PrescriptionRequestController {
     public ResponseEntity<ApiResponse<PrescriptionRequestResponse>> getById(@PathVariable UUID id) {
         PrescriptionRequestResponse response = prescriptionRequestService.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Prescription request", response));
+    }
+
+    @PatchMapping("/{id}/close")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<PrescriptionRequestResponse>> close(@PathVariable UUID id) {
+        PrescriptionRequestResponse response = prescriptionRequestService.close(id);
+        return ResponseEntity.ok(ApiResponse.success("Prescription request closed", response));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

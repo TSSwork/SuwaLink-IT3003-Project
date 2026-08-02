@@ -52,6 +52,20 @@
                  stripComments="true"/>
     </changeSet>
 
+    <changeSet id="008-prescription-responses" author="suwalink">
+        <sqlFile path="sql/008-prescription-responses.sql"
+                 relativeToChangelogFile="true"
+                 splitStatements="true"
+                 stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="009-reservations" author="suwalink">
+        <sqlFile path="sql/009-reservations.sql"
+                 relativeToChangelogFile="true"
+                 splitStatements="true"
+                 stripComments="true"/>
+    </changeSet>
+
     <changeSet id="010-pharmacy-status" author="suwalink">
         <sqlFile path="sql/010-pharmacy-status.sql"
                  relativeToChangelogFile="true"

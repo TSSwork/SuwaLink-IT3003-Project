@@ -144,6 +144,14 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .toList();
     }
 
+    @Override
+    @Transactional
+    public PrescriptionRequestResponse close(UUID id) {
+        PrescriptionRequest prescriptionRequest = ownedRequest(id);
+        prescriptionRequest.setStatus(PrescriptionRequestStatus.CLOSED);
+        return toResponse(prescriptionRequestRepository.save(prescriptionRequest));
+    }
+
     private Image uploadImage(MultipartFile file) {
         ImageResponse uploaded = imageService.upload(file, ImageType.PRESCRIPTION);
         return imageRepository.findById(uploaded.getId())
