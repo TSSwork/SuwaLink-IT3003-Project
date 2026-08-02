@@ -1,20 +1,28 @@
 package com.suwalink.IT3003.service.impl;
 
 import com.suwalink.IT3003.dto.request.CustomerRegisterRequest;
+import com.suwalink.IT3003.dto.request.ForgotPasswordRequest;
 import com.suwalink.IT3003.dto.request.LoginRequest;
 import com.suwalink.IT3003.dto.request.PharmacyRegisterRequest;
+import com.suwalink.IT3003.dto.request.ResetPasswordRequest;
 import com.suwalink.IT3003.dto.response.AuthResponse;
 import com.suwalink.IT3003.entity.Pharmacy;
 import com.suwalink.IT3003.entity.Role;
 import com.suwalink.IT3003.entity.User;
 import com.suwalink.IT3003.exception.DuplicateResourceException;
 import com.suwalink.IT3003.exception.EmailAlreadyExistsException;
+import com.suwalink.IT3003.exception.InvalidOtpException;
 import com.suwalink.IT3003.exception.PharmacyNotVerifiedException;
+import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.PharmacyRepository;
 import com.suwalink.IT3003.repository.UserRepository;
 import com.suwalink.IT3003.security.JwtService;
 import com.suwalink.IT3003.service.AuthService;
+import com.suwalink.IT3003.service.MailService;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,11 +34,17 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final UserRepository userRepository;
     private final PharmacyRepository pharmacyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final MailService mailService;
+
+    @Value("${app.otp.expiry-minutes}")
+    private int otpExpiryMinutes;
 
     @Override
     @Transactional
@@ -93,6 +107,47 @@ public class AuthServiceImpl implements AuthService {
             .id(user.getId())
             .name(user.getName())
             .build();
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new ResourceNotFoundException("No account found with that email"));
+
+        String otp = generateOtp();
+        user.setResetOtp(otp);
+        user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
+        userRepository.save(user);
+
+        mailService.sendPasswordResetOtp(user.getEmail(), otp);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new ResourceNotFoundException("No account found with that email"));
+
+        if (user.getResetOtp() == null || user.getResetOtpExpiry() == null) {
+            throw new InvalidOtpException("No password reset was requested for this account");
+        }
+        if (LocalDateTime.now().isAfter(user.getResetOtpExpiry())) {
+            throw new InvalidOtpException("This code has expired. Please request a new one");
+        }
+        if (!user.getResetOtp().equals(request.getOtp())) {
+            throw new InvalidOtpException("Invalid code");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setResetOtp(null);
+        user.setResetOtpExpiry(null);
+        userRepository.save(user);
+    }
+
+    private String generateOtp() {
+        int otp = 100000 + RANDOM.nextInt(900000);
+        return String.valueOf(otp);
     }
 
     private User registerUser(String name, String email, String phone, String rawPassword, Role role) {

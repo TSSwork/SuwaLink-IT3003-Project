@@ -45,4 +45,11 @@
                  stripComments="true"/>
     </changeSet>
 
+    <changeSet id="007-password-reset" author="suwalink">
+        <sqlFile path="sql/007-password-reset.sql"
+                 relativeToChangelogFile="true"
+                 splitStatements="true"
+                 stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
