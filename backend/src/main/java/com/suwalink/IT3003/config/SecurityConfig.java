@@ -5,6 +5,7 @@ import com.suwalink.IT3003.security.JwtAuthenticationFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -67,6 +68,8 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/inventory/search").permitAll()
+                        .requestMatchers("/api/medicines").hasRole("PHARMACY_ADMIN")
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
                         .anyRequest()

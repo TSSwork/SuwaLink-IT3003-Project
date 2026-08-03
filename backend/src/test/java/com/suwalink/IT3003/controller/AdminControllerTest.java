@@ -77,8 +77,8 @@ class AdminControllerTest {
 
         mockMvc.perform(get("/api/admin/dashboard").header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.totalPharmacies").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
-            .andExpect(jsonPath("$.pendingPharmacies").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
+            .andExpect(jsonPath("$.data.totalPharmacies").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
+            .andExpect(jsonPath("$.data.pendingPharmacies").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
     }
 
     @Test
@@ -163,7 +163,7 @@ class AdminControllerTest {
             .andExpect(status().isOk())
             .andReturn();
         String json = result.getResponse().getContentAsString();
-        List<Map<String, Object>> users = JsonPath.read(json, "$");
+        List<Map<String, Object>> users = JsonPath.read(json, "$.data");
         String id = users.stream()
             .filter(u -> email.equals(u.get("email")))
             .map(u -> (String) u.get("id"))

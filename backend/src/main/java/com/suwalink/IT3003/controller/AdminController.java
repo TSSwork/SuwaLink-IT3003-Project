@@ -1,5 +1,6 @@
 package com.suwalink.IT3003.controller;
 
+import com.suwalink.IT3003.dto.response.ApiResponse;
 import com.suwalink.IT3003.dto.response.DashboardResponse;
 import com.suwalink.IT3003.dto.response.PharmacyResponse;
 import com.suwalink.IT3003.dto.response.UserResponse;
@@ -14,46 +15,40 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-
 public class AdminController {
     private final AdminService adminService;
 
     @GetMapping("/dashboard")
-    public DashboardResponse getDashboard() {
-        return adminService.getDashboard();
+    public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard() {
+        return ResponseEntity.ok(ApiResponse.success("Dashboard stats", adminService.getDashboard()));
     }
+
     @GetMapping("/pharmacies")
-    public List<PharmacyResponse> getAllPharmacies() {
-        return adminService.getAllPharmacies();
+    public ResponseEntity<ApiResponse<List<PharmacyResponse>>> getAllPharmacies() {
+        return ResponseEntity.ok(ApiResponse.success("Pharmacies", adminService.getAllPharmacies()));
     }
+
     @PutMapping("/pharmacies/{id}/approve")
-    public ResponseEntity<String> approve(@PathVariable UUID id){
-
+    public ResponseEntity<ApiResponse<Void>> approve(@PathVariable UUID id) {
         adminService.approvePharmacy(id);
-
-        return ResponseEntity.ok("Pharmacy Approved");
+        return ResponseEntity.ok(ApiResponse.success("Pharmacy approved"));
     }
 
     @PutMapping("/pharmacies/{id}/reject")
-    public ResponseEntity<String> reject(@PathVariable UUID id){
-
+    public ResponseEntity<ApiResponse<Void>> reject(@PathVariable UUID id) {
         adminService.rejectPharmacy(id);
-
-        return ResponseEntity.ok("Pharmacy Rejected");
+        return ResponseEntity.ok(ApiResponse.success("Pharmacy application rejected"));
     }
 
     @GetMapping("/users")
-    public List<UserResponse> getUsers(){
-
-        return adminService.getAllUsers();
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
+        return ResponseEntity.ok(ApiResponse.success("Users", adminService.getAllUsers()));
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<String> delete(@PathVariable UUID id){
-
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         adminService.deleteUser(id);
-
-        return ResponseEntity.ok("User Deleted");
+        return ResponseEntity.ok(ApiResponse.success("User deleted"));
     }
 
 }

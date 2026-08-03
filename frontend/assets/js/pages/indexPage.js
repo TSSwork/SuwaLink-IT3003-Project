@@ -1,4 +1,4 @@
-import { getCurrentAuth, logout } from "../auth/auth.js";
+import { getCurrentAuth, logout, homePathForRole } from "../auth/auth.js";
 
 const navActions = document.getElementById("nav-actions");
 const session = getCurrentAuth();
@@ -7,7 +7,7 @@ if (session) {
   const dashboardLink = document.createElement("a");
   dashboardLink.className = "md-btn md-btn--text";
   dashboardLink.textContent = session.role === "PHARMACY_ADMIN" ? "Dashboard" : "My account";
-  dashboardLink.href = session.role === "PHARMACY_ADMIN" ? "pharmacy-dashboard.html" : "index.html";
+  dashboardLink.href = homePathForRole(session.role);
 
   const logoutBtn = document.createElement("button");
   logoutBtn.className = "md-btn md-btn--outlined";
