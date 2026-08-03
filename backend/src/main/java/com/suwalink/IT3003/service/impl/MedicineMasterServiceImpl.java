@@ -50,6 +50,7 @@ public class MedicineMasterServiceImpl implements MedicineMasterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MedicineMasterResponse get(UUID id) {
         return toResponse(findOrThrow(id));
     }

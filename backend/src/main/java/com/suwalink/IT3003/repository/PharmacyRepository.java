@@ -1,6 +1,7 @@
 package com.suwalink.IT3003.repository;
 
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,6 +12,6 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, UUID> {
     boolean existsByLicenceNo(String licenceNo);
 
     Optional<Pharmacy> findByUserId(UUID userId);
-    long countByVerified(boolean verified);
-    List<Pharmacy> findByVerifiedTrue();
+    long countByStatus(PharmacyStatus status);
+    List<Pharmacy> findByStatus(PharmacyStatus status);
 }

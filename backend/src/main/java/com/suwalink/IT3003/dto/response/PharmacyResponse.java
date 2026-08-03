@@ -13,5 +13,5 @@ public class PharmacyResponse {
     private String email;
     private String licenceNo;
     private String address;
-    private boolean verified;
+    private String status;
 }

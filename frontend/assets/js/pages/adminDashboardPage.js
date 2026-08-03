@@ -41,6 +41,7 @@ function initAdminDashboard() {
       document.getElementById("stat-pharmacies").textContent = stats.totalPharmacies;
       document.getElementById("stat-verified").textContent = stats.verifiedPharmacies;
       document.getElementById("stat-pending").textContent = stats.pendingPharmacies;
+      document.getElementById("stat-rejected").textContent = stats.rejectedPharmacies;
     } catch (err) {
       errorBanner.textContent =
         err instanceof ApiError ? err.message : "Couldn't load dashboard stats.";
@@ -85,9 +86,11 @@ function initAdminDashboard() {
     title.textContent = pharmacy.pharmacyName;
     header.appendChild(title);
 
+    const statusLabels = { PENDING: "Pending", VERIFIED: "Verified", REJECTED: "Rejected" };
+
     const status = document.createElement("span");
-    status.className = `status-badge status-badge--${pharmacy.verified ? "verified" : "pending"}`;
-    status.textContent = pharmacy.verified ? "Verified" : "Pending";
+    status.className = `status-badge status-badge--${pharmacy.status.toLowerCase()}`;
+    status.textContent = statusLabels[pharmacy.status];
     header.appendChild(status);
 
     card.appendChild(header);
@@ -103,7 +106,7 @@ function initAdminDashboard() {
     errorText.hidden = true;
     card.appendChild(errorText);
 
-    if (!pharmacy.verified) {
+    if (pharmacy.status === "PENDING") {
       const actions = document.createElement("div");
       actions.className = "admin-card__actions";
 
@@ -144,8 +147,10 @@ function initAdminDashboard() {
         approveBtn.disabled = true;
         rejectBtn.disabled = true;
         try {
-          await request(`/api/admin/pharmacies/${pharmacy.id}`, { method: "DELETE" });
-          card.remove();
+          await request(`/api/admin/pharmacies/${pharmacy.id}/reject`, { method: "PUT" });
+          status.className = "status-badge status-badge--rejected";
+          status.textContent = "Rejected";
+          actions.remove();
         } catch (err) {
           errorText.textContent =
             err instanceof ApiError ? err.message : "Couldn't reject this pharmacy. Please try again.";

@@ -37,6 +37,14 @@ public class NotificationEventListener {
     }
 
     @EventListener
+    public void handlePharmacyRejectedEvent(PharmacyRejectedEvent event) {
+        String title = "Pharmacy Application Rejected";
+        String message = "Your pharmacy application was reviewed and was not approved.";
+        User recipient = findUser(event.getPharmacyUserId());
+        notificationService.createNotification(recipient, title, message, NotificationType.SYSTEM_ALERT);
+    }
+
+    @EventListener
     public void handlePrescriptionAddedEvent(PrescriptionAddedEvent event) {
         String title = "New Prescription Available";
         String message = "A new prescription has been uploaded in your area. Please check the dashboard to respond.";

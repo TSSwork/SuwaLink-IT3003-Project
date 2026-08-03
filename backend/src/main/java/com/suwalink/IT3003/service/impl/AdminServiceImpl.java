@@ -4,7 +4,9 @@ import com.suwalink.IT3003.dto.response.DashboardResponse;
 import com.suwalink.IT3003.dto.response.PharmacyResponse;
 import com.suwalink.IT3003.dto.response.UserResponse;
 import com.suwalink.IT3003.entity.Pharmacy;
+import com.suwalink.IT3003.entity.PharmacyStatus;
 import com.suwalink.IT3003.entity.Role;
+import com.suwalink.IT3003.event.PharmacyRejectedEvent;
 import com.suwalink.IT3003.event.PharmacyVerifiedEvent;
 import com.suwalink.IT3003.exception.ResourceNotFoundException;
 import com.suwalink.IT3003.repository.PharmacyRepository;
@@ -30,8 +32,9 @@ public class AdminServiceImpl implements AdminService {
         return DashboardResponse.builder()
                 .totalCustomers(userRepository.countByRole(Role.CUSTOMER))
                 .totalPharmacies(pharmacyRepository.count())
-                .verifiedPharmacies(pharmacyRepository.countByVerified(true))
-                .pendingPharmacies(pharmacyRepository.countByVerified(false))
+                .verifiedPharmacies(pharmacyRepository.countByStatus(PharmacyStatus.VERIFIED))
+                .pendingPharmacies(pharmacyRepository.countByStatus(PharmacyStatus.PENDING))
+                .rejectedPharmacies(pharmacyRepository.countByStatus(PharmacyStatus.REJECTED))
                 .build();
     }
 
@@ -46,7 +49,7 @@ public class AdminServiceImpl implements AdminService {
                         .email(pharmacy.getUser().getEmail())
                         .licenceNo(pharmacy.getLicenceNo())
                         .address(pharmacy.getAddress())
-                        .verified(pharmacy.isVerified())
+                        .status(pharmacy.getStatus().name())
                         .build())
                 .toList();
     }
@@ -57,7 +60,7 @@ public class AdminServiceImpl implements AdminService {
         Pharmacy pharmacy = pharmacyRepository.findById(pharmacyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pharmacy not found: " + pharmacyId));
 
-        pharmacy.setVerified(true);
+        pharmacy.setStatus(PharmacyStatus.VERIFIED);
 
         pharmacyRepository.save(pharmacy);
         eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId()));
@@ -69,15 +72,14 @@ public class AdminServiceImpl implements AdminService {
         Pharmacy pharmacy = pharmacyRepository.findById(pharmacyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pharmacy not found: " + pharmacyId));
 
-        UUID userId = pharmacy.getUser().getId();
-        pharmacyRepository.delete(pharmacy);
-        pharmacyRepository.flush();
-        userRepository.deleteById(userId);
+        pharmacy.setStatus(PharmacyStatus.REJECTED);
+
+        pharmacyRepository.save(pharmacy);
+        eventPublisher.publishEvent(new PharmacyRejectedEvent(this, pharmacy.getUser().getId()));
     }
 
     @Override
     public List<UserResponse> getAllUsers() {
-
         return userRepository.findAll()
                 .stream()
                 .map(user -> UserResponse.builder()
@@ -92,9 +94,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public void deleteUser(UUID id) {
-
         userRepository.deleteById(id);
-
     }
-
 }

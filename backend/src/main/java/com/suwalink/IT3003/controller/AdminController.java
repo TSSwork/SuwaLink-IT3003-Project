@@ -34,7 +34,7 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Pharmacy approved"));
     }
 
-    @DeleteMapping("/pharmacies/{id}")
+    @PutMapping("/pharmacies/{id}/reject")
     public ResponseEntity<ApiResponse<Void>> reject(@PathVariable UUID id) {
         adminService.rejectPharmacy(id);
         return ResponseEntity.ok(ApiResponse.success("Pharmacy application rejected"));
