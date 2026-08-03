@@ -26,6 +26,7 @@ function initAdminDashboard() {
       panel.hidden = key !== name;
     });
     if (name === "pharmacies") loadPharmacies();
+    if (name === "users") loadUsers();
   }
 
   loadDashboardStats();
@@ -153,6 +154,88 @@ function initAdminDashboard() {
           rejectBtn.disabled = false;
         }
       });
+    }
+
+    return card;
+  }
+
+  async function loadUsers() {
+    const errorBanner = document.getElementById("users-error-banner");
+    const emptyState = document.getElementById("users-empty-state");
+    const list = document.getElementById("users-list");
+
+    errorBanner.hidden = true;
+    emptyState.hidden = true;
+    list.innerHTML = "";
+
+    try {
+      const users = await request("/api/admin/users");
+
+      if (users.length === 0) {
+        emptyState.hidden = false;
+        return;
+      }
+
+      users.forEach((user) => list.appendChild(renderUserCard(user)));
+    } catch (err) {
+      errorBanner.textContent =
+        err instanceof ApiError ? err.message : "Couldn't load users.";
+      errorBanner.hidden = false;
+    }
+  }
+
+  function renderUserCard(user) {
+    const card = document.createElement("div");
+    card.className = "md-card";
+
+    const header = document.createElement("div");
+    header.className = "admin-card__header";
+
+    const title = document.createElement("p");
+    title.className = "md-type-title";
+    title.textContent = user.name;
+    header.appendChild(title);
+
+    const role = document.createElement("span");
+    role.className = "md-type-label";
+    role.textContent = user.role;
+    header.appendChild(role);
+
+    card.appendChild(header);
+
+    const email = document.createElement("p");
+    email.className = "md-type-body-small admin-card__meta";
+    email.textContent = user.email;
+    card.appendChild(email);
+
+    const errorText = document.createElement("p");
+    errorText.className = "md-type-body-small";
+    errorText.style.color = "var(--md-sys-color-error)";
+    errorText.hidden = true;
+    card.appendChild(errorText);
+
+    if (user.id !== session.id) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "md-btn md-btn--outlined";
+      deleteBtn.textContent = "Delete";
+      deleteBtn.style.marginTop = "var(--md-space-4)";
+
+      deleteBtn.addEventListener("click", async () => {
+        errorText.hidden = true;
+        deleteBtn.disabled = true;
+        try {
+          await request(`/api/admin/users/${user.id}`, { method: "DELETE" });
+          card.remove();
+        } catch (err) {
+          errorText.textContent =
+            err instanceof ApiError ? err.message : "Couldn't delete this user. Please try again.";
+          errorText.hidden = false;
+          deleteBtn.disabled = false;
+        }
+      });
+
+      card.appendChild(deleteBtn);
     }
 
     return card;
