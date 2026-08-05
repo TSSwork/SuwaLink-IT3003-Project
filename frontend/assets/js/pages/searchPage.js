@@ -1,6 +1,7 @@
 import { request, ApiError } from "../api/apiService.js";
 import { getCurrentAuth, logout, homePathForRole } from "../auth/auth.js";
 import { createReserveControl } from "../components/reserveControl.js";
+import { createBookmarkButton } from "../components/bookmarkButton.js";
 
 initNav();
 initSearchPage();
@@ -44,6 +45,17 @@ function initSearchPage() {
   const emptyState = document.getElementById("empty-state");
   const noResultsState = document.getElementById("no-results-state");
   const resultsList = document.getElementById("results-list");
+
+  let bookmarkedIds = new Set();
+  if (getCurrentAuth()?.role === "CUSTOMER") {
+    request("/api/bookmarks")
+      .then((bookmarks) => {
+        bookmarkedIds = new Set(bookmarks.map((b) => b.inventory.id));
+      })
+      .catch(() => {
+        // Non-critical: bookmark buttons just fall back to showing "not bookmarked".
+      });
+  }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -117,6 +129,20 @@ function initSearchPage() {
     card.appendChild(stock);
 
     if (session?.role === "CUSTOMER") {
+      const bookmarkBtn = createBookmarkButton({
+        inventoryId: item.id,
+        bookmarked: bookmarkedIds.has(item.id),
+        onToggled: (bookmarked) => {
+          if (bookmarked) bookmarkedIds.add(item.id);
+          else bookmarkedIds.delete(item.id);
+        },
+        onError: (message) => {
+          errorBanner.textContent = message;
+          errorBanner.hidden = false;
+        },
+      });
+      card.appendChild(bookmarkBtn);
+
       const control = createReserveControl({
         inventoryItemId: item.id,
         initialQuantity: 1,

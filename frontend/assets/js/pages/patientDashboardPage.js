@@ -20,6 +20,7 @@ function initPatientDashboard() {
     upload: document.getElementById("panel-upload"),
     requests: document.getElementById("panel-requests"),
     reservations: document.getElementById("panel-reservations"),
+    bookmarks: document.getElementById("panel-bookmarks"),
   };
 
   tabs.forEach((tab) => {
@@ -33,6 +34,7 @@ function initPatientDashboard() {
     });
     if (name === "requests") loadRequests();
     if (name === "reservations") loadReservations();
+    if (name === "bookmarks") loadBookmarks();
   }
 
   initUploadForm(() => switchTab("requests"));
@@ -320,6 +322,121 @@ function initPatientDashboard() {
 
       card.appendChild(cancelBtn);
     }
+
+    return card;
+  }
+
+  async function loadBookmarks() {
+    const errorBanner = document.getElementById("bookmarks-error-banner");
+    const emptyState = document.getElementById("bookmarks-empty-state");
+    const list = document.getElementById("bookmarks-list");
+
+    errorBanner.hidden = true;
+    emptyState.hidden = true;
+    list.innerHTML = "";
+
+    try {
+      const bookmarks = await request("/api/bookmarks");
+
+      if (bookmarks.length === 0) {
+        emptyState.hidden = false;
+        return;
+      }
+
+      bookmarks.forEach((bookmark) => list.appendChild(renderBookmarkCard(bookmark)));
+    } catch (err) {
+      errorBanner.textContent =
+        err instanceof ApiError ? err.message : "Couldn't load your bookmarks.";
+      errorBanner.hidden = false;
+    }
+  }
+
+  function renderBookmarkCard(bookmark) {
+    const item = bookmark.inventory;
+    const card = document.createElement("div");
+    card.className = "md-card";
+
+    const header = document.createElement("div");
+    header.className = "request-card__header";
+
+    const title = document.createElement("p");
+    title.className = "md-type-title";
+    title.textContent = `${item.medicine.brandName} (${item.medicine.genericName})`;
+    header.appendChild(title);
+    card.appendChild(header);
+
+    const strength = document.createElement("p");
+    strength.className = "md-type-body-small";
+    strength.style.color = "var(--md-sys-color-on-surface-variant)";
+    strength.textContent = `${item.medicine.dosageForm} · ${item.medicine.strength}`;
+    card.appendChild(strength);
+
+    const pharmacy = document.createElement("p");
+    pharmacy.className = "md-type-body-small";
+    pharmacy.style.color = "var(--md-sys-color-on-surface-variant)";
+    pharmacy.textContent = `${item.pharmacy.name} · ${item.pharmacy.address}`;
+    card.appendChild(pharmacy);
+
+    const price = document.createElement("p");
+    price.className = "md-type-body-small";
+    price.style.fontWeight = "700";
+    price.style.color = "var(--md-sys-color-primary)";
+    price.textContent = `${item.currency} ${item.unitPrice.toFixed(2)} · ${item.stockQuantity} in stock`;
+    card.appendChild(price);
+
+    const errorText = document.createElement("p");
+    errorText.className = "md-type-body-small";
+    errorText.style.color = "var(--md-sys-color-error)";
+    errorText.hidden = true;
+    card.appendChild(errorText);
+
+    const actions = document.createElement("div");
+    actions.className = "request-card__actions";
+
+    if (item.stockQuantity > 0 && item.available) {
+      const control = createReserveControl({
+        inventoryItemId: item.id,
+        initialQuantity: 1,
+        maxQuantity: item.stockQuantity,
+        onReserved: (reservation) => {
+          card.replaceChildren();
+          card.className = "md-card";
+          const confirmed = document.createElement("p");
+          confirmed.className = "md-type-body-small";
+          confirmed.style.color = "var(--md-sys-color-success)";
+          confirmed.textContent = `Reserved ${reservation.quantity} × ${reservation.medicineBrandName}.`;
+          card.appendChild(confirmed);
+        },
+      });
+      actions.appendChild(control.row);
+      card.appendChild(actions);
+      card.appendChild(control.error);
+    }
+
+    const unbookmarkBtn = document.createElement("button");
+    unbookmarkBtn.type = "button";
+    unbookmarkBtn.className = "md-btn md-btn--text";
+    unbookmarkBtn.textContent = "Unbookmark";
+    unbookmarkBtn.style.marginTop = "var(--md-space-3)";
+
+    unbookmarkBtn.addEventListener("click", async () => {
+      errorText.hidden = true;
+      unbookmarkBtn.disabled = true;
+      try {
+        await request(`/api/bookmarks/${item.id}`, { method: "DELETE" });
+        card.remove();
+        if (!document.getElementById("bookmarks-list").children.length) {
+          document.getElementById("bookmarks-empty-state").hidden = false;
+        }
+      } catch (err) {
+        errorText.textContent =
+          err instanceof ApiError ? err.message : "Couldn't remove this bookmark. Please try again.";
+        errorText.hidden = false;
+        unbookmarkBtn.disabled = false;
+      }
+    });
+
+    card.appendChild(unbookmarkBtn);
 
     return card;
   }

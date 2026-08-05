@@ -46,6 +46,9 @@
         <button class="md-tab" role="tab" id="tab-reservations" aria-selected="false" aria-controls="panel-reservations" data-tab="reservations">
           My Reservations
         </button>
+        <button class="md-tab" role="tab" id="tab-bookmarks" aria-selected="false" aria-controls="panel-bookmarks" data-tab="bookmarks">
+          Bookmarks
+        </button>
       </div>
 
       <section id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" data-panel="upload">
@@ -89,6 +92,14 @@
           You don't have any reservations yet. Search for a medicine or check your prescription responses to reserve one.
         </p>
         <div id="reservations-list" class="patient-dashboard__list"></div>
+      </section>
+
+      <section id="panel-bookmarks" role="tabpanel" aria-labelledby="tab-bookmarks" data-panel="bookmarks" hidden>
+        <div id="bookmarks-error-banner" class="md-banner md-banner--error" role="alert" hidden></div>
+        <p id="bookmarks-empty-state" class="md-type-body" style="color: var(--md-sys-color-on-surface-variant)" hidden>
+          You haven't bookmarked any medicines yet. Save one from the search page to see it here.
+        </p>
+        <div id="bookmarks-list" class="patient-dashboard__list"></div>
       </section>
     </main>
   </div>

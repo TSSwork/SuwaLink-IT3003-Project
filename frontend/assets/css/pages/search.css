@@ -27,6 +27,14 @@
   margin-top: var(--md-space-6);
 }
 
+.search-result-card {
+  position: relative;
+}
+
+.search-result-card > .md-type-title {
+  padding-right: var(--md-space-10);
+}
+
 .search-result-card__pharmacy {
   color: var(--md-sys-color-on-surface-variant);
   margin: var(--md-space-1) 0 var(--md-space-4);
