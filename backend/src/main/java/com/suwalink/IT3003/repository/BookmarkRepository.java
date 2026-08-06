@@ -16,4 +16,6 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, UUID> {
     boolean existsByUserIdAndInventoryId(UUID userId, UUID inventoryId);
 
     void deleteByUserIdAndInventoryId(UUID userId, UUID inventoryId);
+
+    void deleteByInventory_PharmacyId(UUID pharmacyId);
 }

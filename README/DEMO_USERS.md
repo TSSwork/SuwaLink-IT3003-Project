@@ -8,5 +8,7 @@
   ├───────────────┼──────────────────────────────┼───────────────┤
   │ Demo Pharmacy │ demo.pharmacy@suwalink.local │ DemoPass123!  │
   ├───────────────┼──────────────────────────────┼───────────────┤
-  │ Pharmacy 2026 │ pharmacy2026@email.com       │ DemoPass123!  │
+  │ change password - Pharmacy 2026 │ pharmacy2026@email.com       │ password      │
   └───────────────┴──────────────────────────────┴───────────────┘
+
+python -m http.server 5500

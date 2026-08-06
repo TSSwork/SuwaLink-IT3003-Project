@@ -12,4 +12,6 @@ public interface PrescriptionResponseRepository extends JpaRepository<Prescripti
     List<PrescriptionResponse> findByPrescriptionRequestIdAndPharmacyId(UUID prescriptionRequestId, UUID pharmacyId);
 
     List<PrescriptionResponse> findByPharmacyIdOrderByCreatedAtDesc(UUID pharmacyId);
+
+    void deleteByPharmacyId(UUID pharmacyId);
 }

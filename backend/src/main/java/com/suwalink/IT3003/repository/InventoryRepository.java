@@ -16,6 +16,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     Optional<Inventory> findByIdAndPharmacyId(UUID id, UUID pharmacyId);
 
+    void deleteByPharmacyId(UUID pharmacyId);
+
     @Query("SELECT i FROM Inventory i WHERE i.available = true "
             + "AND (:query IS NULL OR :query = '' "
             + "     OR LOWER(i.medicineMaster.brandName) LIKE LOWER(CONCAT('%', :query, '%')) "
