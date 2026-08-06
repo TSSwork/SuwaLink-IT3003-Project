@@ -1,0 +1,12 @@
+target/
+uploads/
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+Dockerfile
+.dockerignore

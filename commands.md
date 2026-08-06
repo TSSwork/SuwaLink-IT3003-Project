@@ -2,6 +2,30 @@
 
 Reference for every day-to-day command needed to run and debug this project (DB, backend, frontend, Swagger, Liquibase, smoke tests). Run backend/Liquibase commands from the `backend/` directory unless noted.
 
+## Everything in Docker (one command)
+
+The whole stack — MySQL, the Spring Boot backend, and the static frontend — is in `docker-compose.yml`:
+
+```bash
+docker compose up -d --build    # build + start all three
+docker compose logs -f backend  # tail the API logs
+docker compose down             # stop (keeps the DB volume)
+```
+
+| Service | URL | Notes |
+| --- | --- | --- |
+| frontend | http://localhost:5500 | nginx; `frontend/` is bind-mounted, so edits show up on refresh — no rebuild |
+| backend | http://localhost:8080 | Swagger at `/swagger-ui/index.html` |
+| mysql | localhost:3308 | same port as before, so a host-run backend still works |
+
+Rebuild just the backend after Java changes: `docker compose up -d --build backend`.
+
+Secrets (`JWT_SECRET`, `GMAIL_USERNAME`, `GMAIL_APP_PASSWORD`) come from a git-ignored `.env` next to `docker-compose.yml` — copy `.env.example` to start. Dev defaults work without it.
+
+Uploaded images are bind-mounted from `backend/uploads`, so they survive rebuilds and stay shared with a host-run backend.
+
+The sections below cover running the pieces **outside** Docker, which is still supported.
+
 ## Database (MySQL via Docker)
 
 ```bash
@@ -21,6 +45,8 @@ cd backend && ./mvnw clean install     # full build + tests
 ```
 
 If your default `java` isn't 26, set `JAVA_HOME` to a JDK 26 install before running Maven.
+
+Startup polls MySQL for up to 60s before giving up, so starting the backend right after `docker compose up -d` is fine — it waits instead of crashing. Tune with `app.datasource.wait-timeout` / `app.datasource.wait-interval` in `application.properties` (`0` disables the wait). If it does time out you get a short "DATABASE NOT AVAILABLE" message rather than a Liquibase stack trace.
 
 ## Frontend (static server)
 
