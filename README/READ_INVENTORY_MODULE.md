@@ -209,3 +209,20 @@ curl -X POST http://localhost:8080/api/inventory -H "Content-Type: application/j
 # 4. Search as any logged-in user (customer or pharmacy)
 curl http://localhost:8080/api/inventory/search?query=panadol -H "Authorization: Bearer <token>"
 ```
+
+## Search & offers
+
+Public (no token) endpoints for finding medicines and the pharmacies that stock them.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/medicines/search` | Medicines grouped with pharmacy count, lowest price and nearest distance. Params: `q`, `categoryId`, `district`, `lat`, `lng`, `page`, `size` |
+| `GET /api/medicines/{id}` | Medicine detail (includes `requiresPrescription`) |
+| `GET /api/medicines/{id}/offers` | Offers for one medicine. Params: `district`, `lat`, `lng`, `sort=distance\|price` (distance needs `lat`+`lng`; default is price) |
+| `GET /api/pharmacies/{id}` | Public pharmacy page: profile, location, opening hours and its current offers (sorted by brand name). `404` if the pharmacy is not publicly visible |
+| `GET /api/settings/public` | Public settings, including whether demo mode is on |
+| `GET/PUT /api/admin/settings` | Admin only: read / change the demo-mode switch (`demo_mode_public`, default `false`) |
+
+**Offer rule:** an inventory row is an offer only if `available = true`, `stockQuantity > 0`, `expireDate > today`, and its pharmacy is publicly visible.
+
+**Publicly visible pharmacy:** `status = VERIFIED` AND (`demo = false` OR demo mode is on). Pending, rejected and (with demo mode off) demo pharmacies never appear in search, offers or the public page. `GET /api/pharmacies/me` remains owner-only.

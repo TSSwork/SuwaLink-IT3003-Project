@@ -72,6 +72,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/medicines/search", "/api/medicines/*",
                                 "/api/medicines/*/offers").permitAll()
+                        .requestMatchers("/api/pharmacies/me").hasRole("PHARMACY_OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/pharmacies/*").permitAll()
                         .requestMatchers("/api/medicines").hasRole("PHARMACY_OWNER")
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")

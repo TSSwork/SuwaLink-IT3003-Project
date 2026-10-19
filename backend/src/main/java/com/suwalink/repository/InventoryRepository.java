@@ -65,4 +65,19 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             @Param("district") District district,
             @Param("includeDemo") boolean includeDemo,
             @Param("today") LocalDate today);
+
+    /** One pharmacy's offers (same rule as {@link #findOffers}), ordered by brand name. */
+    @Query("SELECT i FROM Inventory i "
+            + "JOIN FETCH i.medicineMaster m "
+            + "JOIN FETCH i.pharmacy p "
+            + "WHERE p.id = :pharmacyId "
+            + "AND i.available = true "
+            + "AND i.stockQuantity > 0 AND i.expireDate > :today "
+            + "AND p.status = com.suwalink.entity.PharmacyStatus.VERIFIED "
+            + "AND (p.demo = false OR :includeDemo = true) "
+            + "ORDER BY m.brandName, i.unitPrice")
+    List<Inventory> findOffersByPharmacy(
+            @Param("pharmacyId") UUID pharmacyId,
+            @Param("includeDemo") boolean includeDemo,
+            @Param("today") LocalDate today);
 }

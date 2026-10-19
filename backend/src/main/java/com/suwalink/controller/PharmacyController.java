@@ -3,6 +3,9 @@ package com.suwalink.controller;
 import com.suwalink.dto.request.UpdatePharmacyProfileRequest;
 import com.suwalink.dto.response.ApiResponse;
 import com.suwalink.dto.response.PharmacyProfileResponse;
+import com.suwalink.dto.response.PharmacyPublicResponse;
+import java.util.UUID;
+import org.springframework.web.bind.annotation.PathVariable;
 import com.suwalink.service.PharmacyProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +36,10 @@ public class PharmacyController {
             @Valid @RequestBody UpdatePharmacyProfileRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Pharmacy profile updated",
             pharmacyProfileService.updateMyProfile(request)));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PharmacyPublicResponse>> getPublicPharmacy(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success("Pharmacy", pharmacyProfileService.getPublicPharmacy(id)));
     }
 }
