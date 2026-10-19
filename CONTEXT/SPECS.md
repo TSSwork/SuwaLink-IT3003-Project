@@ -24,7 +24,7 @@ Framework
 
 Language
 
-- Java 26 (LTS preferred)
+- Java 25 (LTS)
 
 Build Tool
 

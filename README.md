@@ -6,7 +6,7 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 ## Stack
 
-- **Backend**: Spring Boot 4 (Java 26), Spring Security + JWT, Spring Data JPA/Hibernate, MySQL 8
+- **Backend**: Spring Boot 4 (Java 25), Spring Security + JWT, Spring Data JPA/Hibernate, MySQL 8
   via Liquibase migrations, springdoc-openapi.
 - **Frontend**: Plain HTML/CSS/vanilla JS (ES modules) + jQuery, Material Design 3 styling — no
   frontend framework. See [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md).
@@ -18,7 +18,7 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 # 1. Database
 docker compose up -d                     # MySQL on localhost:3308
 
-# 2. Backend (needs JDK 26)
+# 2. Backend (needs JDK 25)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
 
 # 3. Frontend (must be port 5500 - see CORS note below)
