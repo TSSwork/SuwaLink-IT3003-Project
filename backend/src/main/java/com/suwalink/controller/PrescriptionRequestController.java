@@ -53,14 +53,14 @@ public class PrescriptionRequestController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<List<PrescriptionRequestResponse>>> listPending() {
         List<PrescriptionRequestResponse> responses = prescriptionRequestService.listPending();
         return ResponseEntity.ok(ApiResponse.success("Pending prescription requests", responses));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<PrescriptionRequestResponse>> getById(@PathVariable UUID id) {
         PrescriptionRequestResponse response = prescriptionRequestService.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Prescription request", response));

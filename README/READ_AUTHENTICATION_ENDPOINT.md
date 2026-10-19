@@ -16,7 +16,7 @@ near the bottom.
 | email    | VARCHAR, unique   | login identifier                    |
 | phone    | VARCHAR           | required                            |
 | password | VARCHAR           | BCrypt hash, never plain text       |
-| role     | ENUM/STRING       | `CUSTOMER` or `PHARMACY_ADMIN`      |
+| role     | ENUM/STRING       | `CUSTOMER` or `PHARMACY_OWNER`      |
 
 **`pharmacies` table** (`com.suwalink.entity.Pharmacy`)
 
@@ -90,7 +90,7 @@ Response (`200`):
 {
   "success": true,
   "message": "Login successful",
-  "data": { "token": "...", "role": "CUSTOMER | PHARMACY_ADMIN", "id": "uuid", "name": "..." }
+  "data": { "token": "...", "role": "CUSTOMER | PHARMACY_OWNER", "id": "uuid", "name": "..." }
 }
 ```
 - `401` — bad credentials (also covers unknown email).
@@ -107,7 +107,7 @@ Response (`200`):
   "success": true,
   "message": "Current user profile",
   "data": {
-    "id": "uuid", "name": "...", "email": "...", "phone": "...", "role": "PHARMACY_ADMIN",
+    "id": "uuid", "name": "...", "email": "...", "phone": "...", "role": "PHARMACY_OWNER",
     "pharmacy": { "id": "uuid", "licenceNo": "...", "address": "...", "verified": true }
   }
 }
@@ -149,8 +149,8 @@ For pharmacy-only endpoints, look up the `Pharmacy` row via
 the user/JWT itself.
 
 Role gating: use Spring Security annotations rather than manual `if` checks, e.g.
-`@PreAuthorize("hasRole('PHARMACY_ADMIN')")` on the controller method (roles are exposed as
-`ROLE_CUSTOMER` / `ROLE_PHARMACY_ADMIN` grants via `UserDetailsServiceImpl`).
+`@PreAuthorize("hasRole('PHARMACY_OWNER')")` on the controller method (roles are exposed as
+`ROLE_CUSTOMER` / `ROLE_PHARMACY_OWNER` grants via `UserDetailsServiceImpl`).
 
 ## What's deliberately NOT built here (don't assume it exists)
 

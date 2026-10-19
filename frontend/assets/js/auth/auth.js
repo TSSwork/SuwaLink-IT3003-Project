@@ -64,7 +64,7 @@ export function requireAuth() {
 }
 
 export function homePathForRole(role) {
-  if (role === "PHARMACY_ADMIN") return "pharmacy-dashboard.html";
+  if (role === "PHARMACY_OWNER") return "pharmacy-dashboard.html";
   if (role === "CUSTOMER") return "patient-dashboard.html";
   if (role === "ADMIN") return "admin-dashboard.html";
   return "index.html";

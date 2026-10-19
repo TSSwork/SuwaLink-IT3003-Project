@@ -43,14 +43,14 @@ public class ReservationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<List<ReservationResponse>>> pharmacyReservations() {
         return ResponseEntity.ok(
                 ApiResponse.success("Incoming reservations", reservationService.getPharmacyReservations()));
     }
 
     @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<ReservationResponse>> cancel(
             @PathVariable UUID id, @RequestBody(required = false) CancelReservationRequest request) {
         ReservationResponse response = reservationService.cancel(id, request);
@@ -58,7 +58,7 @@ public class ReservationController {
     }
 
     @PatchMapping("/{id}/complete")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<ReservationResponse>> complete(@PathVariable UUID id) {
         ReservationResponse response = reservationService.complete(id);
         return ResponseEntity.ok(ApiResponse.success("Reservation marked as completed", response));

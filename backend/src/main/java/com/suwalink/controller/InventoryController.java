@@ -34,7 +34,7 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @PostMapping
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<InventoryResponse>>
     addInventoryItem(@Valid @RequestBody CreateInventoryRequest request) {
         InventoryResponse response = inventoryService.addInventoryItem(request);
@@ -42,7 +42,7 @@ public class InventoryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<List<InventoryResponse>>>
     listMyInventory() {
         return ResponseEntity.ok(ApiResponse.success("Inventory items", inventoryService.listMyInventory()));
@@ -64,14 +64,14 @@ public class InventoryController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<InventoryResponse>>
     getInventoryItem(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success("Inventory item", inventoryService.getInventoryItem(id)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<InventoryResponse>>
     updateInventoryItem(
             @PathVariable UUID id,
@@ -82,7 +82,7 @@ public class InventoryController {
     }
 
     @PatchMapping("/{id}/availability")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<InventoryResponse>>
     setAvailability(
             @PathVariable UUID id,
@@ -93,7 +93,7 @@ public class InventoryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<Void>>
     removeInventoryItem(@PathVariable UUID id) {
         inventoryService.removeInventoryItem(id);

@@ -55,7 +55,7 @@ class AuthControllerLoginTest {
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.token").isNotEmpty())
-            .andExpect(jsonPath("$.data.role").value("PHARMACY_ADMIN"));
+            .andExpect(jsonPath("$.data.role").value("PHARMACY_OWNER"));
     }
 
     @Test

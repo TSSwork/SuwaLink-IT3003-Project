@@ -49,7 +49,7 @@ class NotificationEventListenerTest {
 
     @Test
     void handlePharmacyVerifiedEvent_notifiesThePharmacyUser() {
-        User pharmacyUser = user("pharmacy@example.com", Role.PHARMACY_ADMIN);
+        User pharmacyUser = user("pharmacy@example.com", Role.PHARMACY_OWNER);
         when(userRepository.findById(pharmacyUser.getId())).thenReturn(Optional.of(pharmacyUser));
 
         listener.handlePharmacyVerifiedEvent(new PharmacyVerifiedEvent(this, pharmacyUser.getId()));
@@ -60,8 +60,8 @@ class NotificationEventListenerTest {
 
     @Test
     void handlePrescriptionAddedEvent_notifiesEveryPharmacyUser() {
-        User pharmacyA = user("a@example.com", Role.PHARMACY_ADMIN);
-        User pharmacyB = user("b@example.com", Role.PHARMACY_ADMIN);
+        User pharmacyA = user("a@example.com", Role.PHARMACY_OWNER);
+        User pharmacyB = user("b@example.com", Role.PHARMACY_OWNER);
         when(userRepository.findById(pharmacyA.getId())).thenReturn(Optional.of(pharmacyA));
         when(userRepository.findById(pharmacyB.getId())).thenReturn(Optional.of(pharmacyB));
 
@@ -135,7 +135,7 @@ class NotificationEventListenerTest {
 
     private Reservation sampleReservation() {
         User patient = user("patient@example.com", Role.CUSTOMER);
-        User pharmacyUser = user("pharmacy@example.com", Role.PHARMACY_ADMIN);
+        User pharmacyUser = user("pharmacy@example.com", Role.PHARMACY_OWNER);
         Pharmacy pharmacy = Pharmacy.builder()
                 .id(UUID.randomUUID())
                 .licenceNo("LIC-1")

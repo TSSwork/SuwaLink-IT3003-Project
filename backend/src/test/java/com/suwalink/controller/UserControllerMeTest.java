@@ -54,7 +54,7 @@ class UserControllerMeTest {
         mockMvc.perform(get("/api/users/me")
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.role").value("PHARMACY_ADMIN"))
+            .andExpect(jsonPath("$.data.role").value("PHARMACY_OWNER"))
             .andExpect(jsonPath("$.data.pharmacy.licenceNo").value("LIC-ME-1"))
             .andExpect(jsonPath("$.data.pharmacy.status").value("VERIFIED"));
     }

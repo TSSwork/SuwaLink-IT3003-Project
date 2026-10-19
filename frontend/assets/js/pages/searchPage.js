@@ -13,7 +13,7 @@ function initNav() {
   if (session) {
     const dashboardLink = document.createElement("a");
     dashboardLink.className = "md-btn md-btn--text";
-    dashboardLink.textContent = session.role === "PHARMACY_ADMIN" ? "Dashboard" : "My account";
+    dashboardLink.textContent = session.role === "PHARMACY_OWNER" ? "Dashboard" : "My account";
     dashboardLink.href = homePathForRole(session.role);
 
     const logoutBtn = document.createElement("button");

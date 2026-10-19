@@ -8,7 +8,7 @@ notifications, and admin.
 
 ```mermaid
 erDiagram
-    USER ||--o| PHARMACY : "owns (PHARMACY_ADMIN only)"
+    USER ||--o| PHARMACY : "owns (PHARMACY_OWNER only)"
     USER ||--o{ PRESCRIPTION_REQUEST : submits
     USER ||--o{ RESERVATION : reserves
     USER ||--o{ NOTIFICATION : receives
@@ -40,7 +40,7 @@ erDiagram
         string email UK
         string phone
         string password
-        enum role "CUSTOMER | PHARMACY_ADMIN | ADMIN"
+        enum role "CUSTOMER | PHARMACY_OWNER | ADMIN"
         string resetOtp
         datetime resetOtpExpiry
     }
@@ -345,7 +345,7 @@ sequenceDiagram
     AM->>DB: load user by email, verify BCrypt hash
     AM-->>AC: Authentication OK / BadCredentialsException
     AC->>AS: login(request)
-    AS->>DB: find user, (if PHARMACY_ADMIN) check Pharmacy.status
+    AS->>DB: find user, (if PHARMACY_OWNER) check Pharmacy.status
     alt not VERIFIED
         AS-->>AC: PharmacyNotVerifiedException
         AC-->>FE: 403 with status-specific message

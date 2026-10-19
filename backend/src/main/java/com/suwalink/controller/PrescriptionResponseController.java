@@ -26,7 +26,7 @@ public class PrescriptionResponseController {
     private final PrescriptionResponseService prescriptionResponseService;
 
     @PostMapping("/{requestId}/responses")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<PrescriptionResponseResponse>> create(
             @PathVariable UUID requestId,
             @Valid @RequestBody CreatePrescriptionResponseRequest request) {
@@ -36,7 +36,7 @@ public class PrescriptionResponseController {
     }
 
     @GetMapping("/{requestId}/responses")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<List<PrescriptionResponseResponse>>> listForRequest(
             @PathVariable UUID requestId) {
         List<PrescriptionResponseResponse> responses = prescriptionResponseService.listForRequest(requestId);
@@ -44,7 +44,7 @@ public class PrescriptionResponseController {
     }
 
     @GetMapping("/responses/me")
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<List<PrescriptionResponseResponse>>> listMyResponses() {
         List<PrescriptionResponseResponse> responses = prescriptionResponseService.listMyResponses();
         return ResponseEntity.ok(ApiResponse.success("Your responses", responses));

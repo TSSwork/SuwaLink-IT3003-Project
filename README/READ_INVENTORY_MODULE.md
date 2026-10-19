@@ -86,7 +86,7 @@ classDiagram
     class Role {
         <<enumeration>>
         CUSTOMER
-        PHARMACY_ADMIN
+        PHARMACY_OWNER
         ADMIN
     }
 
@@ -158,7 +158,7 @@ Same pattern as the auth module — Controller → Service (interface + impl) �
 | Medicine catalog (admin reference data) | `MedicineMasterController` | `/api/admin/medicines` — CRUD |
 | Image upload | `ImageController` | `POST /api/images` |
 
-Role gating: `PHARMACY_ADMIN` owns `/api/inventory` (except `/search`, open to any authenticated user); `ADMIN` owns the three `/api/admin/**` controllers. There is a bootstrap admin account seeded via migration — see `app.upload.dir`/migration notes below for how to log in as it.
+Role gating: `PHARMACY_OWNER` owns `/api/inventory` (except `/search`, open to any authenticated user); `ADMIN` owns the three `/api/admin/**` controllers. There is a bootstrap admin account seeded via migration — see `app.upload.dir`/migration notes below for how to log in as it.
 
 ## Ownership enforcement
 

@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/inventory/search").permitAll()
-                        .requestMatchers("/api/medicines").hasRole("PHARMACY_ADMIN")
+                        .requestMatchers("/api/medicines").hasRole("PHARMACY_OWNER")
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
                         .anyRequest()

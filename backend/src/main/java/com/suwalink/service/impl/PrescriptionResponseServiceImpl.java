@@ -95,7 +95,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
 
         User currentUser = currentUserProvider.getCurrentUser();
 
-        if (currentUser.getRole() == Role.PHARMACY_ADMIN) {
+        if (currentUser.getRole() == Role.PHARMACY_OWNER) {
             Pharmacy pharmacy = currentPharmacy();
             return prescriptionResponseRepository
                     .findByPrescriptionRequestIdAndPharmacyId(requestId, pharmacy.getId())

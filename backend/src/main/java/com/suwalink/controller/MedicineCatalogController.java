@@ -19,7 +19,7 @@ public class MedicineCatalogController {
     private final MedicineMasterService medicineMasterService;
 
     @GetMapping
-    @PreAuthorize("hasRole('PHARMACY_ADMIN')")
+    @PreAuthorize("hasRole('PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<List<MedicineMasterResponse>>> list() {
         return ResponseEntity.ok(ApiResponse.success("Medicine catalog", medicineMasterService.list()));
     }

@@ -17,7 +17,7 @@ password: AdminPass123!
 `Pharmacy.status` is a `PharmacyStatus` enum — `PENDING` (default at registration) / `VERIFIED` /
 `REJECTED`. This replaced an earlier plain `is_verified` boolean (migration
 `010-pharmacy-status.sql`), specifically so a rejected application is a distinct, visible state
-rather than indistinguishable from "never reviewed." Login for a `PHARMACY_ADMIN` checks
+rather than indistinguishable from "never reviewed." Login for a `PHARMACY_OWNER` checks
 `status == VERIFIED`; `PENDING` and `REJECTED` both fail with `403`, but with different messages
 so the frontend/support can tell them apart.
 

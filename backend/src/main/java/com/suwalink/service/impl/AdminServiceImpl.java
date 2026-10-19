@@ -108,7 +108,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void deleteUser(UUID id) {
         userRepository.findById(id).ifPresent(user -> {
-            if (user.getRole() == Role.PHARMACY_ADMIN) {
+            if (user.getRole() == Role.PHARMACY_OWNER) {
                 pharmacyRepository.findByUserId(id).ifPresent(this::deletePharmacyData);
             }
         });

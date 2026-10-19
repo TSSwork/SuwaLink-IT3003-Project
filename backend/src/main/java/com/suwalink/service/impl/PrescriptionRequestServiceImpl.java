@@ -95,7 +95,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
         User currentUser = currentUserProvider.getCurrentUser();
 
         boolean isOwner = prescriptionRequest.getPatient().getId().equals(currentUser.getId());
-        boolean isPharmacy = currentUser.getRole() == Role.PHARMACY_ADMIN;
+        boolean isPharmacy = currentUser.getRole() == Role.PHARMACY_OWNER;
         if (!isOwner && !isPharmacy) {
             throw new PrescriptionAccessDeniedException();
         }

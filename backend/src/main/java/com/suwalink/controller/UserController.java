@@ -33,7 +33,7 @@ public class UserController {
             .phone(user.getPhone())
             .role(user.getRole());
 
-        if (user.getRole() == Role.PHARMACY_ADMIN) {
+        if (user.getRole() == Role.PHARMACY_OWNER) {
             pharmacyRepository.findByUserId(user.getId())
                 .map(this::toPharmacyInfo)
                 .ifPresent(profile::pharmacy);

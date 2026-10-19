@@ -76,12 +76,12 @@ Response (`201`): a `PrescriptionRequestResponse` (see shape below), `status: "P
 
 The current patient's own requests, newest first. Response (`200`): `data` is an array.
 
-### `GET /api/prescriptions` — `PHARMACY_ADMIN` only
+### `GET /api/prescriptions` — `PHARMACY_OWNER` only
 
 All requests with `status = PENDING`, newest first — this is the "pharmacies can see submitted
 requests" browsing view. No filtering by distance/area yet (no location data is collected).
 
-### `GET /api/prescriptions/{id}` — `CUSTOMER` (owner only) or `PHARMACY_ADMIN` (any)
+### `GET /api/prescriptions/{id}` — `CUSTOMER` (owner only) or `PHARMACY_OWNER` (any)
 
 `403` if a customer requests someone else's prescription. `404` if the id doesn't exist.
 

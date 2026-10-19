@@ -74,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User savedUser = registerUser(
-            request.getName(), request.getEmail(), request.getPhone(), request.getPassword(), Role.PHARMACY_ADMIN);
+            request.getName(), request.getEmail(), request.getPhone(), request.getPassword(), Role.PHARMACY_OWNER);
 
         Pharmacy pharmacy = Pharmacy.builder()
             .licenceNo(request.getLicenceNo())
@@ -94,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        if (user.getRole() == Role.PHARMACY_ADMIN) {
+        if (user.getRole() == Role.PHARMACY_OWNER) {
             Pharmacy pharmacy = pharmacyRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new IllegalStateException("Pharmacy admin missing pharmacy record"));
             if (pharmacy.getStatus() == PharmacyStatus.REJECTED) {

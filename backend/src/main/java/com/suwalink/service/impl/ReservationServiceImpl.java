@@ -146,7 +146,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private CancelledBy resolveRequester(Reservation reservation, User currentUser) {
-        if (currentUser.getRole() == Role.PHARMACY_ADMIN) {
+        if (currentUser.getRole() == Role.PHARMACY_OWNER) {
             Pharmacy pharmacy = currentPharmacy();
             if (!reservation.getPharmacy().getId().equals(pharmacy.getId())) {
                 throw new ReservationAccessDeniedException();
