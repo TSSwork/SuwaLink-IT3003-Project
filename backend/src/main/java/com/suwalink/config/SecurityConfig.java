@@ -70,6 +70,8 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/inventory/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/medicines/search", "/api/medicines/*",
+                                "/api/medicines/*/offers").permitAll()
                         .requestMatchers("/api/medicines").hasRole("PHARMACY_OWNER")
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
