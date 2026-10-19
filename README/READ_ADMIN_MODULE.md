@@ -5,19 +5,16 @@ Everything under `/api/admin/**` requires `Authorization: Bearer <token>` for a 
 `ADMIN` (enforced by `SecurityConfig`'s `.requestMatchers("/api/admin/**").hasRole("ADMIN")`, not
 per-endpoint `@PreAuthorize`).
 
-A bootstrap admin account is seeded by `db/changelog/sql/004-admin-role.sql`:
-
-```
-email: admin@suwalink.local
-password: AdminPass123!
-```
+A bootstrap admin account is created at startup by `AdminBootstrap` when no `ADMIN` exists, from
+`app.admin.email` / `app.admin.password`. In the `dev` profile that is `admin@suwalink.local` with the
+dev-only password in `application-dev.properties`; in production set `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 ## Pharmacy status model
 
 `Pharmacy.status` is a `PharmacyStatus` enum — `PENDING` (default at registration) / `VERIFIED` /
 `REJECTED`. This replaced an earlier plain `is_verified` boolean (migration
 `010-pharmacy-status.sql`), specifically so a rejected application is a distinct, visible state
-rather than indistinguishable from "never reviewed." Login for a `PHARMACY_ADMIN` checks
+rather than indistinguishable from "never reviewed." Login for a `PHARMACY_OWNER` checks
 `status == VERIFIED`; `PENDING` and `REJECTED` both fail with `403`, but with different messages
 so the frontend/support can tell them apart.
 

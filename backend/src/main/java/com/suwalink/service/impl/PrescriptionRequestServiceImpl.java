@@ -1,0 +1,207 @@
+package com.suwalink.service.impl;
+
+import com.suwalink.dto.request.CreatePrescriptionRequest;
+import com.suwalink.dto.request.UpdatePrescriptionRequest;
+import com.suwalink.dto.response.ImageResponse;
+import com.suwalink.dto.response.PrescriptionRequestResponse;
+import com.suwalink.entity.Image;
+import com.suwalink.entity.ImageType;
+import com.suwalink.entity.PrescriptionRequest;
+import com.suwalink.entity.PrescriptionRequestStatus;
+import com.suwalink.entity.Role;
+import com.suwalink.entity.User;
+import com.suwalink.entity.Pharmacy;
+import com.suwalink.entity.PharmacyStatus;
+import com.suwalink.event.PrescriptionAddedEvent;
+import com.suwalink.exception.PrescriptionAccessDeniedException;
+import com.suwalink.exception.ResourceNotFoundException;
+import com.suwalink.repository.ImageRepository;
+import com.suwalink.repository.PharmacyRepository;
+import com.suwalink.repository.PrescriptionRequestRepository;
+import com.suwalink.security.CurrentUserProvider;
+import com.suwalink.service.ImageService;
+import com.suwalink.service.PrescriptionRequestService;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Lets a patient submit, view, edit, and delete their own prescription requests, and lets
+ * pharmacies browse pending ones. Tagging inventory against a request (and notifying the patient
+ * back once a pharmacy responds) is a separate, not-yet-built module - see
+ * README/READ_PRESCRIPTION_MODULE.md.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PrescriptionRequestServiceImpl implements PrescriptionRequestService {
+
+    private final PrescriptionRequestRepository prescriptionRequestRepository;
+    private final ImageRepository imageRepository;
+    private final ImageService imageService;
+    private final CurrentUserProvider currentUserProvider;
+    private final PharmacyRepository pharmacyRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Override
+    @Transactional
+    public PrescriptionRequestResponse create(CreatePrescriptionRequest request) {
+        User patient = currentUserProvider.getCurrentUser();
+        Image image = uploadImage(request.getImage());
+
+        PrescriptionRequest prescriptionRequest = PrescriptionRequest.builder()
+            .patient(patient)
+            .image(image)
+            .patientAge(request.getPatientAge())
+            .note(blankToNull(request.getNote()))
+            .status(PrescriptionRequestStatus.PENDING)
+            .build();
+
+        PrescriptionRequestResponse response = toResponse(prescriptionRequestRepository.save(prescriptionRequest));
+
+        // No geolocation/matching module exists yet (MVP), so every verified pharmacy is notified.
+        List<UUID> verifiedPharmacyUserIds = pharmacyRepository.findByStatus(PharmacyStatus.VERIFIED).stream()
+            .map(Pharmacy::getUser)
+            .map(User::getId)
+            .toList();
+        if (!verifiedPharmacyUserIds.isEmpty()) {
+            eventPublisher.publishEvent(new PrescriptionAddedEvent(this, verifiedPharmacyUserIds));
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PrescriptionRequestResponse> getMyRequests() {
+        User patient = currentUserProvider.getCurrentUser();
+        return prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()
+            .map(this::toResponse)
+            .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PrescriptionRequestResponse getById(UUID id) {
+        PrescriptionRequest prescriptionRequest = findOrThrow(id);
+        User currentUser = currentUserProvider.getCurrentUser();
+
+        boolean isOwner = prescriptionRequest.getPatient().getId().equals(currentUser.getId());
+        boolean isPharmacy = currentUser.getRole() == Role.PHARMACY_OWNER;
+        if (!isOwner && !isPharmacy) {
+            throw new PrescriptionAccessDeniedException();
+        }
+
+        return toResponse(prescriptionRequest);
+    }
+
+    @Override
+    @Transactional
+    public PrescriptionRequestResponse update(UUID id, UpdatePrescriptionRequest request) {
+        PrescriptionRequest prescriptionRequest = ownedRequest(id);
+
+        prescriptionRequest.setPatientAge(request.getPatientAge());
+        prescriptionRequest.setNote(blankToNull(request.getNote()));
+
+        Image oldImage = null;
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            oldImage = prescriptionRequest.getImage();
+            prescriptionRequest.setImage(uploadImage(request.getImage()));
+        }
+
+        // Flush the new image_id first - deleting the old Image row before the FK is
+        // repointed would violate the still-in-place foreign key constraint.
+        PrescriptionRequest saved = prescriptionRequestRepository.saveAndFlush(prescriptionRequest);
+
+        if (oldImage != null) {
+            deleteImage(oldImage);
+        }
+
+        return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        PrescriptionRequest prescriptionRequest = ownedRequest(id);
+        Image image = prescriptionRequest.getImage();
+        prescriptionRequestRepository.delete(prescriptionRequest);
+        prescriptionRequestRepository.flush();
+        deleteImage(image);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PrescriptionRequestResponse> listPending() {
+        return prescriptionRequestRepository.findByStatusOrderByCreatedAtDesc(PrescriptionRequestStatus.PENDING)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+    }
+
+    @Override
+    @Transactional
+    public PrescriptionRequestResponse close(UUID id) {
+        PrescriptionRequest prescriptionRequest = ownedRequest(id);
+        prescriptionRequest.setStatus(PrescriptionRequestStatus.CLOSED);
+        return toResponse(prescriptionRequestRepository.save(prescriptionRequest));
+    }
+
+    private Image uploadImage(MultipartFile file) {
+        ImageResponse uploaded = imageService.upload(file, ImageType.PRESCRIPTION);
+        return imageRepository.findById(uploaded.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Uploaded image not found: " + uploaded.getId()));
+    }
+
+    private void deleteImage(Image image) {
+        if (image == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(Path.of(image.getFilePath()));
+        } catch (IOException e) {
+            log.warn("Could not delete prescription image file at {}", image.getFilePath(), e);
+        }
+        imageRepository.delete(image);
+    }
+
+    private PrescriptionRequest ownedRequest(UUID id) {
+        PrescriptionRequest prescriptionRequest = findOrThrow(id);
+        User currentUser = currentUserProvider.getCurrentUser();
+        if (!prescriptionRequest.getPatient().getId().equals(currentUser.getId())) {
+            throw new PrescriptionAccessDeniedException();
+        }
+        return prescriptionRequest;
+    }
+
+    private PrescriptionRequest findOrThrow(UUID id) {
+        return prescriptionRequestRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Prescription request not found: " + id));
+    }
+
+    private PrescriptionRequestResponse toResponse(PrescriptionRequest prescriptionRequest) {
+        return PrescriptionRequestResponse.builder()
+            .id(prescriptionRequest.getId())
+            .patientId(prescriptionRequest.getPatient().getId())
+            .patientName(prescriptionRequest.getPatient().getName())
+            .patientAge(prescriptionRequest.getPatientAge())
+            .note(prescriptionRequest.getNote())
+            .status(prescriptionRequest.getStatus())
+            .imageUrl(prescriptionRequest.getImage().getUrl())
+            .createdAt(prescriptionRequest.getCreatedAt())
+            .updatedAt(prescriptionRequest.getUpdatedAt())
+            .build();
+    }
+
+    private String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
+    }
+}

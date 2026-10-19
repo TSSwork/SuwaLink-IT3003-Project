@@ -5,22 +5,32 @@ Reference for every day-to-day command needed to run and debug this project (DB,
 ## Database (MySQL via Docker)
 
 ```bash
-docker compose up -d          # start MySQL (port 3308, db suwalink_db, user/pass suwalink_user/suwalink_password)
+docker compose up -d          # start MySQL + Mailpit (MySQL port 3308, db suwalink_db, user/pass suwalink_user/suwalink_password)
 ./scripts/dev-up.sh           # same, but first stops other Docker containers hogging ports (e.g. 8080)
 docker compose ps             # check container status
 docker compose down -v        # wipe DB volume — REQUIRED after changing creds in docker-compose.yml
                                # (the MySQL image only applies MYSQL_USER/DATABASE on first init of an empty volume)
 ```
 
-## Backend (Spring Boot, needs JDK 26)
+After pulling the Liquibase squash (migrations collapsed into one baseline), reset your local DB once:
+`docker compose down -v && docker compose up -d`.
+
+## Backend (Spring Boot, needs JDK 25)
 
 ```bash
-cd backend && ./mvnw spring-boot:run   # run the API (localhost:8080)
+cd backend && ./mvnw spring-boot:run   # run the API (localhost:8080); dev profile is the default, nothing else to set
+# Mailpit inbox (OTP emails in dev): http://localhost:8025
+# Prod: SPRING_PROFILES_ACTIVE=prod with variables from .env (see .env.example)
 cd backend && ./mvnw test              # run tests
 cd backend && ./mvnw clean install     # full build + tests
 ```
 
-If your default `java` isn't 26, set `JAVA_HOME` to a JDK 26 install before running Maven.
+`mvn test` needs a reachable container runtime: `SchemaMigrationTest` starts a throwaway MySQL 8 with Testcontainers.
+Docker works as-is. With Podman, enable the user socket (`systemctl --user enable --now podman.socket`) and export
+`DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock` before running Maven (if the Ryuk reaper container fails
+to start, also set `TESTCONTAINERS_RYUK_DISABLED=true`).
+
+If your default `java` isn't 25, set `JAVA_HOME` to a JDK 25 install before running Maven.
 
 ## Frontend (static server)
 
@@ -28,7 +38,7 @@ If your default `java` isn't 26, set `JAVA_HOME` to a JDK 26 install before runn
 cd frontend && python -m http.server 5500
 ```
 
-Must be port 5500 (or add your port to `app.cors.allowed-origins` in `application.properties`) — CORS blocks `file://` URLs and other ports.
+Must be port 5500 (or add your port to `app.cors.allowed-origins` in `backend/src/main/resources/application-dev.properties`, or set the `CORS_ALLOWED_ORIGINS` env var in production) — CORS blocks `file://` URLs and other ports.
 
 ## Swagger / OpenAPI
 
@@ -41,9 +51,10 @@ Backend must be running first (`./mvnw spring-boot:run`).
 
 Schema is now version-controlled via Liquibase, not `ddl-auto` (`spring.jpa.hibernate.ddl-auto=validate` in `application.properties` — Hibernate only checks the schema matches, it never creates/alters tables anymore). Migrations live in `backend/src/main/resources/db/changelog/`:
 - `db.changelog-master.xml` — the changelog Spring Boot loads on every boot (`spring.liquibase.change-log`)
-- `sql/001-baseline.sql` — the initial schema (12 tables incl. Envers `_aud`/`revinfo` audit tables), captured from Hibernate's own generated DDL via `mysqldump --no-data`, not hand-written
+- `sql/001-baseline.sql` — the full schema (incl. Envers `_aud`/`revinfo` audit tables): the earlier migrations 001–011 squashed into one file via `mysqldump --no-data`. It creates no users; the admin comes from `AdminBootstrap`
+- `sql/002-reference-data.sql` — seed categories, manufacturers and medicines
 
-**Applying migrations is automatic** — `./mvnw spring-boot:run` runs them on every startup, no separate command needed. The test profile (`application-test.properties`) explicitly disables Liquibase (`spring.liquibase.enabled=false`) since tests run against H2 and this changelog is MySQL-specific.
+**Applying migrations is automatic** — `./mvnw spring-boot:run` runs them on every startup, no separate command needed. The test profile (`application-test.properties`) disables Liquibase (`spring.liquibase.enabled=false`) since most tests run against H2 and this changelog is MySQL-specific; `SchemaMigrationTest` turns it back on against a MySQL 8 Testcontainer and runs Hibernate `validate` on the result.
 
 **Adding a new migration** (when you change an entity): create `sql/00N-description.sql` with the raw `ALTER TABLE`/etc., add a matching `<changeSet>` to `db.changelog-master.xml`. This is manual — Liquibase doesn't auto-generate migrations from entity changes.
 

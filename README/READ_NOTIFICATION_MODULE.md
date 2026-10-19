@@ -8,7 +8,7 @@ controller/service that isn't the listener.
 
 ## Entity
 
-**`notifications` table** (`com.suwalink.IT3003.entity.Notification`)
+**`notifications` table** (`com.suwalink.entity.Notification`)
 
 | Column        | Type            | Notes                                      |
 |---------------|-----------------|----------------------------------------------|

@@ -6,32 +6,42 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 ## Stack
 
-- **Backend**: Spring Boot 4 (Java 26), Spring Security + JWT, Spring Data JPA/Hibernate, MySQL 8
+- **Backend**: Spring Boot 4 (Java 25), Spring Security + JWT, Spring Data JPA/Hibernate, MySQL 8
   via Liquibase migrations, springdoc-openapi.
 - **Frontend**: Plain HTML/CSS/vanilla JS (ES modules) + jQuery, Material Design 3 styling — no
   frontend framework. See [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md).
-- **Tests**: JUnit 5 + MockMvc against an in-memory H2 database.
+- **Tests**: JUnit 5 + MockMvc against an in-memory H2 database, plus one Testcontainers test that applies the
+  Liquibase changelog to MySQL 8 (needs a running Docker or Podman; see [`commands.md`](commands.md)).
 
 ## Quick start
 
 ```bash
 # 1. Database
-docker compose up -d                     # MySQL on localhost:3308
+docker compose up -d                     # MySQL on localhost:3308, Mailpit on localhost:8025
 
-# 2. Backend (needs JDK 26)
+# 2. Backend (needs JDK 25; the dev profile is the default, no extra config needed)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
 
 # 3. Frontend (must be port 5500 - see CORS note below)
 cd frontend && python -m http.server 5500
 ```
 
+> **Migrations were squashed into a single baseline.** If your local database was created before that change, reset
+> it once after pulling: `docker compose down -v && docker compose up -d` (this wipes local dev data).
+
 Open `http://localhost:5500` for the app, or `http://localhost:8080/swagger-ui/index.html` to
 call every endpoint directly and inspect real request/response shapes.
 
-A bootstrap admin account is seeded automatically: `admin@suwalink.local` / `AdminPass123!`.
+Emails (e.g. password reset OTPs) are caught by Mailpit: open `http://localhost:8025`.
+Production runs with `SPRING_PROFILES_ACTIVE=prod` and needs a `.env` (copy `.env.example`).
+
+On startup an admin account is created if none exists. In the `dev` profile it is `admin@suwalink.local` with the
+dev-only password in `application-dev.properties` (never use it elsewhere). In production, set `ADMIN_EMAIL` and
+`ADMIN_PASSWORD` (at least 12 characters) in `.env`; optionally `ADMIN_NAME`.
 
 **CORS note**: the frontend must be served on port 5500 (or add your port to
-`app.cors.allowed-origins` in `backend/src/main/resources/application.properties`) — opening the
+`app.cors.allowed-origins` in `backend/src/main/resources/application-dev.properties`, or set the
+`CORS_ALLOWED_ORIGINS` env var in production) — opening the
 HTML files directly (`file://`) or serving on another port gets every API call blocked.
 
 More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
@@ -54,7 +64,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 ## Project structure
 
 ```
-backend/    Spring Boot API (com.suwalink.IT3003)
+backend/    Spring Boot API (com.suwalink)
 frontend/   Static HTML/CSS/JS
 CONTEXT/    Product pitch, design system, specs
 README/     Per-module technical docs + diagrams

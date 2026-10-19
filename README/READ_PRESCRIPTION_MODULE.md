@@ -20,7 +20,7 @@ requests; a pharmacy can browse pending ones and view one in detail.
 
 ## Entity
 
-**`prescription_requests` table** (`com.suwalink.IT3003.entity.PrescriptionRequest`, extends
+**`prescription_requests` table** (`com.suwalink.entity.PrescriptionRequest`, extends
 `BaseAuditEntity` like `Inventory`/`MedicineMaster` — so it also carries `version`, `createdBy`,
 `updatedBy`, `createdAt`, `updatedAt`)
 
@@ -76,12 +76,12 @@ Response (`201`): a `PrescriptionRequestResponse` (see shape below), `status: "P
 
 The current patient's own requests, newest first. Response (`200`): `data` is an array.
 
-### `GET /api/prescriptions` — `PHARMACY_ADMIN` only
+### `GET /api/prescriptions` — `PHARMACY_OWNER` only
 
 All requests with `status = PENDING`, newest first — this is the "pharmacies can see submitted
 requests" browsing view. No filtering by distance/area yet (no location data is collected).
 
-### `GET /api/prescriptions/{id}` — `CUSTOMER` (owner only) or `PHARMACY_ADMIN` (any)
+### `GET /api/prescriptions/{id}` — `CUSTOMER` (owner only) or `PHARMACY_OWNER` (any)
 
 `403` if a customer requests someone else's prescription. `404` if the id doesn't exist.
 

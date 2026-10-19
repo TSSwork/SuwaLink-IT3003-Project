@@ -4,23 +4,23 @@ This mirrors your repo's folder structure exactly, so from your repo root you ca
 and overwrite:
 
 ```bash
-unzip -o prescription-module.zip -d /path/to/SuwaLink-IT3003-Project
+unzip -o prescription-module.zip -d /path/to/suwalink
 ```
 
 ## New files (safe to drop in)
 
-- backend/src/main/java/com/suwalink/IT3003/entity/PrescriptionRequestStatus.java
-- backend/src/main/java/com/suwalink/IT3003/entity/PrescriptionRequest.java
-- backend/src/main/java/com/suwalink/IT3003/repository/PrescriptionRequestRepository.java
-- backend/src/main/java/com/suwalink/IT3003/dto/request/CreatePrescriptionRequest.java
-- backend/src/main/java/com/suwalink/IT3003/dto/request/UpdatePrescriptionRequest.java
-- backend/src/main/java/com/suwalink/IT3003/dto/response/PrescriptionRequestResponse.java
-- backend/src/main/java/com/suwalink/IT3003/exception/PrescriptionAccessDeniedException.java
-- backend/src/main/java/com/suwalink/IT3003/service/PrescriptionRequestService.java
-- backend/src/main/java/com/suwalink/IT3003/service/impl/PrescriptionRequestServiceImpl.java
-- backend/src/main/java/com/suwalink/IT3003/controller/PrescriptionRequestController.java
+- backend/src/main/java/com/suwalink/entity/PrescriptionRequestStatus.java
+- backend/src/main/java/com/suwalink/entity/PrescriptionRequest.java
+- backend/src/main/java/com/suwalink/repository/PrescriptionRequestRepository.java
+- backend/src/main/java/com/suwalink/dto/request/CreatePrescriptionRequest.java
+- backend/src/main/java/com/suwalink/dto/request/UpdatePrescriptionRequest.java
+- backend/src/main/java/com/suwalink/dto/response/PrescriptionRequestResponse.java
+- backend/src/main/java/com/suwalink/exception/PrescriptionAccessDeniedException.java
+- backend/src/main/java/com/suwalink/service/PrescriptionRequestService.java
+- backend/src/main/java/com/suwalink/service/impl/PrescriptionRequestServiceImpl.java
+- backend/src/main/java/com/suwalink/controller/PrescriptionRequestController.java
 - backend/src/main/resources/db/changelog/sql/006-prescription-requests.sql
-- backend/src/test/java/com/suwalink/IT3003/controller/PrescriptionRequestControllerTest.java
+- backend/src/test/java/com/suwalink/controller/PrescriptionRequestControllerTest.java
 - README/READ_PRESCRIPTION_MODULE.md
 
 ## Modified files (overwrite — check the diff first if others have touched them since)

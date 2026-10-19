@@ -24,7 +24,7 @@ Framework
 
 Language
 
-- Java 26 (LTS preferred)
+- Java 25 (LTS)
 
 Build Tool
 
@@ -36,7 +36,7 @@ Database
 
 Development Database
 
-- H2 Database
+- MySQL 8 via docker compose (H2 is used only for tests)
 
 ORM
 
