@@ -10,7 +10,8 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
   via Liquibase migrations, springdoc-openapi.
 - **Frontend**: Plain HTML/CSS/vanilla JS (ES modules) + jQuery, Material Design 3 styling — no
   frontend framework. See [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md).
-- **Tests**: JUnit 5 + MockMvc against an in-memory H2 database.
+- **Tests**: JUnit 5 + MockMvc against an in-memory H2 database, plus one Testcontainers test that applies the
+  Liquibase changelog to MySQL 8 (needs a running Docker or Podman; see [`commands.md`](commands.md)).
 
 ## Quick start
 
@@ -24,6 +25,9 @@ cd backend && ./mvnw spring-boot:run     # http://localhost:8080
 # 3. Frontend (must be port 5500 - see CORS note below)
 cd frontend && python -m http.server 5500
 ```
+
+> **Migrations were squashed into a single baseline.** If your local database was created before that change, reset
+> it once after pulling: `docker compose down -v && docker compose up -d` (this wipes local dev data).
 
 Open `http://localhost:5500` for the app, or `http://localhost:8080/swagger-ui/index.html` to
 call every endpoint directly and inspect real request/response shapes.

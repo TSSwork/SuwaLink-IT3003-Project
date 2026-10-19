@@ -33,9 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
  * the dashboard used to be hardcoded to all-zeros, and deleting a user with dependent rows used
  * to throw an unhandled 500 instead of a clean 409.
  *
- * <p>The bootstrap admin account (004-admin-role.sql) only exists via Liquibase, which is
- * disabled for the H2 test profile (Hibernate generates the schema instead) - so each test
- * creates its own admin user directly rather than relying on admin@suwalink.local existing.
+ * <p>Each test creates its own admin user directly rather than relying on the account that
+ * {@code AdminBootstrap} creates from {@code app.admin.*} at startup.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

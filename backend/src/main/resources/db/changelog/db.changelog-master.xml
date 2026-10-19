@@ -9,75 +9,8 @@
         <sqlFile path="sql/001-baseline.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
-    <changeSet id="002-inventory-availability" author="suwalink">
-        <sqlFile path="sql/002-inventory-availability.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="003-seed-reference-data" author="suwalink">
-        <sqlFile path="sql/003-seed-reference-data.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="004-admin-role" author="suwalink">
-        <sqlFile path="sql/004-admin-role.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="005-image-metadata" author="suwalink">
-        <sqlFile path="sql/005-image-metadata.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="006-prescription-requests" author="suwalink">
-        <sqlFile path="sql/006-prescription-requests.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
-    </changeSet>
-    <!--
-  Add this <changeSet> inside backend/src/main/resources/db/changelog/db.changelog-master.xml,
-  after your existing 001-baseline changeSet. Update the "id" and "path" if you renumber the SQL file.
--->
-    <changeSet id="002-add-bookmarks-table" author="suwalink">
-        <sqlFile path="sql/002-add-bookmarks-table.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
-    </changeSet>
-    <changeSet id="006-notifications" author="suwalink">
-        <sqlFile path="sql/006-notifications.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="007-password-reset" author="suwalink">
-        <sqlFile path="sql/007-password-reset.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="008-prescription-responses" author="suwalink">
-        <sqlFile path="sql/008-prescription-responses.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="009-reservations" author="suwalink">
-        <sqlFile path="sql/009-reservations.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="010-pharmacy-status" author="suwalink">
-        <sqlFile path="sql/010-pharmacy-status.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
-    </changeSet>
-
-    <changeSet id="011-image-owner" author="suwalink">
-        <sqlFile path="sql/011-image-owner.sql"
-                 relativeToChangelogFile="true"
-                 splitStatements="true"
-                 stripComments="true"/>
+    <changeSet id="002-reference-data" author="suwalink">
+        <sqlFile path="sql/002-reference-data.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
 </databaseChangeLog>

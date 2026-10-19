@@ -5,12 +5,9 @@ Everything under `/api/admin/**` requires `Authorization: Bearer <token>` for a 
 `ADMIN` (enforced by `SecurityConfig`'s `.requestMatchers("/api/admin/**").hasRole("ADMIN")`, not
 per-endpoint `@PreAuthorize`).
 
-A bootstrap admin account is seeded by `db/changelog/sql/004-admin-role.sql`:
-
-```
-email: admin@suwalink.local
-password: AdminPass123!
-```
+A bootstrap admin account is created at startup by `AdminBootstrap` when no `ADMIN` exists, from
+`app.admin.email` / `app.admin.password`. In the `dev` profile that is `admin@suwalink.local` with the
+dev-only password in `application-dev.properties`; in production set `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 ## Pharmacy status model
 

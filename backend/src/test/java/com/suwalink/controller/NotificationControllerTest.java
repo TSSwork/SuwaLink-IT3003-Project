@@ -31,8 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
  * approval (which publishes a real PharmacyVerifiedEvent) as a deterministic way to generate a
  * real notification without mocking the event system.
  *
- * <p>Creates its own admin user directly - the bootstrap admin (004-admin-role.sql) only exists
- * via Liquibase, which is disabled in the H2 test profile.
+ * <p>Creates its own admin user directly rather than relying on the account that
+ * {@code AdminBootstrap} creates at startup.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
