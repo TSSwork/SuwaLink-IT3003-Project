@@ -71,6 +71,18 @@ class AdminControllerTest {
     private PharmacyRepository pharmacyRepository;
 
     @Test
+    void adminPharmacyListIncludesLocation() throws Exception {
+        String adminToken = loginAndGetToken(ADMIN_EMAIL, ADMIN_PASSWORD);
+        registerPharmacy("admin.loc.pharmacy@example.com", "LIC-LOC-1");
+
+        mockMvc.perform(get("/api/admin/pharmacies").header("Authorization", "Bearer " + adminToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[0].district").value("COLOMBO"))
+            .andExpect(jsonPath("$.data[0].latitude").exists())
+            .andExpect(jsonPath("$.data[0].longitude").exists());
+    }
+
+    @Test
     void dashboard_reflectsRealCounts_notHardcodedZeros() throws Exception {
         String adminToken = loginAndGetToken(ADMIN_EMAIL, ADMIN_PASSWORD);
         registerPharmacy("admin.dash.pharmacy@example.com", "LIC-DASH-1");

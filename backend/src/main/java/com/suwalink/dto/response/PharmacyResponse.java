@@ -1,4 +1,6 @@
 package com.suwalink.dto.response;
+import com.suwalink.entity.District;
+import java.math.BigDecimal;
 import lombok.*;
 
 @Getter
@@ -14,4 +16,11 @@ public class PharmacyResponse {
     private String licenceNo;
     private String address;
     private String status;
+    private String phone;
+    private District district;
+    private String city;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private String openingHours;
+    private boolean demo;
 }

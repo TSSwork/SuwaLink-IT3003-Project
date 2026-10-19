@@ -62,6 +62,13 @@ public class AdminServiceImpl implements AdminService {
                         .licenceNo(pharmacy.getLicenceNo())
                         .address(pharmacy.getAddress())
                         .status(pharmacy.getStatus().name())
+                        .phone(pharmacy.getPhone())
+                        .district(pharmacy.getDistrict())
+                        .city(pharmacy.getCity())
+                        .latitude(pharmacy.getLatitude())
+                        .longitude(pharmacy.getLongitude())
+                        .openingHours(pharmacy.getOpeningHours())
+                        .demo(pharmacy.isDemo())
                         .build())
                 .toList();
     }
