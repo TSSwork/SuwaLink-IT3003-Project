@@ -16,9 +16,9 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 ```bash
 # 1. Database
-docker compose up -d                     # MySQL on localhost:3308
+docker compose up -d                     # MySQL on localhost:3308, Mailpit on localhost:8025
 
-# 2. Backend (needs JDK 25)
+# 2. Backend (needs JDK 25; the dev profile is the default, no extra config needed)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
 
 # 3. Frontend (must be port 5500 - see CORS note below)
@@ -27,6 +27,9 @@ cd frontend && python -m http.server 5500
 
 Open `http://localhost:5500` for the app, or `http://localhost:8080/swagger-ui/index.html` to
 call every endpoint directly and inspect real request/response shapes.
+
+Emails (e.g. password reset OTPs) are caught by Mailpit: open `http://localhost:8025`.
+Production runs with `SPRING_PROFILES_ACTIVE=prod` and needs a `.env` (copy `.env.example`).
 
 A bootstrap admin account is seeded automatically: `admin@suwalink.local` / `AdminPass123!`.
 

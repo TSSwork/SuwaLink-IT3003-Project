@@ -13,7 +13,7 @@ public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.from}")
     private String fromAddress;
 
     @Value("${app.otp.expiry-minutes}")

@@ -1,6 +1,7 @@
 package com.suwalink.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.suwalink.entity.Role;
 import java.util.UUID;
@@ -29,5 +30,11 @@ class JwtServiceTest {
     @Test
     void isTokenValid_forGarbageToken_returnsFalse() {
         assertThat(jwtService.isTokenValid("not.a.valid.token")).isFalse();
+    }
+
+    @Test
+    void rejectsSecretShorterThan32Bytes() {
+        assertThatThrownBy(() -> new JwtService("too-short", 86_400_000L))
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("JWT_SECRET");
     }
 }

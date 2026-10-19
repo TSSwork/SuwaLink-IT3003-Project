@@ -5,7 +5,7 @@ Reference for every day-to-day command needed to run and debug this project (DB,
 ## Database (MySQL via Docker)
 
 ```bash
-docker compose up -d          # start MySQL (port 3308, db suwalink_db, user/pass suwalink_user/suwalink_password)
+docker compose up -d          # start MySQL + Mailpit (MySQL port 3308, db suwalink_db, user/pass suwalink_user/suwalink_password)
 ./scripts/dev-up.sh           # same, but first stops other Docker containers hogging ports (e.g. 8080)
 docker compose ps             # check container status
 docker compose down -v        # wipe DB volume — REQUIRED after changing creds in docker-compose.yml
@@ -15,7 +15,9 @@ docker compose down -v        # wipe DB volume — REQUIRED after changing creds
 ## Backend (Spring Boot, needs JDK 25)
 
 ```bash
-cd backend && ./mvnw spring-boot:run   # run the API (localhost:8080)
+cd backend && ./mvnw spring-boot:run   # run the API (localhost:8080); dev profile is the default, nothing else to set
+# Mailpit inbox (OTP emails in dev): http://localhost:8025
+# Prod: SPRING_PROFILES_ACTIVE=prod with variables from .env (see .env.example)
 cd backend && ./mvnw test              # run tests
 cd backend && ./mvnw clean install     # full build + tests
 ```
