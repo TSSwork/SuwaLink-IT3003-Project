@@ -31,10 +31,13 @@ call every endpoint directly and inspect real request/response shapes.
 Emails (e.g. password reset OTPs) are caught by Mailpit: open `http://localhost:8025`.
 Production runs with `SPRING_PROFILES_ACTIVE=prod` and needs a `.env` (copy `.env.example`).
 
-A bootstrap admin account is seeded automatically: `admin@suwalink.local` / `AdminPass123!`.
+On startup an admin account is created if none exists. In the `dev` profile it is `admin@suwalink.local` with the
+dev-only password in `application-dev.properties` (never use it elsewhere). In production, set `ADMIN_EMAIL` and
+`ADMIN_PASSWORD` (at least 12 characters) in `.env`; optionally `ADMIN_NAME`.
 
 **CORS note**: the frontend must be served on port 5500 (or add your port to
-`app.cors.allowed-origins` in `backend/src/main/resources/application.properties`) — opening the
+`app.cors.allowed-origins` in `backend/src/main/resources/application-dev.properties`, or set the
+`CORS_ALLOWED_ORIGINS` env var in production) — opening the
 HTML files directly (`file://`) or serving on another port gets every API call blocked.
 
 More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
