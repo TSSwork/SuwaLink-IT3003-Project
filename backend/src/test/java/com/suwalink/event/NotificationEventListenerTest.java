@@ -13,6 +13,7 @@ import com.suwalink.entity.Inventory;
 import com.suwalink.entity.Manufacturer;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.NotificationType;
+import com.suwalink.entity.District;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.PrescriptionStatus;
@@ -138,6 +139,12 @@ class NotificationEventListenerTest {
         User pharmacyUser = user("pharmacy@example.com", Role.PHARMACY_OWNER);
         Pharmacy pharmacy = Pharmacy.builder()
                 .id(UUID.randomUUID())
+                .name("Test Pharmacy")
+                .phone("0112345678")
+                .district(District.COLOMBO)
+                .city("Colombo")
+                .latitude(new java.math.BigDecimal("6.927100"))
+                .longitude(new java.math.BigDecimal("79.861200"))
                 .licenceNo("LIC-1")
                 .address("Addr")
                 .status(PharmacyStatus.VERIFIED)

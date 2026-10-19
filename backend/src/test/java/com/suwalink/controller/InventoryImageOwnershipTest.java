@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.UUID;
 import javax.imageio.ImageIO;
+import com.suwalink.support.TestPayloads;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -139,9 +140,7 @@ class InventoryImageOwnershipTest {
     private String registerVerifiedPharmacyAndLogin(String email, String licenceNo) throws Exception {
         mockMvc.perform(post("/api/auth/register/pharmacy")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    { "name": "Image Test Pharmacy", "email": "%s", "phone": "0112345678", "password": "SecurePass123", "licenceNo": "%s", "address": "123 Test Rd" }
-                    """.formatted(email, licenceNo)))
+                .content(TestPayloads.pharmacyRegistration(email, licenceNo)))
             .andExpect(status().isCreated());
 
         Pharmacy pharmacy = pharmacyRepository.findAll().stream()

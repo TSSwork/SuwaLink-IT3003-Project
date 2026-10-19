@@ -51,6 +51,10 @@ public class User {
     @Column(name = "role", nullable = false)
     private Role role;
 
+    @Column(name = "is_demo", nullable = false)
+    @Builder.Default
+    private boolean demo = false;
+
     @Column(name = "reset_otp")
     private String resetOtp;
 

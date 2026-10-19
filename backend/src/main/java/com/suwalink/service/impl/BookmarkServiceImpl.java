@@ -98,7 +98,7 @@ public class BookmarkServiceImpl implements BookmarkService {
                         .build())
                 .pharmacy(InventoryResponse.PharmacySummary.builder()
                         .id(pharmacy.getId())
-                        .name(pharmacy.getUser() != null ? pharmacy.getUser().getName() : null)
+                        .name(pharmacy.getName())
                         .address(pharmacy.getAddress())
                         .build())
                 .build();

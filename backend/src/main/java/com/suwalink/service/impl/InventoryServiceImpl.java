@@ -156,7 +156,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         InventoryResponse.PharmacySummary pharmacySummary = InventoryResponse.PharmacySummary.builder()
                 .id(inventory.getPharmacy().getId())
-                .name(inventory.getPharmacy().getUser().getName())
+                .name(inventory.getPharmacy().getName())
                 .address(inventory.getPharmacy().getAddress())
                 .build();
 

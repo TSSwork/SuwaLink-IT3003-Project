@@ -82,7 +82,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
         }
 
         eventPublisher.publishEvent(new PharmacyRespondedEvent(
-                this, prescriptionRequest.getPatient().getId(), pharmacy.getUser().getName()));
+                this, prescriptionRequest.getPatient().getId(), pharmacy.getName()));
 
         return toResponse(saved);
     }
@@ -149,7 +149,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
                 .id(response.getId())
                 .prescriptionRequestId(response.getPrescriptionRequest().getId())
                 .pharmacyId(response.getPharmacy().getId())
-                .pharmacyName(response.getPharmacy().getUser().getName())
+                .pharmacyName(response.getPharmacy().getName())
                 .message(response.getMessage())
                 .items(items)
                 .createdAt(response.getCreatedAt())

@@ -13,4 +13,8 @@
         <sqlFile path="sql/002-reference-data.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="003-pharmacy-profile" author="suwalink">
+        <sqlFile path="sql/003-pharmacy-profile.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

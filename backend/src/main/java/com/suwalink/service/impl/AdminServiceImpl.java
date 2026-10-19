@@ -57,7 +57,7 @@ public class AdminServiceImpl implements AdminService {
                 .stream()
                 .map(pharmacy -> PharmacyResponse.builder()
                         .id(pharmacy.getId().toString())
-                        .pharmacyName(pharmacy.getUser().getName())
+                        .pharmacyName(pharmacy.getName())
                         .email(pharmacy.getUser().getEmail())
                         .licenceNo(pharmacy.getLicenceNo())
                         .address(pharmacy.getAddress())
