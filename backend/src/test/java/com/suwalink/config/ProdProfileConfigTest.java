@@ -19,6 +19,7 @@ class ProdProfileConfigTest {
 
         // Command-line args outrank application.properties; builder properties do not.
         Throwable t = catchThrowable(() -> app.run(
+            "--JWT_SECRET=",
             "--spring.datasource.driverClassName=org.h2.Driver",
             "--spring.liquibase.enabled=false",
             "--spring.jpa.hibernate.ddl-auto=create-drop"));

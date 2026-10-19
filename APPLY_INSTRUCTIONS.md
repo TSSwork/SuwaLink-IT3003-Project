@@ -4,7 +4,7 @@ This mirrors your repo's folder structure exactly, so from your repo root you ca
 and overwrite:
 
 ```bash
-unzip -o prescription-module.zip -d /path/to/SuwaLink-IT3003-Project
+unzip -o prescription-module.zip -d /path/to/suwalink
 ```
 
 ## New files (safe to drop in)

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class AdminBootstrap implements ApplicationRunner {
 
+    private static final String DEFAULT_NAME = "SuwaLink Admin";
     private static final int MIN_PASSWORD_LENGTH = 12;
 
     private final UserRepository userRepository;
@@ -50,7 +51,7 @@ public class AdminBootstrap implements ApplicationRunner {
                     "ADMIN_PASSWORD must be at least " + MIN_PASSWORD_LENGTH + " characters");
         }
         userRepository.save(User.builder()
-                .name(name)
+                .name(name == null || name.isBlank() ? DEFAULT_NAME : name.trim())
                 .email(email)
                 .phone("0000000000")
                 .password(passwordEncoder.encode(password))

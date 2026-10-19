@@ -23,7 +23,11 @@ class AdminBootstrapTest {
     private final PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
 
     private AdminBootstrap bootstrap(String email, String password) {
-        return new AdminBootstrap(userRepository, encoder, email, password, "SuwaLink Admin");
+        return bootstrap(email, password, "SuwaLink Admin");
+    }
+
+    private AdminBootstrap bootstrap(String email, String password, String name) {
+        return new AdminBootstrap(userRepository, encoder, email, password, name);
     }
 
     @Test
@@ -66,5 +70,45 @@ class AdminBootstrapTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("ADMIN_EMAIL");
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void usesDefaultNameWhenNameBlank() {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(0L);
+
+        bootstrap("boot@suwalink.lk", "long-enough-pass", "").run(null);
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        assertThat(saved.getValue().getName()).isEqualTo("SuwaLink Admin");
+    }
+
+    @Test
+    void failsWhenPasswordNull() {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(0L);
+
+        assertThatThrownBy(() -> bootstrap("boot@suwalink.lk", null).run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_PASSWORD");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void failsWhenPasswordIs11Chars() {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(0L);
+
+        assertThatThrownBy(() -> bootstrap("boot@suwalink.lk", "12345678901").run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_PASSWORD");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void acceptsPasswordOfExactly12Chars() {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(0L);
+
+        bootstrap("boot@suwalink.lk", "123456789012").run(null);
+
+        verify(userRepository, times(1)).save(any());
     }
 }
