@@ -20,7 +20,7 @@ requests; a pharmacy can browse pending ones and view one in detail.
 
 ## Entity
 
-**`prescription_requests` table** (`com.suwalink.IT3003.entity.PrescriptionRequest`, extends
+**`prescription_requests` table** (`com.suwalink.entity.PrescriptionRequest`, extends
 `BaseAuditEntity` like `Inventory`/`MedicineMaster` — so it also carries `version`, `createdBy`,
 `updatedBy`, `createdAt`, `updatedAt`)
 

@@ -12,7 +12,7 @@ docker compose down -v        # wipe DB volume — REQUIRED after changing creds
                                # (the MySQL image only applies MYSQL_USER/DATABASE on first init of an empty volume)
 ```
 
-## Backend (Spring Boot, needs JDK 26)
+## Backend (Spring Boot, needs JDK 25)
 
 ```bash
 cd backend && ./mvnw spring-boot:run   # run the API (localhost:8080)
@@ -20,7 +20,7 @@ cd backend && ./mvnw test              # run tests
 cd backend && ./mvnw clean install     # full build + tests
 ```
 
-If your default `java` isn't 26, set `JAVA_HOME` to a JDK 26 install before running Maven.
+If your default `java` isn't 25, set `JAVA_HOME` to a JDK 25 install before running Maven.
 
 ## Frontend (static server)
 

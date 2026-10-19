@@ -7,7 +7,7 @@ near the bottom.
 
 ## Entities
 
-**`users` table** (`com.suwalink.IT3003.entity.User`)
+**`users` table** (`com.suwalink.entity.User`)
 
 | Column   | Type              | Notes                              |
 |----------|-------------------|-------------------------------------|
@@ -18,7 +18,7 @@ near the bottom.
 | password | VARCHAR           | BCrypt hash, never plain text       |
 | role     | ENUM/STRING       | `CUSTOMER` or `PHARMACY_ADMIN`      |
 
-**`pharmacies` table** (`com.suwalink.IT3003.entity.Pharmacy`)
+**`pharmacies` table** (`com.suwalink.entity.Pharmacy`)
 
 | Column      | Type              | Notes                          |
 |-------------|-------------------|----------------------------------|
@@ -39,7 +39,7 @@ Every endpoint (success or error) returns this shape:
 { "success": true, "message": "...", "data": { } }
 ```
 
-Errors use the same shape via `ApiErrorResponse` (`com.suwalink.IT3003.dto.response`), with an
+Errors use the same shape via `ApiErrorResponse` (`com.suwalink.dto.response`), with an
 optional `errors` array of `{ "field": "...", "message": "..." }` for validation failures.
 
 ## Endpoints
@@ -127,7 +127,7 @@ Response (`200`):
 
 ## For other developers: getting the current user
 
-Don't parse JWTs yourself. Inject `com.suwalink.IT3003.security.CurrentUserProvider` and call
+Don't parse JWTs yourself. Inject `com.suwalink.security.CurrentUserProvider` and call
 `getCurrentUser()` — it returns the `User` entity for whoever the request's Bearer token
 resolved to:
 
@@ -192,8 +192,8 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
    those values in `docker-compose.yml` after the container's already been created once, you
    must `docker compose down -v && docker compose up -d` — Docker's MySQL image only applies
    `MYSQL_USER`/`MYSQL_DATABASE`/etc. on first init of an empty volume, not on every restart.
-2. **Backend**: `cd backend && ./mvnw spring-boot:run`. Needs JDK 26 — if your default `java`
-   isn't 26, set `JAVA_HOME` to whichever JDK 26 install you have before running Maven.
+2. **Backend**: `cd backend && ./mvnw spring-boot:run`. Needs JDK 25 — if your default `java`
+   isn't 25, set `JAVA_HOME` to whichever JDK 25 install you have before running Maven.
 3. **Frontend**: it's plain static HTML/CSS/JS, so serve it with a simple static server rather
    than opening the files directly — from the `frontend/` directory:
    ```

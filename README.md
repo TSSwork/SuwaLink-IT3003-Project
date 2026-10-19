@@ -54,7 +54,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 ## Project structure
 
 ```
-backend/    Spring Boot API (com.suwalink.IT3003)
+backend/    Spring Boot API (com.suwalink)
 frontend/   Static HTML/CSS/JS
 CONTEXT/    Product pitch, design system, specs
 README/     Per-module technical docs + diagrams

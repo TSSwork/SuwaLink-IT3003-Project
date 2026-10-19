@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.suwalink</groupId>
-	<artifactId>IT3003</artifactId>
+	<artifactId>suwalink</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
+	<name>suwalink</name>
 	<description/>
 	<url/>
 	<licenses>
