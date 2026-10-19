@@ -17,4 +17,8 @@
         <sqlFile path="sql/003-pharmacy-profile.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="004-app-settings" author="suwalink">
+        <sqlFile path="sql/004-app-settings.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

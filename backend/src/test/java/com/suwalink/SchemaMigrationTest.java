@@ -48,6 +48,6 @@ class SchemaMigrationTest {
                         + " where table_schema = database() and table_name = 'users' and column_name = 'role'",
                 String.class)).isEqualTo("enum('CUSTOMER','PHARMACY_OWNER','ADMIN')");
         assertThat(jdbc.queryForObject("select count(*) from medicine_master", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(4);
     }
 }

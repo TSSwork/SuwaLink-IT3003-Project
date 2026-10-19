@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -129,6 +130,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(ApiErrorResponse.builder()
                 .message("Invalid email or password")
+                .build());
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiErrorResponse> handleDisabled(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiErrorResponse.builder()
+                .message("Demo accounts are currently disabled")
                 .build());
     }
 

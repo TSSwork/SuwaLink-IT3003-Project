@@ -1,10 +1,14 @@
 package com.suwalink.controller;
 
+import com.suwalink.dto.request.UpdateAppSettingsRequest;
 import com.suwalink.dto.response.ApiResponse;
+import com.suwalink.dto.response.AppSettingsResponse;
 import com.suwalink.dto.response.DashboardResponse;
 import com.suwalink.dto.response.PharmacyResponse;
 import com.suwalink.dto.response.UserResponse;
 import com.suwalink.service.AdminService;
+import com.suwalink.service.PharmacyVisibilityService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +21,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final PharmacyVisibilityService visibility;
+
+    @GetMapping("/settings")
+    public ResponseEntity<ApiResponse<AppSettingsResponse>> getSettings() {
+        return ResponseEntity.ok(ApiResponse.success("Settings",
+            new AppSettingsResponse(visibility.isDemoModePublic())));
+    }
+
+    @PutMapping("/settings")
+    public ResponseEntity<ApiResponse<AppSettingsResponse>> updateSettings(
+            @Valid @RequestBody UpdateAppSettingsRequest request) {
+        visibility.setDemoModePublic(request.getDemoModePublic());
+        return ResponseEntity.ok(ApiResponse.success("Settings updated",
+            new AppSettingsResponse(visibility.isDemoModePublic())));
+    }
 
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard() {
