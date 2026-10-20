@@ -37,4 +37,8 @@
         <sqlFile path="sql/008-user-preferences.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="009-notification-keys" author="suwalink">
+        <sqlFile path="sql/009-notification-keys.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

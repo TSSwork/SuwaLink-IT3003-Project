@@ -66,8 +66,8 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
             prescriptionRequestRepository.save(prescriptionRequest);
         }
 
-        eventPublisher.publishEvent(new PharmacyRespondedEvent(
-                this, prescriptionRequest.getPatient().getId(), pharmacy.getName(), false));
+        eventPublisher.publishEvent(new PharmacyRespondedEvent(this, prescriptionRequest.getId(),
+                prescriptionRequest.getPatient().getId(), pharmacy.getName(), false));
 
         return toResponse(saved);
     }
@@ -92,8 +92,8 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
         applyContent(response, pharmacy, request);
         PrescriptionResponse saved = prescriptionResponseRepository.save(response);
 
-        eventPublisher.publishEvent(new PharmacyRespondedEvent(
-                this, prescriptionRequest.getPatient().getId(), pharmacy.getName(), true));
+        eventPublisher.publishEvent(new PharmacyRespondedEvent(this, prescriptionRequest.getId(),
+                prescriptionRequest.getPatient().getId(), pharmacy.getName(), true));
 
         return toResponse(saved);
     }

@@ -10,6 +10,7 @@ import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
+import com.suwalink.event.PharmacyRegisteredEvent;
 import com.suwalink.exception.DuplicateResourceException;
 import com.suwalink.exception.EmailAlreadyExistsException;
 import com.suwalink.exception.InvalidOtpException;
@@ -26,6 +27,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -45,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final MailService mailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${app.otp.expiry-minutes}")
     private int otpExpiryMinutes;
@@ -90,7 +93,8 @@ public class AuthServiceImpl implements AuthService {
             .user(savedUser)
             .build();
 
-        pharmacyRepository.save(pharmacy);
+        Pharmacy saved = pharmacyRepository.save(pharmacy);
+        eventPublisher.publishEvent(new PharmacyRegisteredEvent(this, saved.getId(), saved.getName()));
     }
 
     @Override

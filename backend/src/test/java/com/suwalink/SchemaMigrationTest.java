@@ -58,6 +58,6 @@ class SchemaMigrationTest {
                         + " and column_name = 'status'",
                 String.class)).isEqualTo("enum('CONFIRMED','CANCELLED','COMPLETED','EXPIRED')");
         assertThat(jdbc.queryForObject("select count(*) from medicine_master", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(8);
+        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(9);
     }
 }

@@ -235,7 +235,7 @@ class PrescriptionResponseControllerTest {
                 .andExpect(jsonPath("$.data.items[0].unitPrice").value(25.00));
 
         assertThat(notificationRepository.findAll())
-                .anyMatch(n -> "Pharmacy updated its response".equals(n.getTitle()));
+                .anyMatch(n -> "notify.prescription.response-updated".equals(n.getMessageKey()));
     }
 
     @Test

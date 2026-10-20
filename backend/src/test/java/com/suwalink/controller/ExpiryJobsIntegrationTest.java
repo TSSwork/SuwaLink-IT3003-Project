@@ -1,12 +1,14 @@
 package com.suwalink.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.suwalink.entity.Category;
 import com.suwalink.entity.Currency;
 import com.suwalink.entity.District;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.Manufacturer;
+import com.suwalink.entity.Notification;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
@@ -164,6 +166,32 @@ class ExpiryJobsIntegrationTest {
                 .isEqualTo(PrescriptionRequestStatus.EXPIRED);
         assertThat(prescriptionRequestRepository.findById(fresh.getId()).orElseThrow().getStatus())
                 .isEqualTo(PrescriptionRequestStatus.PENDING);
+    }
+
+    @Test
+    void reservationExpiryNotifiesBothSides() {
+        Reservation overdue = reservation("NOTIFYEXP1", LocalDateTime.now().minusMinutes(1), item(inventory(1), 2));
+
+        assertThat(reservationService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
+
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(patient))
+                .extracting(Notification::getMessageKey, Notification::getLink)
+                .containsExactly(tuple("notify.reservation.expired", "/reservations/" + overdue.getId()));
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(pharmacyUser))
+                .extracting(Notification::getMessageKey, Notification::getLink)
+                .containsExactly(tuple("notify.reservation.expired", "/pharmacy/reservations"));
+    }
+
+    @Test
+    void expiredRequestNotifiesCustomer() {
+        PrescriptionRequest overdue = request(LocalDateTime.now().minusMinutes(1));
+
+        assertThat(prescriptionRequestService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
+
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(patient))
+                .extracting(Notification::getMessageKey, Notification::getLink)
+                .containsExactly(tuple("notify.prescription.expired", "/prescriptions/" + overdue.getId()));
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(pharmacyUser)).isEmpty();
     }
 
     private Inventory inventory(int stock) {

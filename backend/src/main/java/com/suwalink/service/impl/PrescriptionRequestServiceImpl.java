@@ -14,6 +14,7 @@ import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.District;
 import com.suwalink.entity.TargetScope;
 import com.suwalink.event.PrescriptionAddedEvent;
+import com.suwalink.event.PrescriptionRequestExpiredEvent;
 import com.suwalink.exception.NoPharmaciesInScopeException;
 import com.suwalink.exception.PrescriptionAccessDeniedException;
 import com.suwalink.exception.PrescriptionRequestClosedException;
@@ -104,13 +105,14 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .targetPharmacies(new HashSet<>(targets))
             .build();
 
-        PrescriptionRequestResponse response = toResponse(prescriptionRequestRepository.save(prescriptionRequest));
+        PrescriptionRequest saved = prescriptionRequestRepository.save(prescriptionRequest);
+        PrescriptionRequestResponse response = toResponse(saved);
 
         List<UUID> targetUserIds = targets.stream()
             .map(Pharmacy::getUser)
             .map(User::getId)
             .toList();
-        eventPublisher.publishEvent(new PrescriptionAddedEvent(this, targetUserIds));
+        eventPublisher.publishEvent(new PrescriptionAddedEvent(this, saved.getId(), patient.getId(), targetUserIds));
 
         return response;
     }
@@ -224,6 +226,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
         }
         request.setStatus(PrescriptionRequestStatus.EXPIRED);
         prescriptionRequestRepository.save(request);
+        eventPublisher.publishEvent(new PrescriptionRequestExpiredEvent(this, id, request.getPatient().getId()));
         return true;
     }
 

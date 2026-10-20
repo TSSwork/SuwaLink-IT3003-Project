@@ -84,7 +84,7 @@ public class AdminServiceImpl implements AdminService {
         pharmacy.setStatus(PharmacyStatus.VERIFIED);
 
         pharmacyRepository.save(pharmacy);
-        eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId()));
+        eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId(), pharmacy.getName()));
     }
 
     @Override
@@ -96,7 +96,7 @@ public class AdminServiceImpl implements AdminService {
         pharmacy.setStatus(PharmacyStatus.REJECTED);
 
         pharmacyRepository.save(pharmacy);
-        eventPublisher.publishEvent(new PharmacyRejectedEvent(this, pharmacy.getUser().getId()));
+        eventPublisher.publishEvent(new PharmacyRejectedEvent(this, pharmacy.getUser().getId(), pharmacy.getName()));
     }
 
     @Override

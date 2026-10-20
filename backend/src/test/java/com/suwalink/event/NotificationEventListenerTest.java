@@ -1,9 +1,14 @@
 package com.suwalink.event;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.suwalink.entity.CancelledBy;
@@ -26,7 +31,13 @@ import com.suwalink.entity.User;
 import com.suwalink.repository.ReservationRepository;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.service.NotificationService;
+import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Properties;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -51,103 +62,198 @@ class NotificationEventListenerTest {
     }
 
     @Test
-    void handlePharmacyVerifiedEvent_notifiesThePharmacyUser() {
-        User pharmacyUser = user("pharmacy@example.com", Role.PHARMACY_OWNER);
-        when(userRepository.findById(pharmacyUser.getId())).thenReturn(Optional.of(pharmacyUser));
+    void pharmacyRegistrationNotifiesAdmins() {
+        User adminA = user("admin.a@example.com", Role.ADMIN);
+        User adminB = user("admin.b@example.com", Role.ADMIN);
+        when(userRepository.findAllByRole(Role.ADMIN)).thenReturn(List.of(adminA, adminB));
 
-        listener.handlePharmacyVerifiedEvent(new PharmacyVerifiedEvent(this, pharmacyUser.getId()));
+        listener.handlePharmacyRegisteredEvent(new PharmacyRegisteredEvent(this, UUID.randomUUID(), "City Pharmacy"));
 
-        verify(notificationService).createNotification(
-                eq(pharmacyUser), any(), any(), eq(NotificationType.SYSTEM_ALERT));
+        for (User admin : List.of(adminA, adminB)) {
+            verify(notificationService).notify(admin, NotificationType.SYSTEM_ALERT,
+                    NotificationKeys.PHARMACY_REGISTERED, Map.of("pharmacy", "City Pharmacy"), "/admin/pharmacies");
+        }
+        verifyNoMoreInteractions(notificationService);
     }
 
     @Test
-    void handlePrescriptionAddedEvent_notifiesEveryPharmacyUser() {
+    void pharmacyApprovedNotifiesOwner() {
+        User owner = user("pharmacy@example.com", Role.PHARMACY_OWNER);
+        when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
+
+        listener.handlePharmacyVerifiedEvent(new PharmacyVerifiedEvent(this, owner.getId(), "City Pharmacy"));
+
+        verify(notificationService).notify(owner, NotificationType.SYSTEM_ALERT,
+                NotificationKeys.PHARMACY_APPROVED, Map.of("pharmacy", "City Pharmacy"), "/pharmacy");
+    }
+
+    @Test
+    void pharmacyRejectedNotifiesOwner() {
+        User owner = user("pharmacy@example.com", Role.PHARMACY_OWNER);
+        when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
+
+        listener.handlePharmacyRejectedEvent(new PharmacyRejectedEvent(this, owner.getId(), "City Pharmacy"));
+
+        verify(notificationService).notify(owner, NotificationType.SYSTEM_ALERT,
+                NotificationKeys.PHARMACY_REJECTED, Map.of("pharmacy", "City Pharmacy"), "/");
+    }
+
+    @Test
+    void prescriptionSentNotifiesCustomerAndTargetsOnly() {
+        User customer = user("patient@example.com", Role.CUSTOMER);
         User pharmacyA = user("a@example.com", Role.PHARMACY_OWNER);
         User pharmacyB = user("b@example.com", Role.PHARMACY_OWNER);
-        when(userRepository.findById(pharmacyA.getId())).thenReturn(Optional.of(pharmacyA));
-        when(userRepository.findById(pharmacyB.getId())).thenReturn(Optional.of(pharmacyB));
+        for (User u : List.of(customer, pharmacyA, pharmacyB)) {
+            when(userRepository.findById(u.getId())).thenReturn(Optional.of(u));
+        }
+        UUID requestId = UUID.randomUUID();
 
-        listener.handlePrescriptionAddedEvent(
-                new PrescriptionAddedEvent(this, List.of(pharmacyA.getId(), pharmacyB.getId())));
+        listener.handlePrescriptionAddedEvent(new PrescriptionAddedEvent(
+                this, requestId, customer.getId(), List.of(pharmacyA.getId(), pharmacyB.getId())));
 
-        verify(notificationService).createNotification(
-                eq(pharmacyA), any(), any(), eq(NotificationType.PRESCRIPTION));
-        verify(notificationService).createNotification(
-                eq(pharmacyB), any(), any(), eq(NotificationType.PRESCRIPTION));
+        verify(notificationService).notify(customer, NotificationType.PRESCRIPTION,
+                NotificationKeys.PRESCRIPTION_SENT, Map.of("count", "2"), "/prescriptions/" + requestId);
+        for (User pharmacy : List.of(pharmacyA, pharmacyB)) {
+            verify(notificationService).notify(pharmacy, NotificationType.PRESCRIPTION,
+                    NotificationKeys.PRESCRIPTION_NEW, Map.of(), "/pharmacy/requests/" + requestId);
+        }
+        verifyNoMoreInteractions(notificationService);
     }
 
     @Test
-    void handlePharmacyRespondedEvent_notifiesThePatient() {
-        User patient = user("patient@example.com", Role.CUSTOMER);
-        when(userRepository.findById(patient.getId())).thenReturn(Optional.of(patient));
+    void pharmacyRespondedNotifiesCustomer() {
+        User customer = user("patient@example.com", Role.CUSTOMER);
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+        UUID requestId = UUID.randomUUID();
 
-        listener.handlePharmacyRespondedEvent(new PharmacyRespondedEvent(this, patient.getId(), "City Pharmacy", false));
+        listener.handlePharmacyRespondedEvent(
+                new PharmacyRespondedEvent(this, requestId, customer.getId(), "City Pharmacy", false));
+        listener.handlePharmacyRespondedEvent(
+                new PharmacyRespondedEvent(this, requestId, customer.getId(), "City Pharmacy", true));
 
-        verify(notificationService).createNotification(
-                eq(patient), any(), any(), eq(NotificationType.PRESCRIPTION));
+        verify(notificationService).notify(customer, NotificationType.PRESCRIPTION,
+                NotificationKeys.PRESCRIPTION_RESPONDED, Map.of("pharmacy", "City Pharmacy"),
+                "/prescriptions/" + requestId);
+        verify(notificationService).notify(customer, NotificationType.PRESCRIPTION,
+                NotificationKeys.PRESCRIPTION_RESPONSE_UPDATED, Map.of("pharmacy", "City Pharmacy"),
+                "/prescriptions/" + requestId);
     }
 
     @Test
-    void handleReservationCreatedEvent_notifiesBothPatientAndPharmacy() {
+    void expiredRequestNotifiesCustomer() {
+        User customer = user("patient@example.com", Role.CUSTOMER);
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+        UUID requestId = UUID.randomUUID();
+
+        listener.handlePrescriptionRequestExpiredEvent(
+                new PrescriptionRequestExpiredEvent(this, requestId, customer.getId()));
+
+        verify(notificationService).notify(customer, NotificationType.PRESCRIPTION,
+                NotificationKeys.PRESCRIPTION_EXPIRED, Map.of(), "/prescriptions/" + requestId);
+        verifyNoMoreInteractions(notificationService);
+    }
+
+    @Test
+    void reservationCreatedNotifiesCustomerAndPharmacy() {
         Reservation reservation = sampleReservation();
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
 
         listener.handleReservationCreatedEvent(new ReservationCreatedEvent(this, reservation.getId()));
 
-        verify(notificationService).createNotification(
-                eq(reservation.getPatient()), any(),
-                eq("Your reservation of 2 x Panadol 500mg at Test Pharmacy is confirmed."),
-                eq(NotificationType.RESERVATION));
-        verify(notificationService).createNotification(
-                eq(reservation.getPharmacy().getUser()), any(), any(), eq(NotificationType.RESERVATION));
+        verify(notificationService).notify(reservation.getPatient(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_CONFIRMED,
+                Map.of("items", "Panadol 500mg × 2", "pharmacy", "Test Pharmacy", "code", "ABCDEFGH23"),
+                "/reservations/" + reservation.getId());
+        verify(notificationService).notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_NEW,
+                Map.of("items", "Panadol 500mg × 2", "customer", "Test User"),
+                "/pharmacy/reservations");
     }
 
     @Test
-    void handleReservationCreatedEvent_withSeveralLines_countsItems() {
+    void reservationItemsListEveryLine() {
         Reservation reservation = sampleReservation();
         Inventory inventory = reservation.getItems().get(0).getInventoryItem();
-        for (int i = 0; i < 2; i++) {
-            reservation.addItem(ReservationItem.builder()
-                    .id(UUID.randomUUID())
-                    .inventoryItem(inventory)
-                    .quantity(1)
-                    .unitPrice(BigDecimal.ONE)
-                    .medicineName("Other " + i)
-                    .build());
-        }
+        reservation.addItem(ReservationItem.builder()
+                .id(UUID.randomUUID())
+                .inventoryItem(inventory)
+                .quantity(1)
+                .unitPrice(BigDecimal.ONE)
+                .medicineName("Amoxil 250mg")
+                .build());
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
 
-        listener.handleReservationCreatedEvent(new ReservationCreatedEvent(this, reservation.getId()));
+        listener.handleReservationCompletedEvent(new ReservationCompletedEvent(this, reservation.getId()));
 
-        verify(notificationService).createNotification(
-                eq(reservation.getPatient()), any(),
-                eq("Your reservation of 3 items at Test Pharmacy is confirmed."),
-                eq(NotificationType.RESERVATION));
+        verify(notificationService).notify(reservation.getPatient(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_COMPLETED,
+                Map.of("items", "Panadol 500mg × 2, Amoxil 250mg × 1", "pharmacy", "Test Pharmacy"),
+                "/reservations/" + reservation.getId());
     }
 
     @Test
-    void handleReservationCancelledEvent_byPatient_notifiesThePharmacy() {
+    void reservationCancelledByCustomerNotifiesPharmacyOnly() {
         Reservation reservation = sampleReservation();
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
 
         listener.handleReservationCancelledEvent(
                 new ReservationCancelledEvent(this, reservation.getId(), CancelledBy.PATIENT));
 
-        verify(notificationService).createNotification(
-                eq(reservation.getPharmacy().getUser()), any(), any(), eq(NotificationType.RESERVATION));
+        verify(notificationService).notify(eq(reservation.getPharmacy().getUser()), eq(NotificationType.RESERVATION),
+                eq(NotificationKeys.RESERVATION_CANCELLED_BY_CUSTOMER), anyMap(), eq("/pharmacy/reservations"));
+        verifyNoMoreInteractions(notificationService);
     }
 
     @Test
-    void handleReservationCancelledEvent_byPharmacy_notifiesThePatient() {
+    void reservationCancelledByPharmacyNotifiesCustomerOnly() {
         Reservation reservation = sampleReservation();
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
 
         listener.handleReservationCancelledEvent(
                 new ReservationCancelledEvent(this, reservation.getId(), CancelledBy.PHARMACY));
 
-        verify(notificationService).createNotification(
-                eq(reservation.getPatient()), any(), any(), eq(NotificationType.RESERVATION));
+        verify(notificationService).notify(eq(reservation.getPatient()), eq(NotificationType.RESERVATION),
+                eq(NotificationKeys.RESERVATION_CANCELLED_BY_PHARMACY), anyMap(),
+                eq("/reservations/" + reservation.getId()));
+        verifyNoMoreInteractions(notificationService);
+    }
+
+    @Test
+    void reservationExpiredNotifiesBothSides() {
+        Reservation reservation = sampleReservation();
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        listener.handleReservationExpiredEvent(new ReservationExpiredEvent(this, reservation.getId()));
+
+        verify(notificationService).notify(eq(reservation.getPatient()), eq(NotificationType.RESERVATION),
+                eq(NotificationKeys.RESERVATION_EXPIRED), anyMap(), eq("/reservations/" + reservation.getId()));
+        verify(notificationService).notify(eq(reservation.getPharmacy().getUser()), eq(NotificationType.RESERVATION),
+                eq(NotificationKeys.RESERVATION_EXPIRED), anyMap(), eq("/pharmacy/reservations"));
+        verify(notificationService, times(2)).notify(any(), any(), anyString(), anyMap(), anyString());
+    }
+
+    /** Every key the listener (or Task 6's medicine events) can use has a title and body in en/si/ta. */
+    @Test
+    void everyNotifyKeyExistsInAllBundles() throws Exception {
+        List<String> keys = new java.util.ArrayList<>();
+        for (Field field : NotificationKeys.class.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers()) && field.getType() == String.class) {
+                keys.add((String) field.get(null));
+            }
+        }
+        assertThat(keys).contains("notify.pharmacy.registered", "notify.reservation.expired",
+                "notify.medicine.approved", "notify.medicine.rejected");
+
+        for (String bundle : List.of("messages", "messages_si", "messages_ta")) {
+            Properties properties = new Properties();
+            try (var in = getClass().getResourceAsStream("/i18n/" + bundle + ".properties")) {
+                properties.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+            }
+            for (String key : keys) {
+                assertThat(properties.getProperty(key + ".title")).as(bundle + ": " + key + ".title").isNotBlank();
+                assertThat(properties.getProperty(key + ".body")).as(bundle + ": " + key + ".body").isNotBlank();
+            }
+        }
     }
 
     private User user(String email, Role role) {

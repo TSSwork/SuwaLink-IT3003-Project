@@ -3,19 +3,26 @@ package com.suwalink.event;
 import com.suwalink.entity.CancelledBy;
 import com.suwalink.entity.NotificationType;
 import com.suwalink.entity.Reservation;
-import com.suwalink.entity.ReservationItem;
+import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.repository.ReservationRepository;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.service.NotificationService;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.UUID;
-
+/**
+ * Turns domain events into keyed notifications (recipients per spec §9.6). Text lives in the
+ * message bundles under {@code <key>.title} / {@code <key>.body}; params fill their {@code {name}}
+ * placeholders when the notification is rendered in the reader's language.
+ */
 @Component
 public class NotificationEventListener {
+
+    private static final String PHARMACY_RESERVATIONS = "/pharmacy/reservations";
 
     private final NotificationService notificationService;
     private final UserRepository userRepository;
@@ -31,80 +38,87 @@ public class NotificationEventListener {
     }
 
     @EventListener
+    public void handlePharmacyRegisteredEvent(PharmacyRegisteredEvent event) {
+        Map<String, String> params = Map.of("pharmacy", event.getPharmacyName());
+        for (User admin : userRepository.findAllByRole(Role.ADMIN)) {
+            notificationService.notify(admin, NotificationType.SYSTEM_ALERT,
+                    NotificationKeys.PHARMACY_REGISTERED, params, "/admin/pharmacies");
+        }
+    }
+
+    @EventListener
     public void handlePharmacyVerifiedEvent(PharmacyVerifiedEvent event) {
-        String title = "Pharmacy Verified";
-        String message = "Your pharmacy profile has been successfully verified by the Admin!";
-        User recipient = findUser(event.getPharmacyUserId());
-        notificationService.createNotification(recipient, title, message, NotificationType.SYSTEM_ALERT);
+        notificationService.notify(findUser(event.getPharmacyUserId()), NotificationType.SYSTEM_ALERT,
+                NotificationKeys.PHARMACY_APPROVED, Map.of("pharmacy", event.getPharmacyName()), "/pharmacy");
     }
 
     @EventListener
     public void handlePharmacyRejectedEvent(PharmacyRejectedEvent event) {
-        String title = "Pharmacy Application Rejected";
-        String message = "Your pharmacy application was reviewed and was not approved.";
-        User recipient = findUser(event.getPharmacyUserId());
-        notificationService.createNotification(recipient, title, message, NotificationType.SYSTEM_ALERT);
+        notificationService.notify(findUser(event.getPharmacyUserId()), NotificationType.SYSTEM_ALERT,
+                NotificationKeys.PHARMACY_REJECTED, Map.of("pharmacy", event.getPharmacyName()), "/");
     }
 
     @EventListener
     public void handlePrescriptionAddedEvent(PrescriptionAddedEvent event) {
-        String title = "New Prescription Available";
-        String message = "A new prescription has been uploaded in your area. Please check the dashboard to respond.";
+        UUID requestId = event.getRequestId();
+        notificationService.notify(findUser(event.getCustomerUserId()), NotificationType.PRESCRIPTION,
+                NotificationKeys.PRESCRIPTION_SENT,
+                Map.of("count", String.valueOf(event.getPharmacyUserIds().size())),
+                "/prescriptions/" + requestId);
 
         for (UUID pharmacyUserId : event.getPharmacyUserIds()) {
-            User recipient = findUser(pharmacyUserId);
-            notificationService.createNotification(recipient, title, message, NotificationType.PRESCRIPTION);
+            notificationService.notify(findUser(pharmacyUserId), NotificationType.PRESCRIPTION,
+                    NotificationKeys.PRESCRIPTION_NEW, Map.of(), "/pharmacy/requests/" + requestId);
         }
     }
 
     @EventListener
     public void handlePharmacyRespondedEvent(PharmacyRespondedEvent event) {
-        String title = event.isUpdated() ? "Pharmacy updated its response" : "Pharmacy Responded";
-        String message = event.getPharmacyName()
-                + (event.isUpdated() ? " has updated its response to your prescription."
-                        : " has responded to your prescription.")
-                + " Please check your dashboard.";
+        String key = event.isUpdated()
+                ? NotificationKeys.PRESCRIPTION_RESPONSE_UPDATED
+                : NotificationKeys.PRESCRIPTION_RESPONDED;
+        notificationService.notify(findUser(event.getPatientUserId()), NotificationType.PRESCRIPTION,
+                key, Map.of("pharmacy", event.getPharmacyName()), "/prescriptions/" + event.getRequestId());
+    }
 
-        User recipient = findUser(event.getPatientUserId());
-        notificationService.createNotification(recipient, title, message, NotificationType.PRESCRIPTION);
+    @EventListener
+    public void handlePrescriptionRequestExpiredEvent(PrescriptionRequestExpiredEvent event) {
+        notificationService.notify(findUser(event.getCustomerUserId()), NotificationType.PRESCRIPTION,
+                NotificationKeys.PRESCRIPTION_EXPIRED, Map.of(), "/prescriptions/" + event.getRequestId());
     }
 
     @EventListener
     public void handleReservationCreatedEvent(ReservationCreatedEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
-        String reserved = describeItems(reservation);
-        String pharmacyName = reservation.getPharmacy().getName();
+        String items = describeItems(reservation);
 
-        notificationService.createNotification(
-                reservation.getPatient(),
-                "Reservation Confirmed",
-                "Your reservation of " + reserved + " at " + pharmacyName + " is confirmed.",
-                NotificationType.RESERVATION);
+        notificationService.notify(reservation.getPatient(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_CONFIRMED,
+                Map.of("items", items, "pharmacy", reservation.getPharmacy().getName(),
+                        "code", reservation.getPickupCode()),
+                customerLink(reservation));
 
-        notificationService.createNotification(
-                reservation.getPharmacy().getUser(),
-                "New Reservation",
-                reservation.getPatient().getName() + " reserved " + reserved + ".",
-                NotificationType.RESERVATION);
+        notificationService.notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_NEW,
+                Map.of("items", items, "customer", reservation.getPatient().getName()),
+                PHARMACY_RESERVATIONS);
     }
 
     @EventListener
     public void handleReservationCancelledEvent(ReservationCancelledEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
-        String reserved = describeItems(reservation);
+        String items = describeItems(reservation);
 
         if (event.getCancelledBy() == CancelledBy.PATIENT) {
-            notificationService.createNotification(
-                    reservation.getPharmacy().getUser(),
-                    "Reservation Cancelled",
-                    reservation.getPatient().getName() + " cancelled their reservation of " + reserved + ".",
-                    NotificationType.RESERVATION);
+            notificationService.notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
+                    NotificationKeys.RESERVATION_CANCELLED_BY_CUSTOMER,
+                    Map.of("items", items, "customer", reservation.getPatient().getName()),
+                    PHARMACY_RESERVATIONS);
         } else {
-            notificationService.createNotification(
-                    reservation.getPatient(),
-                    "Reservation Cancelled",
-                    "Your reservation of " + reserved + " was cancelled by the pharmacy.",
-                    NotificationType.RESERVATION);
+            notificationService.notify(reservation.getPatient(), NotificationType.RESERVATION,
+                    NotificationKeys.RESERVATION_CANCELLED_BY_PHARMACY,
+                    Map.of("items", items, "pharmacy", reservation.getPharmacy().getName()),
+                    customerLink(reservation));
         }
     }
 
@@ -112,41 +126,35 @@ public class NotificationEventListener {
     public void handleReservationCompletedEvent(ReservationCompletedEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
 
-        notificationService.createNotification(
-                reservation.getPatient(),
-                "Reservation Completed",
-                "You collected " + describeItems(reservation) + " from " + reservation.getPharmacy().getName() + ".",
-                NotificationType.RESERVATION);
+        notificationService.notify(reservation.getPatient(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_COMPLETED,
+                Map.of("items", describeItems(reservation), "pharmacy", reservation.getPharmacy().getName()),
+                customerLink(reservation));
     }
 
     @EventListener
     public void handleReservationExpiredEvent(ReservationExpiredEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
-        String reserved = describeItems(reservation);
+        Map<String, String> params = Map.of(
+                "items", describeItems(reservation),
+                "pharmacy", reservation.getPharmacy().getName(),
+                "customer", reservation.getPatient().getName());
 
-        notificationService.createNotification(
-                reservation.getPatient(),
-                "Reservation Expired",
-                "Your reservation of " + reserved + " at " + reservation.getPharmacy().getName()
-                        + " was not collected in time and has expired.",
-                NotificationType.RESERVATION);
-
-        notificationService.createNotification(
-                reservation.getPharmacy().getUser(),
-                "Reservation Expired",
-                reservation.getPatient().getName() + "'s reservation of " + reserved
-                        + " expired uncollected; the stock was released.",
-                NotificationType.RESERVATION);
+        notificationService.notify(reservation.getPatient(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_EXPIRED, params, customerLink(reservation));
+        notificationService.notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
+                NotificationKeys.RESERVATION_EXPIRED, params, PHARMACY_RESERVATIONS);
     }
 
-    /** "3 items" for a multi-line reservation, otherwise "2 x Panadol 500mg". */
-    private String describeItems(Reservation reservation) {
-        List<ReservationItem> items = reservation.getItems();
-        if (items.size() == 1) {
-            ReservationItem item = items.get(0);
-            return item.getQuantity() + " x " + item.getMedicineName();
-        }
-        return items.size() + " items";
+    /** Language-neutral item list, e.g. "Panadol 500mg × 2, Amoxil 250mg × 1". */
+    private static String describeItems(Reservation reservation) {
+        return reservation.getItems().stream()
+                .map(item -> item.getMedicineName() + " × " + item.getQuantity())
+                .collect(Collectors.joining(", "));
+    }
+
+    private static String customerLink(Reservation reservation) {
+        return "/reservations/" + reservation.getId();
     }
 
     private User findUser(UUID userId) {
