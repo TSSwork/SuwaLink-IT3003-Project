@@ -32,14 +32,6 @@ to start, also set `TESTCONTAINERS_RYUK_DISABLED=true`).
 
 If your default `java` isn't 25, set `JAVA_HOME` to a JDK 25 install before running Maven.
 
-## Frontend (static server)
-
-```bash
-cd frontend && python -m http.server 5500
-```
-
-Must be port 5500 (or add your port to `app.cors.allowed-origins` in `backend/src/main/resources/application-dev.properties`, or set the `CORS_ALLOWED_ORIGINS` env var in production) — CORS blocks `file://` URLs and other ports.
-
 ## Swagger / OpenAPI
 
 Backend must be running first (`./mvnw spring-boot:run`).

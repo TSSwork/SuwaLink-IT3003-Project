@@ -3,8 +3,6 @@ package com.suwalink.service;
 import com.suwalink.dto.request.CreateInventoryRequest;
 import com.suwalink.dto.request.UpdateInventoryRequest;
 import com.suwalink.dto.response.InventoryResponse;
-import com.suwalink.entity.PrescriptionStatus;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,11 +20,4 @@ public interface InventoryService {
 
     void removeInventoryItem(UUID id);
 
-    List<InventoryResponse> search(
-            String query,
-            UUID categoryId,
-            UUID manufacturerId,
-            PrescriptionStatus legalCategory,
-            BigDecimal minPrice,
-            BigDecimal maxPrice);
 }

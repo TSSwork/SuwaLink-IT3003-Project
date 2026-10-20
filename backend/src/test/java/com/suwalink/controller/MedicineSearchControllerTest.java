@@ -192,13 +192,6 @@ class MedicineSearchControllerTest {
     }
 
     @Test
-    void oldInventorySearchAppliesOfferRule() throws Exception {
-        mockMvc.perform(get("/api/inventory/search").param("query", "panadol"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(2));
-    }
-
-    @Test
     void invalidDistrictReturns400() throws Exception {
         mockMvc.perform(get("/api/medicines/search").param("district", "LONDON"))
                 .andExpect(status().isBadRequest())

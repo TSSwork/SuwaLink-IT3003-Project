@@ -184,7 +184,6 @@ Both paths are `permitAll()`'d in `SecurityConfig` — otherwise the JWT filter 
 
 1. **Database**: `docker compose up -d` from the repo root (or `./scripts/dev-up.sh`, which also stops any other container hogging a port SuwaLink needs, e.g. 8080).
 2. **Backend**: `cd backend && ./mvnw spring-boot:run` — needs JDK 25. Schema is managed by **Liquibase**, not Hibernate (`spring.jpa.hibernate.ddl-auto=validate`) — migrations in `backend/src/main/resources/db/changelog/` apply automatically on every boot, including seed reference data (categories, manufacturers, three sample medicines). A bootstrap admin (`admin@suwalink.local`, dev-only password in `application-dev.properties`) is created at startup by `AdminBootstrap`.
-3. **Frontend**: `cd frontend && python -m http.server 5500` (must be this port — CORS allow-list).
 
 ### Adding a new migration
 
@@ -196,7 +195,7 @@ Liquibase applies migrations automatically but does **not** generate them from e
 # 1. Register + verify a pharmacy (verification is currently manual — no admin-approval UI yet)
 curl -X POST http://localhost:8080/api/auth/register/pharmacy -H "Content-Type: application/json" \
   -d '{"name":"My Pharmacy","email":"pharm@example.com","phone":"0770000000","password":"pass1234","licenceNo":"LIC001","address":"Colombo","pharmacyName":"My Pharmacy","district":"COLOMBO","city":"Colombo","latitude":6.9271,"longitude":79.8612,"openingHours":"Mon-Sat 8am-8pm"}'
-# then: UPDATE pharmacies p JOIN users u ON p.user_id=u.id SET p.is_verified=1 WHERE u.email='pharm@example.com';
+# then approve it as admin: PUT /api/admin/pharmacies/<id>/approve (admin token)
 
 # 2. Login, grab the token
 curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" \
@@ -206,8 +205,8 @@ curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/
 curl -X POST http://localhost:8080/api/inventory -H "Content-Type: application/json" -H "Authorization: Bearer <token>" \
   -d '{"medicineMasterId":"<id>","unitPrice":150.00,"stockQuantity":50,"expireDate":"2027-01-01"}'
 
-# 4. Search as any logged-in user (customer or pharmacy)
-curl http://localhost:8080/api/inventory/search?query=panadol -H "Authorization: Bearer <token>"
+# 4. Search (public, no token needed)
+curl "http://localhost:8080/api/medicines/search?q=panadol&lat=6.9271&lng=79.8612"
 ```
 
 ## Search & offers
