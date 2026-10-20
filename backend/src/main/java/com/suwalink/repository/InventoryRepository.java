@@ -26,8 +26,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             + "JOIN FETCH i.pharmacy p "
             + "WHERE i.available = true "
             + "AND i.stockQuantity > 0 AND i.expireDate > :today "
-            + "AND p.status = com.suwalink.entity.PharmacyStatus.VERIFIED "
-            + "AND (p.demo = false OR :includeDemo = true) "
+            + "AND " + VisibilityJpql.VISIBLE_PHARMACY_P + " "
             + "AND (:query IS NULL "
             + "     OR LOWER(m.brandName) LIKE LOWER(CONCAT('%', :query, '%')) "
             + "     OR LOWER(m.genericName) LIKE LOWER(CONCAT('%', :query, '%'))) "
@@ -49,8 +48,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             + "WHERE p.id = :pharmacyId "
             + "AND i.available = true "
             + "AND i.stockQuantity > 0 AND i.expireDate > :today "
-            + "AND p.status = com.suwalink.entity.PharmacyStatus.VERIFIED "
-            + "AND (p.demo = false OR :includeDemo = true) "
+            + "AND " + VisibilityJpql.VISIBLE_PHARMACY_P + " "
             + "ORDER BY m.brandName, i.unitPrice")
     List<Inventory> findOffersByPharmacy(
             @Param("pharmacyId") UUID pharmacyId,
