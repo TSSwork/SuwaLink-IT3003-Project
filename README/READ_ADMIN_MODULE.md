@@ -73,14 +73,17 @@ unknown or deleted users.
 
 Deletion is by anonymisation (`AccountService`); nothing is hard-deleted. Name becomes
 `Deleted user`, email `deleted-<id>@deleted.suwalink.invalid`, phone `0000000000`, password a random
-hash, `deleted_at` set; old tokens get `401` and the original email can register again. The user's
+hash, `deleted_at` set; old tokens get `401` and the original email can register again (tokens are
+also matched to the account id, so an old token never works for the new account). The user's
 notifications are removed.
 
 - Customer: CONFIRMED reservations are cancelled as by the patient (reason `Account deleted`, stock
   returned, pharmacy notified), open prescription requests are closed, their prescription image files
-  are deleted (`purged_at` set) and bookmarks removed.
+  are deleted (`purged_at` set), the note and location (`note`, `latitude`, `longitude`, `district`) of
+  all their requests are cleared, bookmarks removed, and pharmacies' notifications naming them (found by the
+  `customerId` param) now say `Deleted user`.
 - Pharmacy owner: refused with `409 OPEN_RESERVATIONS` while any reservation is `CONFIRMED`; otherwise
-  the pharmacy becomes `DEACTIVATED` (hidden everywhere) and all its inventory unavailable. Existing
+  the pharmacy's inventory rows are locked first (as a reservation create does), then the pharmacy becomes `DEACTIVATED` (hidden everywhere) and all its inventory unavailable. Existing
   prescription responses keep the pharmacy name with `pharmacyActive: false`.
 - Admins can't be deleted, by themselves or another admin (`409 ACCOUNT_ACTION_NOT_ALLOWED`).
   Self-deletion with a wrong password is `400 INVALID_PASSWORD`.

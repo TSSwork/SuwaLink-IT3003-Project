@@ -2,6 +2,7 @@ package com.suwalink.service.impl;
 
 import com.suwalink.dto.request.DeleteAccountRequest;
 import com.suwalink.entity.Inventory;
+import com.suwalink.entity.Notification;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.PrescriptionRequest;
 import com.suwalink.entity.PrescriptionRequestStatus;
@@ -27,11 +28,15 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -58,8 +63,9 @@ public class AccountServiceImpl implements AccountService {
     private final CurrentUserProvider currentUserProvider;
     private final PasswordEncoder passwordEncoder;
 
+    /** READ_COMMITTED: the open-reservation check runs after taking row locks and must see rows committed meanwhile. */
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteMyAccount(DeleteAccountRequest request) {
         User user = currentUserProvider.getCurrentUser();
         requireNotAdmin(user, "Admin accounts can't be deleted");
@@ -70,7 +76,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteUser(UUID id) {
         User user = findLiveUser(id);
         requireNotAdmin(user, "Admin accounts can't be deleted");
@@ -100,6 +106,7 @@ public class AccountServiceImpl implements AccountService {
             deactivatePharmacy(user);
         } else {
             removeCustomerData(user);
+            renameInOtherNotifications(user);
         }
         notificationRepository.deleteByRecipient_Id(user.getId());
         anonymise(user);
@@ -111,21 +118,44 @@ public class AccountServiceImpl implements AccountService {
         for (PrescriptionRequest request : prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(customerId)) {
             if (OPEN_REQUEST_STATUSES.contains(request.getStatus())) {
                 request.setStatus(PrescriptionRequestStatus.CLOSED);
-                prescriptionRequestRepository.save(request);
             }
+            // Free text and location could identify the customer; the age may stay.
+            request.setNote(null);
+            request.setLatitude(null);
+            request.setLongitude(null);
+            request.setDistrict(null);
+            prescriptionRequestRepository.save(request);
             imageService.purgeFile(request.getImage());
         }
         bookmarkRepository.deleteByUserId(customerId);
     }
 
+    /** Pharmacies' notifications about this customer (new reservation, cancellation, expiry) stop naming them. */
+    private void renameInOtherNotifications(User customer) {
+        for (Notification notification : notificationRepository.findMentioningCustomer(customer.getId().toString())) {
+            Map<String, String> params = new LinkedHashMap<>(notification.getParams());
+            params.put("customer", DELETED_NAME);
+            notification.setParams(params);
+            notificationRepository.save(notification);
+        }
+    }
+
+    /**
+     * Locks the pharmacy's inventory rows first (the same id-ordered locks a reservation create takes),
+     * so a reservation can't be created between the open-reservation check and marking stock unavailable.
+     */
     private void deactivatePharmacy(User owner) {
         pharmacyRepository.findByUserId(owner.getId()).ifPresent(pharmacy -> {
+            List<UUID> inventoryIds = inventoryRepository.findByPharmacyId(pharmacy.getId()).stream()
+                    .map(Inventory::getId)
+                    .toList();
+            List<Inventory> locked = inventoryIds.isEmpty() ? List.of() : inventoryRepository.lockAllById(inventoryIds);
             if (reservationRepository.existsByPharmacyIdAndStatus(pharmacy.getId(), ReservationStatus.CONFIRMED)) {
                 throw new OpenReservationsException("Complete or cancel open reservations first");
             }
             pharmacy.setStatus(PharmacyStatus.DEACTIVATED);
             pharmacyRepository.save(pharmacy);
-            for (Inventory inventory : inventoryRepository.findByPharmacyId(pharmacy.getId())) {
+            for (Inventory inventory : locked) {
                 inventory.setAvailable(false);
             }
         });

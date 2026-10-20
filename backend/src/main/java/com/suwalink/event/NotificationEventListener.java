@@ -24,6 +24,12 @@ public class NotificationEventListener {
 
     private static final String PHARMACY_RESERVATIONS = "/pharmacy/reservations";
 
+    /**
+     * Param holding the customer's user id next to {@code customer} (their name), so the name can be
+     * replaced when the customer deletes their account. Not referenced by any message text.
+     */
+    public static final String CUSTOMER_ID_PARAM = "customerId";
+
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
@@ -100,7 +106,8 @@ public class NotificationEventListener {
 
         notificationService.notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
                 NotificationKeys.RESERVATION_NEW,
-                Map.of("items", items, "customer", reservation.getPatient().getName()),
+                Map.of("items", items, "customer", reservation.getPatient().getName(),
+                        CUSTOMER_ID_PARAM, reservation.getPatient().getId().toString()),
                 PHARMACY_RESERVATIONS);
     }
 
@@ -112,7 +119,8 @@ public class NotificationEventListener {
         if (event.getCancelledBy() == CancelledBy.PATIENT) {
             notificationService.notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
                     NotificationKeys.RESERVATION_CANCELLED_BY_CUSTOMER,
-                    Map.of("items", items, "customer", reservation.getPatient().getName()),
+                    Map.of("items", items, "customer", reservation.getPatient().getName(),
+                        CUSTOMER_ID_PARAM, reservation.getPatient().getId().toString()),
                     PHARMACY_RESERVATIONS);
         } else {
             notificationService.notify(reservation.getPatient(), NotificationType.RESERVATION,
@@ -138,7 +146,8 @@ public class NotificationEventListener {
         Map<String, String> params = Map.of(
                 "items", describeItems(reservation),
                 "pharmacy", reservation.getPharmacy().getName(),
-                "customer", reservation.getPatient().getName());
+                "customer", reservation.getPatient().getName(),
+                CUSTOMER_ID_PARAM, reservation.getPatient().getId().toString());
 
         notificationService.notify(reservation.getPatient(), NotificationType.RESERVATION,
                 NotificationKeys.RESERVATION_EXPIRED, params, customerLink(reservation));

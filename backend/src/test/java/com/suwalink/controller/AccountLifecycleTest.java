@@ -101,13 +101,19 @@ class AccountLifecycleTest {
         String customerToken = registerCustomerAndLogin(email);
         UUID customerId = userId(email);
         String pharmacyEmail = "acct.del.customer.pharmacy@example.com";
-        registerVerifiedPharmacyAndLogin(pharmacyEmail, "LIC-AD-C1");
+        String ownerToken = registerVerifiedPharmacyAndLogin(pharmacyEmail, "LIC-AD-C1");
         UUID inventoryId = createInventoryItem(pharmacyEmail, 10);
 
         String reservationId = reserve(customerToken, inventoryId, 3);
         assertThat(inventoryRepository.findById(inventoryId).orElseThrow().getStockQuantity()).isEqualTo(7);
-        String requestId = createPrescription(customerToken);
+        assertThat(ownerNotifications(ownerToken)).contains("Test Customer");
+        String requestId = createPrescription(customerToken,
+            TestPayloads.prescriptionTargetRadius("6.927100", "79.861200"), "Private note");
+        String districtRequestId = createPrescription(customerToken,
+            TestPayloads.prescriptionTargetDistrict("COLOMBO"), "Another note");
         PrescriptionRequest request = prescriptionRequestRepository.findById(UUID.fromString(requestId)).orElseThrow();
+        assertThat(request.getNote()).isEqualTo("Private note");
+        assertThat(request.getLatitude()).isNotNull();
         Image image = request.getImage();
         Path imageFile = Path.of(image.getFilePath());
         assertThat(Files.exists(imageFile)).isTrue();
@@ -132,8 +138,23 @@ class AccountLifecycleTest {
         assertThat(reservation.getCancelReason()).isEqualTo("Account deleted");
         assertThat(inventoryRepository.findById(inventoryId).orElseThrow().getStockQuantity()).isEqualTo(10);
 
-        assertThat(prescriptionRequestRepository.findById(request.getId()).orElseThrow().getStatus())
-            .isEqualTo(PrescriptionRequestStatus.CLOSED);
+        for (String id : new String[] {requestId, districtRequestId}) {
+            PrescriptionRequest closed = prescriptionRequestRepository.findById(UUID.fromString(id)).orElseThrow();
+            assertThat(closed.getStatus()).isEqualTo(PrescriptionRequestStatus.CLOSED);
+            assertThat(closed.getNote()).isNull();
+            assertThat(closed.getLatitude()).isNull();
+            assertThat(closed.getLongitude()).isNull();
+            assertThat(closed.getDistrict()).isNull();
+        }
+        mockMvc.perform(get("/api/prescriptions/" + districtRequestId).header("Authorization", bearer(adminToken())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.note").doesNotExist())
+            .andExpect(jsonPath("$.data.district").doesNotExist())
+            .andExpect(jsonPath("$.data.patientName").value("Deleted user"));
+
+        // The pharmacy's notifications (new reservation, cancelled by customer) no longer name the customer.
+        String ownerNotificationsAfter = ownerNotifications(ownerToken);
+        assertThat(ownerNotificationsAfter).doesNotContain("Test Customer").contains("Deleted user");
         assertThat(Files.exists(imageFile)).isFalse();
         assertThat(image.getPurgedAt()).isNotNull();
 
@@ -146,6 +167,21 @@ class AccountLifecycleTest {
         assertThat(deleted.getPhone()).isEqualTo("0000000000");
         assertThat(deleted.getDeletedAt()).isNotNull();
         assertThat(passwordEncoder.matches(PASSWORD, deleted.getPassword())).isFalse();
+    }
+
+    @Test
+    void oldTokenStopsWorkingWhenDeletedUsersEmailIsRegisteredAgain() throws Exception {
+        String email = "acct.reused.email@example.com";
+        String oldToken = registerCustomerAndLogin(email);
+        deleteMe(oldToken, PASSWORD).andExpect(status().isOk());
+
+        String newToken = registerCustomerAndLogin(email);
+
+        mockMvc.perform(get("/api/users/me").header("Authorization", bearer(oldToken)))
+            .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/users/me").header("Authorization", bearer(newToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.email").value(email));
     }
 
     @Test
@@ -444,13 +480,31 @@ class AccountLifecycleTest {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.data.id");
     }
 
+    private String ownerNotifications(String ownerToken) throws Exception {
+        return mockMvc.perform(get("/api/notifications").header("Authorization", bearer(ownerToken)))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     private String createPrescription(String customerToken) throws Exception {
+        return createPrescription(customerToken, TestPayloads.prescriptionTargetAll(), null);
+    }
+
+    private String createPrescription(
+            String customerToken, org.springframework.test.web.servlet.request.RequestPostProcessor target, String note)
+            throws Exception {
         BufferedImage image = new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ImageIO.write(image, "png", out);
         MvcResult result = mockMvc.perform(multipart("/api/prescriptions")
                 .file(new MockMultipartFile("image", "p.png", MediaType.IMAGE_PNG_VALUE, out.toByteArray()))
-                .with(TestPayloads.prescriptionTargetAll())
+                .with(target)
+                .with(request -> {
+                    if (note != null) {
+                        request.setParameter("note", note);
+                    }
+                    return request;
+                })
                 .param("patientAge", "30")
                 .header("Authorization", bearer(customerToken)))
             .andExpect(status().isCreated())

@@ -166,7 +166,8 @@ class NotificationEventListenerTest {
                 "/reservations/" + reservation.getId());
         verify(notificationService).notify(reservation.getPharmacy().getUser(), NotificationType.RESERVATION,
                 NotificationKeys.RESERVATION_NEW,
-                Map.of("items", "Panadol 500mg × 2", "customer", "Test User"),
+                Map.of("items", "Panadol 500mg × 2", "customer", "Test User",
+                        "customerId", reservation.getPatient().getId().toString()),
                 "/pharmacy/reservations");
     }
 
