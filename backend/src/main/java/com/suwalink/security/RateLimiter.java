@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,18 +28,26 @@ public class RateLimiter {
     private final Clock clock;
     private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
     private final AtomicLong lastSweep;
+    private final int maxEntries;
 
-    public RateLimiter(Clock clock) {
+    public RateLimiter(Clock clock, @Value("${app.rate-limit.max-entries:100000}") int maxEntries) {
         this.clock = clock;
+        this.maxEntries = maxEntries;
         this.lastSweep = new AtomicLong(clock.millis());
     }
 
     /** Counts one attempt; returns false (without counting further) once the window's limit is used up. */
     public boolean tryAcquire(String bucket, String key, int limit, Duration window) {
         long now = clock.millis();
-        sweep(now);
+        sweep(now, false);
+        if (windows.size() >= maxEntries) {
+            sweep(now, true);
+        }
         boolean[] allowed = {false};
         windows.compute(bucket + '|' + key, (k, w) -> {
+            if (w == null && windows.size() >= maxEntries) {
+                return null; // table full of live windows: refuse new keys instead of growing
+            }
             Window current = (w == null || w.endMillis <= now) ? new Window(now + window.toMillis()) : w;
             if (current.count < limit) {
                 current.count++;
@@ -59,9 +68,13 @@ public class RateLimiter {
         return Math.max(1, (remaining + 999) / 1000);
     }
 
-    private void sweep(long now) {
+    int size() {
+        return windows.size();
+    }
+
+    private void sweep(long now, boolean force) {
         long last = lastSweep.get();
-        if (now - last >= SWEEP_INTERVAL_MS && lastSweep.compareAndSet(last, now)) {
+        if (force || (now - last >= SWEEP_INTERVAL_MS && lastSweep.compareAndSet(last, now))) {
             windows.values().removeIf(w -> w.endMillis <= now);
         }
     }

@@ -28,6 +28,7 @@ import tools.jackson.databind.ObjectMapper;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int MAX_BODY_BYTES = 16 * 1024;
+    private static final int MAX_EMAIL_LENGTH = 254;
     private static final Duration LOGIN_WINDOW = Duration.ofMinutes(5);
     private static final Duration REGISTER_WINDOW = Duration.ofHours(1);
     private static final Duration FORGOT_WINDOW = Duration.ofHours(1);
@@ -80,7 +81,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (needsEmail) {
             byte[] body = request.getInputStream().readNBytes(MAX_BODY_BYTES + 1);
             if (body.length > MAX_BODY_BYTES) {
-                response.setStatus(413);
+                writeError(request, response, 413, "PAYLOAD_TOO_LARGE", "error.payload_too_large", null);
                 return;
             }
             forwarded = new CachedBodyRequest(request, body);
@@ -90,10 +91,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         boolean allowed;
         if (path.equals("/api/auth/login")) {
             allowed = check("login-ip", ip, loginIp, LOGIN_WINDOW)
-                    & check("login-email", email, loginEmail, LOGIN_WINDOW);
+                    && check("login-email", email, loginEmail, LOGIN_WINDOW);
         } else if (path.equals("/api/auth/forgot-password")) {
             allowed = check("forgot-ip", ip, forgotIp, FORGOT_WINDOW)
-                    & check("forgot-email", email, forgotEmail, FORGOT_WINDOW);
+                    && check("forgot-email", email, forgotEmail, FORGOT_WINDOW);
         } else if (path.equals("/api/auth/reset-password")) {
             allowed = check("reset-email", email, resetEmail, RESET_WINDOW);
         } else {
@@ -132,7 +133,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         try {
             JsonNode node = objectMapper.readTree(body).get("email");
             if (node != null && node.isString() && !node.asString().isBlank()) {
-                return node.asString().trim().toLowerCase(Locale.ROOT);
+                String normalised = node.asString().trim().toLowerCase(Locale.ROOT);
+                // oversize "emails" are not valid anyway; limit by IP only so they can't mint buckets
+                return normalised.length() > MAX_EMAIL_LENGTH ? null : normalised;
             }
         } catch (RuntimeException ignored) {
             // malformed JSON: let the controller reject it; only the IP limit applies
@@ -141,13 +144,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private void reject(HttpServletRequest request, HttpServletResponse response, long retryAfter) throws IOException {
-        response.setStatus(429);
-        response.setHeader("Retry-After", String.valueOf(retryAfter));
+        writeError(request, response, 429, "RATE_LIMITED", "error.rate_limited", String.valueOf(retryAfter));
+    }
+
+    private void writeError(HttpServletRequest request, HttpServletResponse response, int status, String code,
+            String messageKey, String retryAfter) throws IOException {
+        response.setStatus(status);
+        if (retryAfter != null) {
+            response.setHeader("Retry-After", retryAfter);
+        }
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         ApiErrorResponse body = ApiErrorResponse.builder()
-            .code("RATE_LIMITED")
-            .message(messageSource.getMessage("error.rate_limited", null, request.getLocale()))
+            .code(code)
+            .message(messageSource.getMessage(messageKey, null, request.getLocale()))
             .build();
         response.getWriter().write(objectMapper.writeValueAsString(body));
     }

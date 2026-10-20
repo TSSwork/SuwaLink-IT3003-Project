@@ -58,6 +58,7 @@ class RateLimitTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired MutableClock clock;
+    @Autowired RateLimiter limiter;
 
     private ResultActions postJson(String path, String ip, String json) throws Exception {
         return mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(json)
@@ -107,5 +108,50 @@ class RateLimitTest {
         login("10.3.0.9", "reset.a@example.com").andExpect(status().isTooManyRequests());
         clock.advance(Duration.ofMinutes(5).plusSeconds(1));
         login("10.3.0.9", "reset.a@example.com").andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void oversizeEmailIsLimitedByIpOnlyAndCreatesNoEmailBucket() throws Exception {
+        int before = limiter.size();
+        String huge = "a".repeat(300) + "@example.com";
+        for (int i = 0; i < 10; i++) {
+            login("10.4.0.1", huge).andExpect(status().isBadRequest());
+        }
+        // only the IP window was created
+        org.junit.jupiter.api.Assertions.assertEquals(before + 1, limiter.size());
+        login("10.4.0.1", huge).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void ipBlockedRequestDoesNotConsumeVictimEmailBudget() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            login("10.5.0.1", "filler" + i + "@example.com").andExpect(status().isUnauthorized());
+        }
+        for (int i = 0; i < 20; i++) {
+            login("10.5.0.1", "victim.b@example.com").andExpect(status().isTooManyRequests());
+        }
+        for (int i = 0; i < 5; i++) {
+            login("10.5.0." + (10 + i), "victim.b@example.com").andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test
+    void oversizeBodyIs413WithErrorShape() throws Exception {
+        postJson("/api/auth/login", "10.6.0.1", "{\"email\":\"" + "a".repeat(20000) + "\"}")
+            .andExpect(status().isPayloadTooLarge())
+            .andExpect(jsonPath("$.code").value("PAYLOAD_TOO_LARGE"));
+    }
+
+    @Test
+    void fullTableRefusesNewKeys() {
+        RateLimiter small = new RateLimiter(clock, 2);
+        Duration w = Duration.ofMinutes(5);
+        org.junit.jupiter.api.Assertions.assertTrue(small.tryAcquire("b", "k1", 5, w));
+        org.junit.jupiter.api.Assertions.assertTrue(small.tryAcquire("b", "k2", 5, w));
+        org.junit.jupiter.api.Assertions.assertFalse(small.tryAcquire("b", "k3", 5, w));
+        org.junit.jupiter.api.Assertions.assertEquals(2, small.size());
+        org.junit.jupiter.api.Assertions.assertTrue(small.tryAcquire("b", "k1", 5, w)); // existing still served
+        clock.advance(w.plusSeconds(1));
+        org.junit.jupiter.api.Assertions.assertTrue(small.tryAcquire("b", "k3", 5, w)); // expired swept, room again
     }
 }
