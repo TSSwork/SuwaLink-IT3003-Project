@@ -141,4 +141,9 @@ class PharmacyPublicControllerTest {
     void meStillRequiresOwnerRole() throws Exception {
         mockMvc.perform(get("/api/pharmacies/me")).andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void malformedPharmacyIdReturns400() throws Exception {
+        mockMvc.perform(get("/api/pharmacies/not-a-uuid")).andExpect(status().isBadRequest());
+    }
 }

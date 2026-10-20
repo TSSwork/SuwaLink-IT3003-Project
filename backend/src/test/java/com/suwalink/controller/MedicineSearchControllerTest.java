@@ -197,4 +197,53 @@ class MedicineSearchControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(2));
     }
+
+    @Test
+    void invalidDistrictReturns400() throws Exception {
+        mockMvc.perform(get("/api/medicines/search").param("district", "LONDON"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid value for parameter 'district'"));
+    }
+
+    @Test
+    void invalidLatitudeReturns400() throws Exception {
+        mockMvc.perform(get("/api/medicines/search").param("lat", "abc").param("lng", "80"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void malformedMedicineIdReturns400() throws Exception {
+        mockMvc.perform(get("/api/medicines/not-a-uuid")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void districtIsCaseInsensitive() throws Exception {
+        mockMvc.perform(get("/api/medicines/search").param("q", "panadol").param("district", "kandy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].pharmacyCount").value(1));
+    }
+
+    @Test
+    void districtWithSpaceIsAccepted() throws Exception {
+        mockMvc.perform(get("/api/medicines/search").param("district", "Nuwara Eliya"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void equalDistanceResultsAreOrderedByBrandName() throws Exception {
+        MedicineMaster aspirin = medicineMasterRepository.save(MedicineMaster.builder()
+                .brandName("Aspirin").genericName("Acetylsalicylic acid").dosageForm("Tablet").strength("100mg")
+                .unitOfMeasure(UnitOfMeasure.TABLET).manufacturer(panadol.getManufacturer())
+                .therapeuticCategory(panadol.getTherapeuticCategory())
+                .legalCategory(PrescriptionStatus.OTC).build());
+        inventoryRepository.save(Inventory.builder()
+                .medicineMaster(aspirin).pharmacy(colombo).unitPrice(new BigDecimal("4.00"))
+                .currency(Currency.LKR).stockQuantity(5).expireDate(LocalDate.now().plusYears(1))
+                .available(true).build());
+        mockMvc.perform(get("/api/medicines/search")
+                        .param("lat", "6.9271").param("lng", "79.8612"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].brandName").value("Aspirin"))
+                .andExpect(jsonPath("$.data.content[1].brandName").value("Panadol"));
+    }
 }

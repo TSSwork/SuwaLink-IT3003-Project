@@ -47,8 +47,9 @@ public class MedicineSearchServiceImpl implements MedicineSearchService {
 
         Comparator<MedicineSearchResult> order = hasLocation
                 ? Comparator.comparing(MedicineSearchResult::getNearestDistanceKm)
-                : Comparator.comparingInt(MedicineSearchResult::getPharmacyCount).reversed()
-                        .thenComparing(MedicineSearchResult::getBrandName);
+                : Comparator.comparingInt(MedicineSearchResult::getPharmacyCount).reversed();
+        order = order.thenComparing(MedicineSearchResult::getBrandName)
+                .thenComparing(r -> r.getMedicineId().toString());
 
         List<MedicineSearchResult> sorted = groupByMedicine(offers).values().stream()
                 .map(group -> toSearchResult(group, lat, lng))

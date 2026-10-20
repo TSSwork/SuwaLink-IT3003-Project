@@ -69,8 +69,13 @@ until verified (verification itself is someone else's part; this module just res
 
 Request:
 ```json
-{ "name": "...", "email": "...", "phone": "...", "password": "...", "licenceNo": "...", "address": "..." }
+{ "name": "...", "email": "...", "phone": "...", "password": "...", "licenceNo": "...", "address": "...",
+  "pharmacyName": "...", "district": "KANDY", "city": "...", "latitude": 7.2906, "longitude": 80.6337,
+  "openingHours": "Mon-Sat 8am-8pm" }
 ```
+`pharmacyName`, `district`, `city`, `latitude`, `longitude` are required; `openingHours` is optional
+(max 255 chars). `district` is a Sri Lanka district name (case-insensitive). Coordinates must be
+within Sri Lanka: `latitude` 5.85 to 9.90, `longitude` 79.50 to 81.95 (otherwise `400`).
 Response (`201`):
 ```json
 { "success": true, "message": "Registered. Awaiting verification.", "data": null }
@@ -96,6 +101,8 @@ Response (`200`):
 - `401` — bad credentials (also covers unknown email).
 - `403` — pharmacy account not yet verified (`PharmacyNotVerifiedException`). Token is never
   issued in this case — enforced server-side, so no client can bypass it.
+- `403` — "Demo accounts are currently disabled": the account is a demo account and demo mode is
+  switched off (see `READ_INVENTORY_MODULE.md`, Search & offers).
 
 ### `GET /api/users/me` — authenticated
 

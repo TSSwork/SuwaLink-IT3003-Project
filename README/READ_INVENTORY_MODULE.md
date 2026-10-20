@@ -195,7 +195,7 @@ Liquibase applies migrations automatically but does **not** generate them from e
 ```bash
 # 1. Register + verify a pharmacy (verification is currently manual — no admin-approval UI yet)
 curl -X POST http://localhost:8080/api/auth/register/pharmacy -H "Content-Type: application/json" \
-  -d '{"name":"My Pharmacy","email":"pharm@example.com","phone":"0770000000","password":"pass1234","licenceNo":"LIC001","address":"Colombo"}'
+  -d '{"name":"My Pharmacy","email":"pharm@example.com","phone":"0770000000","password":"pass1234","licenceNo":"LIC001","address":"Colombo","pharmacyName":"My Pharmacy","district":"COLOMBO","city":"Colombo","latitude":6.9271,"longitude":79.8612,"openingHours":"Mon-Sat 8am-8pm"}'
 # then: UPDATE pharmacies p JOIN users u ON p.user_id=u.id SET p.is_verified=1 WHERE u.email='pharm@example.com';
 
 # 2. Login, grab the token
@@ -218,10 +218,12 @@ Public (no token) endpoints for finding medicines and the pharmacies that stock 
 |---|---|
 | `GET /api/medicines/search` | Medicines grouped with pharmacy count, lowest price and nearest distance. Params: `q`, `categoryId`, `district`, `lat`, `lng`, `page`, `size` |
 | `GET /api/medicines/{id}` | Medicine detail (includes `requiresPrescription`) |
-| `GET /api/medicines/{id}/offers` | Offers for one medicine. Params: `district`, `lat`, `lng`, `sort=distance\|price` (distance needs `lat`+`lng`; default is price) |
+| `GET /api/medicines/{id}/offers` | Offers for one medicine. Params: `district`, `lat`, `lng`, `sort=distance\|price` (distance needs `lat`+`lng`; default is distance when `lat`+`lng` are given, price otherwise) |
 | `GET /api/pharmacies/{id}` | Public pharmacy page: profile, location, opening hours and its current offers (sorted by brand name). `404` if the pharmacy is not publicly visible |
 | `GET /api/settings/public` | Public settings, including whether demo mode is on |
-| `GET/PUT /api/admin/settings` | Admin only: read / change the demo-mode switch (`demo_mode_public`, default `false`) |
+| `GET/PUT /api/admin/settings` | Admin only: read / change the demo-mode switch (JSON body field `demoModePublic`, stored under DB key `demo_mode_public`, default `false`) |
+
+`district` accepts the district name case-insensitively (`kandy`, `Nuwara Eliya`); an unknown name, a non-numeric `lat`/`lng` or a malformed id returns `400` (`Invalid value for parameter '<name>'`). Registration coordinates must be within Sri Lanka (`latitude` 5.85 to 9.90, `longitude` 79.50 to 81.95).
 
 **Offer rule:** an inventory row is an offer only if `available = true`, `stockQuantity > 0`, `expireDate > today`, and its pharmacy is publicly visible.
 
