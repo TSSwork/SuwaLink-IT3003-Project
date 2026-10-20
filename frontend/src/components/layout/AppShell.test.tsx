@@ -48,6 +48,12 @@ describe("AppShell", () => {
 
     await user.click(await screen.findByRole("button", { name: "Open menu" }))
     const sheet = await screen.findByRole("dialog", { name: "Menu" })
+    expect(
+      within(sheet).getByRole("navigation", { name: "Main menu" })
+    ).toBeInTheDocument()
+    expect(within(sheet).getByRole("button", { name: "Close" })).toHaveClass(
+      "size-11"
+    )
     await user.click(within(sheet).getByRole("link", { name: "Find medicine" }))
 
     expect(screen.queryByRole("dialog", { name: "Menu" })).toBeNull()

@@ -46,11 +46,7 @@ export function ThemeToggle() {
           onValueChange={(value) => isTheme(value) && setTheme(value)}
         >
           {OPTIONS.map(({ value, label, Icon }) => (
-            <DropdownMenuRadioItem
-              key={value}
-              value={value}
-              className="min-h-11"
-            >
+            <DropdownMenuRadioItem key={value} value={value}>
               <Icon aria-hidden />
               {label}
             </DropdownMenuRadioItem>

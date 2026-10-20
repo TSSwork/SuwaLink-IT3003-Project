@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { THEME_STORAGE_KEY, startThemeSync, themeInitScript } from "@/lib/theme"
+import {
+  THEME_COLORS,
+  THEME_STORAGE_KEY,
+  startThemeSync,
+  themeInitScript,
+} from "@/lib/theme"
 import { useThemeStore } from "@/stores/themeStore"
 
 type Listener = (event: { matches: boolean }) => void
@@ -60,6 +65,31 @@ describe("theme", () => {
 
     useThemeStore.getState().setTheme("light")
     expect(html()).not.toHaveClass("dark")
+  })
+
+  it("keeps a single theme-color meta in step with the active mode", () => {
+    const metas = () =>
+      document.head.querySelectorAll<HTMLMetaElement>(
+        'meta[name="theme-color"]'
+      )
+    metas().forEach((m) => m.remove())
+
+    // The inline script creates the meta before the app loads...
+    mockSystemScheme(false)
+    localStorage.setItem(
+      THEME_STORAGE_KEY,
+      JSON.stringify({ state: { theme: "dark" }, version: 0 })
+    )
+    new Function(themeInitScript)()
+    expect(metas()).toHaveLength(1)
+    expect(metas()[0].content).toBe(THEME_COLORS.dark)
+
+    // ...and the running app updates that same element.
+    stop = startThemeSync()
+    useThemeStore.getState().setTheme("light")
+    expect(metas()).toHaveLength(1)
+    expect(metas()[0].content).toBe(THEME_COLORS.light)
+    metas().forEach((m) => m.remove())
   })
 
   it("persists the choice under suwalink.theme", () => {

@@ -80,7 +80,7 @@ export function AppShell({
                   </SheetHeader>
                   {/* Any link chosen inside the sheet closes it. */}
                   <nav
-                    aria-label="Main"
+                    aria-label="Main menu"
                     className="flex flex-col gap-1 px-4"
                     onClick={(event) => {
                       if ((event.target as HTMLElement).closest("a")) {

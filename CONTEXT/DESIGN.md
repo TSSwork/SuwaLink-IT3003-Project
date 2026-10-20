@@ -22,7 +22,7 @@ This section is binding for the React frontend in `frontend/`. Where it differs 
 
 Supporting light tokens: `--card #FFFDF2`, `--muted #F4EFD2`, `--muted-foreground #666A4C`, `--border #E4DEBF`, `--input #D6CFAB`, `--chart-5 #A3AE7A`. `--destructive` stays the preset red in both modes.
 
-Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foreground/primary 5.4:1, muted-foreground/background 5.4:1; dark 15.0:1, 8.6:1, 6.9:1. Copperwood on Cornsilk is 3.8:1, so in light mode `--highlight` is for icons, dots, borders and chart marks, not body text.
+Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foreground/primary 5.4:1, muted-foreground/background 5.4:1; dark 15.0:1, 8.6:1, 6.9:1. Primary button hover mixes primary 20% toward foreground (`color-mix` in `button.tsx`) instead of lowering opacity, keeping its text at 6.4:1 light / 9.6:1 dark. Copperwood on Cornsilk is 3.8:1, so in light mode `--highlight` is for icons, dots, borders and chart marks, not body text.
 
 ### Fonts
 
@@ -40,7 +40,8 @@ Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foregr
 
 - Every page renders inside `AppShell` (top bar with wordmark, navigation, language, theme, account; footer with Privacy/Terms). Below 768 px navigation moves into a `Sheet`.
 - Use `LoadingState`, `EmptyState` and `ErrorState` from `components/feedback` instead of ad-hoc spinners or blank screens.
-- Touch targets are at least 44 px (`size-11` / `min-h-11`), even where the preset's default button is smaller.
+- Touch targets are at least 44 px on touch devices. The generated `components/ui` files carry `pointer-coarse:h-11` / `pointer-coarse:size-11` / `pointer-coarse:min-h-11` on every interactive control (buttons, menu items), so phones and tablets get 44 px while mouse and trackpad keep the preset's density. Each edited generated file has a comment saying so; keep these edits when re-adding a component with the shadcn CLI, and apply the same rule to any new interactive component (inputs, select triggers, ...).
+- Shell controls that are always icon-only (theme, menu, sheet close) use `size-11` on every pointer type.
 
 ---
 

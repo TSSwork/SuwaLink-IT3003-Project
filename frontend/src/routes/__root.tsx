@@ -25,9 +25,11 @@ export const Route = createRootRoute({
       {
         title: "SuwaLink",
       },
-      { name: "theme-color", content: "#606C38" },
+      // Updated to the active mode by themeInitScript / applyTheme.
     ],
-    // Sets .dark before first paint so a stored dark choice never flashes.
+    // Sets .dark and the theme-color meta before first paint so a stored dark
+    // choice never flashes. The meta is created by the script, not by React,
+    // so hydration never re-adds a second, stale one.
     scripts: [{ children: themeInitScript }],
     links: [
       {
