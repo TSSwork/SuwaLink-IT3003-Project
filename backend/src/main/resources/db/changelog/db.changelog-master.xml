@@ -53,4 +53,8 @@
         <sqlFile path="sql/012-medicine-status.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="013-reference-medicines" author="suwalink">
+        <sqlFile path="sql/013-reference-medicines.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

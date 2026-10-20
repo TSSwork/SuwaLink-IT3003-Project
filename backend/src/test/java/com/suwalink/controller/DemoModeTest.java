@@ -122,4 +122,29 @@ class DemoModeTest {
         mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + demoToken))
             .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void publicSettingsListDemoAccountsOnlyWhenOn() throws Exception {
+        mockMvc.perform(get("/api/settings/public"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.demoAccounts").isEmpty());
+
+        visibility.setDemoModePublic(true);
+        mockMvc.perform(get("/api/settings/public"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.demoAccounts.length()").value(2))
+            .andExpect(jsonPath("$.data.demoAccounts[0].role").value("CUSTOMER"))
+            .andExpect(jsonPath("$.data.demoAccounts[0].email").value("customer1@demo.suwalink.lk"))
+            .andExpect(jsonPath("$.data.demoAccounts[0].password").value("DemoPass123!"))
+            .andExpect(jsonPath("$.data.demoAccounts[1].role").value("PHARMACY_OWNER"))
+            .andExpect(jsonPath("$.data.demoAccounts[1].email").value("pharmacy1@demo.suwalink.lk"))
+            .andExpect(jsonPath("$.data.demoAccounts[1].password").value("DemoPass123!"));
+    }
+
+    @Test
+    void nonAdminCannotResetDemoData() throws Exception {
+        mockMvc.perform(post("/api/admin/demo/reset")
+                .header("Authorization", "Bearer " + token(CUSTOMER_EMAIL)))
+            .andExpect(status().isForbidden());
+    }
 }

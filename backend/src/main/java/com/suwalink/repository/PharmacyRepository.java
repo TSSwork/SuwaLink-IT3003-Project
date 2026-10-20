@@ -32,4 +32,8 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, UUID> {
             @Param("minLat") BigDecimal minLat, @Param("maxLat") BigDecimal maxLat,
             @Param("minLng") BigDecimal minLng, @Param("maxLng") BigDecimal maxLng,
             @Param("includeDemo") boolean includeDemo);
+
+    boolean existsByDemoTrue();
+
+    List<Pharmacy> findByDemoTrue();
 }

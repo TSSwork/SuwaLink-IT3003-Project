@@ -9,6 +9,7 @@ import com.suwalink.dto.response.UserResponse;
 import com.suwalink.entity.AccountStatus;
 import com.suwalink.service.AccountService;
 import com.suwalink.service.AdminService;
+import com.suwalink.service.DemoDataService;
 import com.suwalink.service.PharmacyVisibilityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +26,12 @@ public class AdminController {
     private final AdminService adminService;
     private final AccountService accountService;
     private final PharmacyVisibilityService visibility;
+    private final DemoDataService demoDataService;
 
     @GetMapping("/settings")
     public ResponseEntity<ApiResponse<AppSettingsResponse>> getSettings() {
         return ResponseEntity.ok(ApiResponse.success("Settings",
-            new AppSettingsResponse(visibility.isDemoModePublic())));
+            settings()));
     }
 
     @PutMapping("/settings")
@@ -37,7 +39,18 @@ public class AdminController {
             @Valid @RequestBody UpdateAppSettingsRequest request) {
         visibility.setDemoModePublic(request.getDemoModePublic());
         return ResponseEntity.ok(ApiResponse.success("Settings updated",
-            new AppSettingsResponse(visibility.isDemoModePublic())));
+            settings()));
+    }
+
+    /** Deletes all demo-owned data and seeds the demo dataset again; real data is left alone. */
+    @PostMapping("/demo/reset")
+    public ResponseEntity<ApiResponse<Void>> resetDemoData() {
+        demoDataService.reset();
+        return ResponseEntity.ok(ApiResponse.success("Demo data reset"));
+    }
+
+    private AppSettingsResponse settings() {
+        return new AppSettingsResponse(visibility.isDemoModePublic(), demoDataService.loginAccounts());
     }
 
     @GetMapping("/dashboard")

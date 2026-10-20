@@ -57,7 +57,9 @@ class SchemaMigrationTest {
                         + " where table_schema = database() and table_name = 'reservations'"
                         + " and column_name = 'status'",
                 String.class)).isEqualTo("enum('CONFIRMED','CANCELLED','COMPLETED','EXPIRED')");
-        assertThat(jdbc.queryForObject("select count(*) from medicine_master", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(12);
+        assertThat(jdbc.queryForObject("select count(*) from medicine_master", Integer.class)).isGreaterThanOrEqualTo(40);
+        assertThat(jdbc.queryForObject(
+                "select count(*) from medicine_master where status <> 'APPROVED'", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(13);
     }
 }

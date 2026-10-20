@@ -88,6 +88,13 @@ notifications are removed.
 - Admins can't be deleted, by themselves or another admin (`409 ACCOUNT_ACTION_NOT_ALLOWED`).
   Self-deletion with a wrong password is `400 INVALID_PASSWORD`.
 
+### `GET|PUT /api/admin/settings` and `POST /api/admin/demo/reset`
+
+The settings response (`{ demoModePublic, demoAccounts }`) is also served publicly at
+`GET /api/settings/public`. `demoAccounts` lists the one-click demo logins (`role`, `email`,
+`password`) while demo mode is on, and is empty while it is off. `POST /api/admin/demo/reset` deletes
+every demo-owned row and seeds the demo dataset again. Real data is left alone. See `DEMO_USERS.md`.
+
 ## Frontend
 
 The admin pages are being rebuilt in the TanStack Start app (`frontend/`).

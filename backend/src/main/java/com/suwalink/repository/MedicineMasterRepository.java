@@ -15,4 +15,6 @@ public interface MedicineMasterRepository extends JpaRepository<MedicineMaster, 
 
     boolean existsByBrandNameIgnoreCaseAndStrengthIgnoreCaseAndDosageFormIgnoreCaseAndStatusIn(
             String brandName, String strength, String dosageForm, Collection<MedicineStatus> statuses);
+
+    List<MedicineMaster> findBySuggestedByPharmacyIdIn(Collection<UUID> pharmacyIds);
 }

@@ -2,11 +2,12 @@ package com.suwalink.repository;
 
 import com.suwalink.entity.Notification;
 import com.suwalink.entity.User;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import java.util.List;
-import java.util.UUID;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
     List<Notification> findByRecipientOrderByCreatedAtDesc(User recipient);
@@ -21,4 +22,6 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     @Query(value = "SELECT * FROM notifications WHERE params LIKE CONCAT('%\"customerId\":\"', :customerId, '\"%')",
             nativeQuery = true)
     List<Notification> findMentioningCustomer(@Param("customerId") String customerId);
+
+    List<Notification> findByRecipientIdIn(Collection<UUID> recipientIds);
 }

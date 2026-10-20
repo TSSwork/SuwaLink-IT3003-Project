@@ -33,4 +33,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("q") String q,
             @Param("deleted") boolean deleted,
             @Param("suspended") Boolean suspended);
+
+    List<User> findByDemoTrue();
 }

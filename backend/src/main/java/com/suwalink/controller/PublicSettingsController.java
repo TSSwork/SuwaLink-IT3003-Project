@@ -2,6 +2,7 @@ package com.suwalink.controller;
 
 import com.suwalink.dto.response.ApiResponse;
 import com.suwalink.dto.response.AppSettingsResponse;
+import com.suwalink.service.DemoDataService;
 import com.suwalink.service.PharmacyVisibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicSettingsController {
 
     private final PharmacyVisibilityService visibility;
+    private final DemoDataService demoDataService;
 
     @GetMapping("/public")
     public ResponseEntity<ApiResponse<AppSettingsResponse>> getPublicSettings() {
         return ResponseEntity.ok(ApiResponse.success("Public settings",
-            new AppSettingsResponse(visibility.isDemoModePublic())));
+            new AppSettingsResponse(visibility.isDemoModePublic(), demoDataService.loginAccounts())));
     }
 }

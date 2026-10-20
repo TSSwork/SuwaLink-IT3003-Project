@@ -26,4 +26,6 @@ public interface ImageRepository extends JpaRepository<Image, UUID> {
     @Modifying
     @Query("UPDATE Image i SET i.uploadedByUserId = NULL WHERE i.uploadedByUserId = :userId")
     void clearUploadedBy(@Param("userId") UUID userId);
+
+    List<Image> findByUploadedByUserIdIn(Collection<UUID> userIds);
 }

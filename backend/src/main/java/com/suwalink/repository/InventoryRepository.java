@@ -70,4 +70,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
     @Query("select i from Inventory i join fetch i.pharmacy join fetch i.medicineMaster "
             + "where i.id in :ids order by i.id")
     List<Inventory> lockAllById(@Param("ids") Collection<UUID> ids);
+
+    List<Inventory> findByPharmacyIdIn(Collection<UUID> pharmacyIds);
 }

@@ -29,4 +29,10 @@ public interface PrescriptionRequestRepository extends JpaRepository<Prescriptio
 
     List<PrescriptionRequest> findByStatusInAndExpiresAtBefore(
             Collection<PrescriptionRequestStatus> statuses, LocalDateTime cutoff);
+
+    List<PrescriptionRequest> findByPatientIdIn(Collection<UUID> patientIds);
+
+    /** Requests that target any of the pharmacies. */
+    @Query("SELECT DISTINCT r FROM PrescriptionRequest r JOIN r.targetPharmacies p WHERE p.id IN :pharmacyIds")
+    List<PrescriptionRequest> findTargetingAnyPharmacy(@Param("pharmacyIds") Collection<UUID> pharmacyIds);
 }
