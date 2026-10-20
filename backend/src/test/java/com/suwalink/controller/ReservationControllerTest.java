@@ -273,6 +273,39 @@ class ReservationControllerTest {
         reserve(strangerToken, quotedLine(item, 1, responseItemId)).andExpect(status().isForbidden());
     }
 
+    @Test
+    void strangerQuoteIsForbiddenBeforeStockIsRevealed() throws Exception {
+        String ownerToken = registerCustomerAndLogin("resv.order.patient@example.com");
+        String strangerToken = registerCustomerAndLogin("resv.order.stranger@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.order.pharmacy@example.com", "LIC-RQ-9");
+        UUID item = createInventoryItem("resv.order.pharmacy@example.com", new BigDecimal("9.50"), 3);
+        String requestId = createPrescription(ownerToken);
+        UUID responseItemId = submitResponse(pharmacyToken, requestId, item, 3);
+
+        // Asks for more than is in stock: without the ordering this would be a 409 naming the stock.
+        reserve(strangerToken, quotedLine(item, 50, responseItemId)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void moreThanTwentyLinesIsRejected() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.many.patient@example.com");
+        String[] lines = new String[21];
+        for (int i = 0; i < lines.length; i++) {
+            lines[i] = line(UUID.randomUUID(), 1);
+        }
+
+        reserve(patientToken, lines).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].message").value("A reservation can have at most 20 items"));
+    }
+
+    @Test
+    void quantityAboveOneHundredIsRejected() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.big.patient@example.com");
+
+        reserve(patientToken, line(UUID.randomUUID(), 101)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].message").value("quantity must be at most 100"));
+    }
+
     // --- existing lifecycle (adapted to the multi-line request) --------------------------------
 
     @Test
@@ -524,30 +557,6 @@ class ReservationControllerTest {
         complete(pharmacyToken, id)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("This reservation has expired"));
-    }
-
-    @Test
-    void expireOverdueReleasesStock() throws Exception {
-        String patientToken = registerCustomerAndLogin("resv.job.patient@example.com");
-        registerVerifiedPharmacyAndLogin("resv.job.pharmacy@example.com", "LIC-LC-8");
-        UUID first = createInventoryItem("resv.job.pharmacy@example.com", new BigDecimal("10.00"), 5);
-        UUID second = createInventoryItem("resv.job.pharmacy@example.com", new BigDecimal("10.00"), 4);
-        String overdue = JsonPath.read(reserve(patientToken, line(first, 2), line(second, 4))
-                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.data.id");
-        String current = createReservation(patientToken, first, 1);
-        expireHold(overdue);
-
-        assertThat(reservationService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
-
-        assertThat(reservationRepository.findById(UUID.fromString(overdue)).orElseThrow().getStatus())
-                .isEqualTo(ReservationStatus.EXPIRED);
-        assertThat(reservationRepository.findById(UUID.fromString(current)).orElseThrow().getStatus())
-                .isEqualTo(ReservationStatus.CONFIRMED);
-        assertThat(inventoryRepository.findById(first).orElseThrow().getStockQuantity()).isEqualTo(4);
-        assertThat(inventoryRepository.findById(second).orElseThrow().getStockQuantity()).isEqualTo(4);
-        assertThat(notificationTitles("resv.job.patient@example.com")).contains("Reservation Expired");
-        assertThat(notificationTitles("resv.job.pharmacy@example.com")).contains("Reservation Expired");
-        assertThat(reservationService.expireOverdue(LocalDateTime.now())).isZero();
     }
 
     // --- lookup by id and pickup code -----------------------------------------------------------

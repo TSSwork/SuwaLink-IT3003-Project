@@ -50,12 +50,17 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReservationServiceImpl implements ReservationService {
@@ -76,6 +81,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final ApplicationEventPublisher eventPublisher;
     private final PharmacyVisibilityService pharmacyVisibilityService;
     private final PickupCodeGenerator pickupCodeGenerator;
+    private final PlatformTransactionManager transactionManager;
 
     @Value("${app.reservation.hold-hours}")
     private int holdHours;
@@ -131,22 +137,29 @@ public class ReservationServiceImpl implements ReservationService {
                 .demo(pharmacy.isDemo())
                 .build();
 
+        // Quote checks (ownership, open request, inventory match, remaining quantity) come first so a
+        // stranger's quote is refused with 403 before any stock or availability detail is revealed.
+        Map<UUID, PrescriptionResponseItem> quoted = new HashMap<>();
+        for (CreateReservationRequest.Line line : lines) {
+            if (line.getPrescriptionResponseItemId() == null) {
+                continue;
+            }
+            PrescriptionResponseItem responseItem = findQuotedItem(line, patient);
+            PrescriptionRequest quotedFor = responseItem.getPrescriptionResponse().getPrescriptionRequest();
+            if (prescriptionRequest != null && !prescriptionRequest.getId().equals(quotedFor.getId())) {
+                throw new InvalidReservationRequestException(
+                        "All quoted items in one reservation must come from the same prescription request");
+            }
+            prescriptionRequest = quotedFor;
+            quoted.put(line.getInventoryItemId(), responseItem);
+        }
+
         for (CreateReservationRequest.Line line : lines) {
             Inventory inventory = locked.get(line.getInventoryItemId());
             checkReservable(inventory, line.getQuantity(), today);
 
-            BigDecimal unitPrice = inventory.getUnitPrice();
-            PrescriptionResponseItem responseItem = null;
-            if (line.getPrescriptionResponseItemId() != null) {
-                responseItem = findQuotedItem(line, patient);
-                unitPrice = responseItem.getUnitPrice();
-                PrescriptionRequest quotedFor = responseItem.getPrescriptionResponse().getPrescriptionRequest();
-                if (prescriptionRequest != null && !prescriptionRequest.getId().equals(quotedFor.getId())) {
-                    throw new InvalidReservationRequestException(
-                            "All quoted items in one reservation must come from the same prescription request");
-                }
-                prescriptionRequest = quotedFor;
-            }
+            PrescriptionResponseItem responseItem = quoted.get(line.getInventoryItemId());
+            BigDecimal unitPrice = responseItem == null ? inventory.getUnitPrice() : responseItem.getUnitPrice();
 
             MedicineMaster medicine = inventory.getMedicineMaster();
             reservation.addItem(ReservationItem.builder()
@@ -311,24 +324,39 @@ public class ReservationServiceImpl implements ReservationService {
 
     /**
      * CONFIRMED reservations whose hold ended before {@code now} become EXPIRED and give their stock
-     * back. A cancel racing with this on the same reservation loses on the reservation's version check.
+     * back, each in its own transaction so one failure can't stop the rest. A cancel racing with this
+     * on the same reservation loses on the reservation's version check.
      */
     @Override
-    @Transactional
     public int expireOverdue(LocalDateTime now) {
-        List<Reservation> overdue =
-                reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.CONFIRMED, now);
-        if (overdue.isEmpty()) {
-            return 0;
+        TransactionTemplate each = new TransactionTemplate(transactionManager);
+        each.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        int expired = 0;
+        for (Reservation overdue : reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.CONFIRMED, now)) {
+            UUID id = overdue.getId();
+            try {
+                if (Boolean.TRUE.equals(each.execute(status -> expireOne(id, now)))) {
+                    expired++;
+                }
+            } catch (RuntimeException e) {
+                log.warn("Could not expire reservation {}: {}", id, e.getClass().getSimpleName());
+            }
         }
+        return expired;
+    }
 
-        releaseStock(overdue);
-        overdue.forEach(reservation -> reservation.setStatus(ReservationStatus.EXPIRED));
-        reservationRepository.saveAll(overdue);
-
-        overdue.forEach(reservation ->
-                eventPublisher.publishEvent(new ReservationExpiredEvent(this, reservation.getId())));
-        return overdue.size();
+    private boolean expireOne(UUID id, LocalDateTime now) {
+        Reservation reservation = reservationRepository.findById(id).orElse(null);
+        if (reservation == null || reservation.getStatus() != ReservationStatus.CONFIRMED
+                || !reservation.getExpiresAt().isBefore(now)) {
+            return false;
+        }
+        releaseStock(List.of(reservation));
+        reservation.setStatus(ReservationStatus.EXPIRED);
+        reservationRepository.save(reservation);
+        eventPublisher.publishEvent(new ReservationExpiredEvent(this, reservation.getId()));
+        return true;
     }
 
     /**

@@ -16,6 +16,7 @@ import com.suwalink.entity.TargetScope;
 import com.suwalink.event.PrescriptionAddedEvent;
 import com.suwalink.exception.NoPharmaciesInScopeException;
 import com.suwalink.exception.PrescriptionAccessDeniedException;
+import com.suwalink.exception.PrescriptionRequestClosedException;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.ImageRepository;
 import com.suwalink.repository.PharmacyRepository;
@@ -39,7 +40,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -59,6 +63,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     private final PharmacyRepository pharmacyRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final PrescriptionTargetingService targetingService;
+    private final PlatformTransactionManager transactionManager;
 
     @Value("${app.prescription.expiry-days}")
     private int expiryDays;
@@ -138,6 +143,9 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     @Transactional
     public PrescriptionRequestResponse update(UUID id, UpdatePrescriptionRequest request) {
         PrescriptionRequest prescriptionRequest = ownedRequest(id);
+        if (!OPEN_STATUSES.contains(prescriptionRequest.getStatus())) {
+            throw new PrescriptionRequestClosedException();
+        }
 
         prescriptionRequest.setPatientAge(request.getPatientAge());
         prescriptionRequest.setNote(blankToNull(request.getNote()));
@@ -188,14 +196,35 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
         return toResponse(prescriptionRequestRepository.save(prescriptionRequest));
     }
 
+    /** Each request expires in its own transaction, so one failure can't stop the rest. */
     @Override
-    @Transactional
     public int expireOverdue(LocalDateTime now) {
-        List<PrescriptionRequest> overdue =
-            prescriptionRequestRepository.findByStatusInAndExpiresAtBefore(OPEN_STATUSES, now);
-        overdue.forEach(r -> r.setStatus(PrescriptionRequestStatus.EXPIRED));
-        prescriptionRequestRepository.saveAll(overdue);
-        return overdue.size();
+        TransactionTemplate each = new TransactionTemplate(transactionManager);
+        each.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        int expired = 0;
+        for (PrescriptionRequest overdue
+                : prescriptionRequestRepository.findByStatusInAndExpiresAtBefore(OPEN_STATUSES, now)) {
+            UUID id = overdue.getId();
+            try {
+                if (Boolean.TRUE.equals(each.execute(status -> expireOne(id, now)))) {
+                    expired++;
+                }
+            } catch (RuntimeException e) {
+                log.warn("Could not expire prescription request {}: {}", id, e.getClass().getSimpleName());
+            }
+        }
+        return expired;
+    }
+
+    private boolean expireOne(UUID id, LocalDateTime now) {
+        PrescriptionRequest request = prescriptionRequestRepository.findById(id).orElse(null);
+        if (request == null || !OPEN_STATUSES.contains(request.getStatus()) || !request.getExpiresAt().isBefore(now)) {
+            return false;
+        }
+        request.setStatus(PrescriptionRequestStatus.EXPIRED);
+        prescriptionRequestRepository.save(request);
+        return true;
     }
 
     private boolean isTargetedPharmacy(UUID requestId, User user) {

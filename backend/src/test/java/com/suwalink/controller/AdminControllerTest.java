@@ -2,6 +2,7 @@ package com.suwalink.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -13,6 +14,10 @@ import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.UserRepository;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
+import org.springframework.mock.web.MockMultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -142,6 +147,38 @@ class AdminControllerTest {
 
         mockMvc.perform(delete("/api/admin/users/" + userId).header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void deletePharmacyOwner_targetedByPrescriptionRequest_succeedsAndKeepsRequest() throws Exception {
+        String adminToken = loginAndGetToken(ADMIN_EMAIL, ADMIN_PASSWORD);
+        String pharmacyEmail = "admin.delete.targeted@example.com";
+        registerPharmacy(pharmacyEmail, "LIC-DEL-T1");
+        mockMvc.perform(put("/api/admin/pharmacies/" + findPharmacyId(pharmacyEmail) + "/approve")
+                .header("Authorization", "Bearer " + adminToken))
+            .andExpect(status().isOk());
+        String customerToken = registerCustomerAndLogin("admin.delete.targeted.customer@example.com");
+
+        BufferedImage image = new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", out);
+        MvcResult created = mockMvc.perform(multipart("/api/prescriptions")
+                .file(new MockMultipartFile("image", "p.png", MediaType.IMAGE_PNG_VALUE, out.toByteArray()))
+                .with(TestPayloads.prescriptionTargetAll())
+                .param("patientAge", "30")
+                .header("Authorization", "Bearer " + customerToken))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.data.targetCount").value(1))
+            .andReturn();
+        String requestId = JsonPath.read(created.getResponse().getContentAsString(), "$.data.id");
+
+        mockMvc.perform(delete("/api/admin/users/" + findUserId(pharmacyEmail))
+                .header("Authorization", "Bearer " + adminToken))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/prescriptions/" + requestId).header("Authorization", "Bearer " + customerToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.targetCount").value(0));
     }
 
     // Note: deleting a user with dependent rows (a Pharmacy, PrescriptionRequest, etc.) returning

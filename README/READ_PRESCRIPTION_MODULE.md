@@ -45,7 +45,7 @@ Reuses the inventory module's `ImageService.upload(file, ImageType.PRESCRIPTION)
 storage (`app.upload.dir`), re-encoded to WebP, metadata-only row in `images`. Prescription images
 are private: they are served at `GET /api/images/{id}/content` (authenticated, `Cache-Control:
 private, no-store`) and only to the uploader, the owning customer, a pharmacy targeted by the request,
-or an `ADMIN` (otherwise `403`). The old `/uploads/**` static path is gone. Non-prescription images
+or an `ADMIN` (otherwise `403`). Non-prescription images
 (profile, inventory) are served publicly at `GET /api/images/public/{filename}`, which refuses
 prescription images (`404`). `POST /api/images` rejects `imageType=PRESCRIPTION` (`400`); prescription
 images are only created through `POST /api/prescriptions`.
@@ -124,7 +124,7 @@ Sets `status` to `CLOSED`. `403` if the caller doesn't own the request.
   "patientAge": 34,
   "note": "...",
   "status": "PENDING",
-  "imageUrl": "/uploads/<generated-filename>.webp",
+  "imageUrl": "/api/images/<image-id>/content",
   "createdAt": "2026-...",
   "updatedAt": "2026-..."
 }

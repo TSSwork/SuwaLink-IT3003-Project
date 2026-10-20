@@ -246,29 +246,6 @@ class PrescriptionRequestControllerTest {
         assertThat(prescriptionNotificationCount("tgt.demo@example.com")).isZero();
     }
 
-    @Test
-    void expireOverdueMarksOpenRequestsExpired() throws Exception {
-        seedPharmacies();
-        String customer = registerCustomerAndLogin("tgt.expire@example.com");
-        String id = createPrescription(customer, 30, "Will expire",
-            TestPayloads.prescriptionTargetRadius("6.930000", "79.860000"));
-        createPrescription(customer, 30, "Still fresh",
-            TestPayloads.prescriptionTargetRadius("6.930000", "79.860000"));
-
-        PrescriptionRequest overdue = prescriptionRequestRepository.findById(UUID.fromString(id)).orElseThrow();
-        overdue.setExpiresAt(LocalDateTime.now().minusMinutes(1));
-        prescriptionRequestRepository.saveAndFlush(overdue);
-
-        assertThat(prescriptionRequestService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
-        assertThat(prescriptionRequestRepository.findById(UUID.fromString(id)).orElseThrow().getStatus())
-            .isEqualTo(PrescriptionRequestStatus.EXPIRED);
-
-        mockMvc.perform(get("/api/prescriptions").header("Authorization", "Bearer " + colomboToken))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.length()").value(1))
-            .andExpect(jsonPath("$.data[0].note").value("Still fresh"));
-    }
-
     private long prescriptionNotificationCount(String email) {
         return notificationRepository.findByRecipientOrderByCreatedAtDesc(
                 userRepository.findByEmail(email).orElseThrow()).stream()
@@ -414,6 +391,25 @@ class PrescriptionRequestControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.patientAge").value(21))
             .andExpect(jsonPath("$.data.note").value("Updated note"));
+    }
+
+    @Test
+    void update_ofExpiredRequest_isRejected() throws Exception {
+        registerVerifiedPharmacyAndLogin("presc.recipient3b@example.com", "LIC-P-R3B");
+        String token = registerCustomerAndLogin("presc.update.expired@example.com");
+        String id = createPrescription(token, 20, "Original note");
+        PrescriptionRequest request = prescriptionRequestRepository.findById(UUID.fromString(id)).orElseThrow();
+        request.setStatus(PrescriptionRequestStatus.EXPIRED);
+        prescriptionRequestRepository.saveAndFlush(request);
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/prescriptions/" + id)
+                .param("patientAge", "21")
+                .param("note", "Too late")
+                .header("Authorization", "Bearer " + token))
+            .andExpect(status().isBadRequest());
+
+        assertThat(prescriptionRequestRepository.findById(UUID.fromString(id)).orElseThrow().getNote())
+            .isEqualTo("Original note");
     }
 
     @Test

@@ -27,6 +27,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * Stock is given back only through the row-locked inventory returned by
@@ -40,6 +41,7 @@ class ReservationServiceImplTest {
     @Mock private InventoryRepository inventoryRepository;
     @Mock private CurrentUserProvider currentUserProvider;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private PlatformTransactionManager transactionManager;
     @InjectMocks private ReservationServiceImpl service;
 
     private final User patient = User.builder().id(UUID.randomUUID()).name("Pat").role(Role.CUSTOMER).build();
@@ -80,16 +82,43 @@ class ReservationServiceImplTest {
 
         when(reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.CONFIRMED, now))
                 .thenReturn(List.of(a, b));
-        when(inventoryRepository.lockAllById(anyCollection())).thenReturn(List.of(lockedShared, lockedOther));
+        when(reservationRepository.findById(a.getId())).thenReturn(java.util.Optional.of(a));
+        when(reservationRepository.findById(b.getId())).thenReturn(java.util.Optional.of(b));
+        when(inventoryRepository.lockAllById(anyCollection())).thenAnswer(invocation -> {
+            java.util.Collection<UUID> ids = invocation.getArgument(0);
+            return List.of(lockedShared, lockedOther).stream().filter(i -> ids.contains(i.getId())).toList();
+        });
 
         assertThat(service.expireOverdue(now)).isEqualTo(2);
 
         verify(inventoryRepository).lockAllById(Set.of(shared.getId(), other.getId()));
+        verify(inventoryRepository).lockAllById(Set.of(shared.getId()));
         assertThat(lockedShared.getStockQuantity()).isEqualTo(8);
         assertThat(lockedOther.getStockQuantity()).isEqualTo(9);
         assertThat(shared.getStockQuantity()).isZero();
         assertThat(a.getStatus()).isEqualTo(ReservationStatus.EXPIRED);
         assertThat(b.getStatus()).isEqualTo(ReservationStatus.EXPIRED);
+    }
+
+    @Test
+    void expireOverdueKeepsGoingWhenOneReservationFails() {
+        LocalDateTime now = LocalDateTime.now();
+        Inventory stocked = inventory(UUID.randomUUID(), 0);
+        Reservation broken = reservation(now.minusMinutes(5), line(stocked, 1));
+        Reservation fine = reservation(now.minusMinutes(1), line(stocked, 2));
+        Inventory locked = inventory(stocked.getId(), 5);
+
+        when(reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.CONFIRMED, now))
+                .thenReturn(List.of(broken, fine));
+        when(reservationRepository.findById(broken.getId())).thenThrow(new IllegalStateException("boom"));
+        when(reservationRepository.findById(fine.getId())).thenReturn(java.util.Optional.of(fine));
+        when(inventoryRepository.lockAllById(anyCollection())).thenReturn(List.of(locked));
+
+        assertThat(service.expireOverdue(now)).isEqualTo(1);
+
+        assertThat(fine.getStatus()).isEqualTo(ReservationStatus.EXPIRED);
+        assertThat(broken.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+        assertThat(locked.getStockQuantity()).isEqualTo(7);
     }
 
     private Reservation reservation(LocalDateTime expiresAt, ReservationItem... items) {
