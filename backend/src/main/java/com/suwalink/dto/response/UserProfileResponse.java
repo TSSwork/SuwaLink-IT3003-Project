@@ -1,5 +1,7 @@
 package com.suwalink.dto.response;
 
+import com.suwalink.entity.District;
+import com.suwalink.entity.Language;
 import com.suwalink.entity.Role;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -16,6 +18,8 @@ public class UserProfileResponse {
     private final String email;
     private final String phone;
     private final Role role;
+    private final Language preferredLanguage;
+    private final District district;
     private final PharmacyInfo pharmacy;
 
     @Getter

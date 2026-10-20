@@ -104,6 +104,41 @@ class GlobalExceptionHandlerTest {
         }
     }
 
+    @Test
+    void everyHandlerSetsStableCode() {
+        assertEquals("INTERNAL_ERROR", handler.handleUnexpected(new IllegalStateException("x")).getBody().getCode());
+        assertEquals("ACCESS_DENIED", handler.handleAccessDenied(new AccessDeniedException("x")).getBody().getCode());
+        assertEquals("NOT_FOUND", handler.handleResourceNotFound(new ResourceNotFoundException("x")).getBody().getCode());
+        assertEquals("EMAIL_TAKEN",
+            handler.handleEmailAlreadyExists(new EmailAlreadyExistsException("x")).getBody().getCode());
+        assertEquals("DEMO_DISABLED",
+            handler.handleDisabled(new org.springframework.security.authentication.DisabledException("x"))
+                .getBody().getCode());
+        assertEquals("UNAUTHENTICATED",
+            handler.handleBadCredentials(new org.springframework.security.authentication.BadCredentialsException("x"))
+                .getBody().getCode());
+        assertEquals("CONCURRENT_UPDATE",
+            handler.handleConcurrentUpdate(new PessimisticLockingFailureException("x")).getBody().getCode());
+        assertEquals("DUPLICATE", handler.handleDuplicateResource(new DuplicateResourceException("x")).getBody().getCode());
+    }
+
+    @Test
+    void duplicatePrescriptionResponseMapsTo409Duplicate() {
+        ResponseEntity<ApiErrorResponse> response = handler.handleDataIntegrityViolation(
+            new DataIntegrityViolationException("could not execute statement",
+                new RuntimeException("Duplicate entry for key 'prescription_responses.UK_presc_responses_request_pharmacy'")));
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("DUPLICATE", response.getBody().getCode());
+        assertEquals("You have already responded; update your response instead", response.getBody().getMessage());
+    }
+
+    @Test
+    void otherIntegrityViolationKeepsGenericMessageWithCode() {
+        assertEquals("DATA_CONFLICT",
+            handler.handleDataIntegrityViolation(new DataIntegrityViolationException("FK violation")).getBody().getCode());
+    }
+
     @RestController
     static class ThrowingController {
         private final RuntimeException failure;

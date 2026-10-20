@@ -4,6 +4,7 @@ import com.suwalink.dto.response.ApiErrorResponse;
 import jakarta.persistence.LockTimeoutException;
 import jakarta.persistence.PessimisticLockException;
 import java.util.List;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,10 +27,23 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** Unique key (request, pharmacy) on prescription_responses; see changeset 006. */
+    private static final String DUPLICATE_RESPONSE_CONSTRAINT = "uk_presc_responses_request_pharmacy";
+
+    private static boolean mentionsConstraint(Throwable ex, String constraint) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t.getMessage() != null && t.getMessage().toLowerCase(Locale.ROOT).contains(constraint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("EMAIL_TAKEN")
                 .message(ex.getMessage())
                 .build());
     }
@@ -38,6 +52,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handlePharmacyNotVerified(PharmacyNotVerifiedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiErrorResponse.builder()
+                .code("PHARMACY_NOT_VERIFIED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -46,6 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleDuplicateResource(DuplicateResourceException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("DUPLICATE")
                 .message(ex.getMessage())
                 .build());
     }
@@ -54,6 +70,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(ApiErrorResponse.builder()
+                .code("NOT_FOUND")
                 .message(ex.getMessage())
                 .build());
     }
@@ -62,6 +79,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInventoryAccessDenied(InventoryAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiErrorResponse.builder()
+                .code("ACCESS_DENIED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -70,6 +88,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handlePrescriptionAccessDenied(PrescriptionAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiErrorResponse.builder()
+                .code("ACCESS_DENIED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -78,6 +97,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handlePrescriptionRequestClosed(PrescriptionRequestClosedException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("REQUEST_CLOSED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -86,6 +106,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleNoPharmaciesInScope(NoPharmaciesInScopeException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
             .body(ApiErrorResponse.builder()
+                .code("NO_PHARMACIES_IN_SCOPE")
                 .message(ex.getMessage())
                 .build());
     }
@@ -94,6 +115,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInsufficientStock(InsufficientStockException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("INSUFFICIENT_STOCK")
                 .message(ex.getMessage())
                 .build());
     }
@@ -102,6 +124,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleItemUnavailable(ItemUnavailableException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("ITEM_UNAVAILABLE")
                 .message(ex.getMessage())
                 .build());
     }
@@ -110,6 +133,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInvalidReservationRequest(InvalidReservationRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("VALIDATION_FAILED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -118,6 +142,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleReservationAccessDenied(ReservationAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiErrorResponse.builder()
+                .code("ACCESS_DENIED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -126,6 +151,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInvalidReservationState(InvalidReservationStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("RESERVATION_STATE")
                 .message(ex.getMessage())
                 .build());
     }
@@ -134,6 +160,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInvalidFile(InvalidFileException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("VALIDATION_FAILED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -142,6 +169,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleFileStorage(FileStorageException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiErrorResponse.builder()
+                .code("INTERNAL_ERROR")
                 .message("Could not process the uploaded image")
                 .build());
     }
@@ -150,6 +178,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInvalidOtp(InvalidOtpException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("VALIDATION_FAILED")
                 .message(ex.getMessage())
                 .build());
     }
@@ -158,6 +187,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(ApiErrorResponse.builder()
+                .code("UNAUTHENTICATED")
                 .message("Invalid email or password")
                 .build());
     }
@@ -166,6 +196,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleDisabled(DisabledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiErrorResponse.builder()
+                .code("DEMO_DISABLED")
                 .message("Demo accounts are currently disabled")
                 .build());
     }
@@ -175,6 +206,7 @@ public class GlobalExceptionHandler {
         log.error("Failed to send an email", ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
             .body(ApiErrorResponse.builder()
+                .code("INTERNAL_ERROR")
                 .message("Could not send the email. Please try again shortly.")
                 .build());
     }
@@ -182,8 +214,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation: {}", ex.getMessage());
+        if (mentionsConstraint(ex, DUPLICATE_RESPONSE_CONSTRAINT)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.builder()
+                    .code("DUPLICATE")
+                    .message("You have already responded; update your response instead")
+                    .build());
+        }
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("DATA_CONFLICT")
                 .message("This action can't be completed because related data still references it")
                 .build());
     }
@@ -202,6 +242,7 @@ public class GlobalExceptionHandler {
         log.warn("Concurrent update conflict: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
+                .code("CONCURRENT_UPDATE")
                 .message("This item was just updated by someone else. Please try again.")
                 .build());
     }
@@ -210,6 +251,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiErrorResponse.builder()
+                .code("ACCESS_DENIED")
                 .message("You don't have permission to perform this action")
                 .build());
     }
@@ -219,6 +261,7 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiErrorResponse.builder()
+                .code("INTERNAL_ERROR")
                 .message("Something went wrong. Please try again.")
                 .build());
     }
@@ -228,12 +271,14 @@ public class GlobalExceptionHandler {
         List<ApiErrorResponse.FieldErrorDetail> errors = ex.getBindingResult().getFieldErrors().stream()
             .map(fieldError -> ApiErrorResponse.FieldErrorDetail.builder()
                 .field(fieldError.getField())
+                .code(fieldError.getCode())
                 .message(fieldError.getDefaultMessage())
                 .build())
             .toList();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("VALIDATION_FAILED")
                 .message("Validation failed")
                 .errors(errors)
                 .build());
@@ -243,6 +288,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleUnreadableBody(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("MALFORMED_REQUEST")
                 .message("Malformed or invalid request body")
                 .build());
     }
@@ -251,6 +297,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
+                .code("INVALID_PARAMETER")
                 .message("Invalid value for parameter '" + ex.getName() + "'")
                 .build());
     }

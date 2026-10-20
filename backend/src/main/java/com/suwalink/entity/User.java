@@ -1,6 +1,7 @@
 package com.suwalink.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -50,6 +51,15 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
+
+    @Convert(converter = LanguageConverter.class)
+    @Column(name = "preferred_language", nullable = false, length = 2)
+    @Builder.Default
+    private Language preferredLanguage = Language.EN;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "district")
+    private District district;
 
     @Column(name = "is_demo", nullable = false)
     @Builder.Default

@@ -33,4 +33,8 @@
         <sqlFile path="sql/007-reservation-items.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="008-user-preferences" author="suwalink">
+        <sqlFile path="sql/008-user-preferences.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>
