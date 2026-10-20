@@ -2,6 +2,48 @@
 
 # SuwaLink Design System
 
+## Implementation (shadcn)
+
+This section is binding for the React frontend in `frontend/`. Where it differs from the sections below, it wins.
+
+- **Components come from shadcn/ui** on the `radix-rhea` preset (Radix primitives, preset radius and menu style). Add them only with `npx shadcn@latest add <name>` from `frontend/`; do not hand-write replacements or restyle their shape.
+- **Material Design 3 references below are historical guidance for principles only** (calm, consistent, accessible, roles not raw colours). Do not import Material components or recreate Material specs pixel for pixel.
+- Tokens live in `frontend/src/styles.css` as oklch CSS variables for `:root` (light) and `.dark`. Use the Tailwind utilities (`bg-primary`, `text-muted-foreground`, ...), never raw hex in components.
+
+### Token map
+
+| Brand colour | Hex | Light tokens | Dark tokens |
+|---|---|---|---|
+| Cornsilk | `#FEFAE0` | `--background`, `--primary-foreground` | `--foreground` (dimmed to `#F2EED6`) |
+| Black Forest | `#283618` | `--foreground`, `--card/popover/secondary/accent-foreground`, `--chart-4` | basis of the olive-tinted surfaces (`--background #161B0F`, `--card #1E2516`, `--popover #222A19`, `--muted #262F1C`) |
+| Olive Leaf | `#606C38` | `--primary`, `--ring`, `--sidebar-primary`, `--chart-1` | raised to `#B3C17A` for `--primary`, `--ring`, `--chart-1` (on-primary text `#1A2010`) |
+| Sunlit Clay | `#DDA15E` | `--secondary` (text `#283618`), `--chart-2`; tint `#F4E3C1` = `--accent` (menu focus, hovers) | `--secondary` (text `#1E1608`), `--chart-2`; `--accent #3A3322` with text `#F6E3BF` |
+| Copperwood | `#BC6C25` | `--highlight` (`bg-highlight`, `text-highlight`), `--chart-3` | raised to `#E08F4A` |
+
+Supporting light tokens: `--card #FFFDF2`, `--muted #F4EFD2`, `--muted-foreground #666A4C`, `--border #E4DEBF`, `--input #D6CFAB`, `--chart-5 #A3AE7A`. `--destructive` stays the preset red in both modes.
+
+Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foreground/primary 5.4:1, muted-foreground/background 5.4:1; dark 15.0:1, 8.6:1, 6.9:1. Copperwood on Cornsilk is 3.8:1, so in light mode `--highlight` is for icons, dots, borders and chart marks, not body text.
+
+### Fonts
+
+- `font-sans` (and `font-heading`): **Manrope** for UI, with **Noto Sans Sinhala** and **Noto Sans Tamil** in the same stack so සිංහල and தமிழ் text falls through to them automatically.
+- `font-mono`: **Space Mono**, only for codes and IDs (pickup codes, licence numbers).
+- All are self-hosted via `@fontsource` packages imported in `styles.css`; no font CDNs.
+
+### Dark mode rules
+
+- Dark is a designed palette, not an inversion: olive-tinted near-black surfaces (low chroma, hue ~127), lighter surfaces for higher elevation (background < card < popover), Cornsilk text dimmed slightly, brand colours raised in lightness until text on them and them on the background pass AA.
+- Choice is Light / Dark / System (`ThemeToggle`), persisted under `suwalink.theme`; System follows `prefers-color-scheme` live. `.dark` is set on `<html>` by an inline head script before first paint.
+- Every new token needs a light and a dark value, and both must keep text at 4.5:1 (3:1 for large text and non-text UI).
+
+### Shell and states
+
+- Every page renders inside `AppShell` (top bar with wordmark, navigation, language, theme, account; footer with Privacy/Terms). Below 768 px navigation moves into a `Sheet`.
+- Use `LoadingState`, `EmptyState` and `ErrorState` from `components/feedback` instead of ad-hoc spinners or blank screens.
+- Touch targets are at least 44 px (`size-11` / `min-h-11`), even where the preset's default button is smaller.
+
+---
+
 ## Purpose
 
 This document defines the design principles for SuwaLink.

@@ -1,83 +1,104 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/raleway";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/noto-sans-sinhala";
+@import "@fontsource-variable/noto-sans-tamil";
+@import "@fontsource/space-mono/400.css";
+@import "@fontsource/space-mono/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * SuwaLink brand tokens - "Olive Garden Feast" (CONTEXT/DESIGN.md).
+ * Hex in comments is the source of truth; contrast ratios are WCAG 2.x.
+ *   Olive Leaf   #606C38  primary
+ *   Black Forest #283618  foreground / headlines
+ *   Cornsilk     #FEFAE0  background
+ *   Sunlit Clay  #DDA15E  secondary (+ tinted accent)
+ *   Copperwood   #BC6C25  highlight (non-text marks, charts)
+ */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.148 0.004 228.8);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.148 0.004 228.8);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.148 0.004 228.8);
-    --primary: oklch(0.841 0.238 128.85);
-    --primary-foreground: oklch(0.405 0.101 131.063);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.963 0.002 197.1);
-    --muted-foreground: oklch(0.56 0.021 213.5);
-    --accent: oklch(0.841 0.238 128.85);
-    --accent-foreground: oklch(0.405 0.101 131.063);
+    --background: oklch(0.981 0.034 99.8);            /* #FEFAE0 Cornsilk */
+    --foreground: oklch(0.312 0.053 129.6);           /* #283618 Black Forest, 12.2:1 */
+    --card: oklch(0.993 0.015 98.3);                  /* #FFFDF2 toned surface */
+    --card-foreground: oklch(0.312 0.053 129.6);
+    --popover: oklch(0.993 0.015 98.3);
+    --popover-foreground: oklch(0.312 0.053 129.6);
+    --primary: oklch(0.508 0.076 119.9);              /* #606C38 Olive Leaf */
+    --primary-foreground: oklch(0.981 0.034 99.8);    /* #FEFAE0 on olive, 5.4:1 */
+    --secondary: oklch(0.753 0.110 67.8);             /* #DDA15E Sunlit Clay */
+    --secondary-foreground: oklch(0.312 0.053 129.6); /* #283618 on clay, 5.7:1 */
+    --muted: oklch(0.948 0.038 99);                   /* #F4EFD2 */
+    --muted-foreground: oklch(0.512 0.045 114.2);     /* #666A4C, 5.4:1 on bg, 4.9:1 on muted */
+    --accent: oklch(0.921 0.048 84.6);                /* #F4E3C1 clay tint (menu focus, hovers) */
+    --accent-foreground: oklch(0.312 0.053 129.6);    /* 10.2:1 */
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.925 0.005 214.3);
-    --input: oklch(0.925 0.005 214.3);
-    --ring: oklch(0.723 0.014 214.4);
-    --chart-1: oklch(0.872 0.007 219.6);
-    --chart-2: oklch(0.56 0.021 213.5);
-    --chart-3: oklch(0.45 0.017 213.2);
-    --chart-4: oklch(0.378 0.015 216);
-    --chart-5: oklch(0.275 0.011 216.9);
+    --highlight: oklch(0.609 0.130 57.3);             /* #BC6C25 Copperwood, 3.8:1 - not for body text */
+    --border: oklch(0.897 0.042 98.1);                /* #E4DEBF */
+    --input: oklch(0.851 0.049 98.2);                 /* #D6CFAB */
+    --ring: oklch(0.508 0.076 119.9);                 /* Olive Leaf */
+    --chart-1: oklch(0.508 0.076 119.9);              /* Olive Leaf */
+    --chart-2: oklch(0.753 0.110 67.8);               /* Sunlit Clay */
+    --chart-3: oklch(0.609 0.130 57.3);               /* Copperwood */
+    --chart-4: oklch(0.312 0.053 129.6);              /* Black Forest */
+    --chart-5: oklch(0.729 0.072 117.9);              /* #A3AE7A light olive */
     --radius: 0.625rem;
-    --sidebar: oklch(0.987 0.002 197.1);
-    --sidebar-foreground: oklch(0.148 0.004 228.8);
-    --sidebar-primary: oklch(0.648 0.2 131.684);
-    --sidebar-primary-foreground: oklch(0.986 0.031 120.757);
-    --sidebar-accent: oklch(0.963 0.002 197.1);
-    --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-    --sidebar-border: oklch(0.925 0.005 214.3);
-    --sidebar-ring: oklch(0.723 0.014 214.4);
+    --sidebar: oklch(0.970 0.037 98.7);               /* #FBF6DA */
+    --sidebar-foreground: oklch(0.312 0.053 129.6);
+    --sidebar-primary: oklch(0.508 0.076 119.9);
+    --sidebar-primary-foreground: oklch(0.981 0.034 99.8);
+    --sidebar-accent: oklch(0.921 0.048 84.6);
+    --sidebar-accent-foreground: oklch(0.312 0.053 129.6);
+    --sidebar-border: oklch(0.897 0.042 98.1);
+    --sidebar-ring: oklch(0.508 0.076 119.9);
 }
 
+/*
+ * Dark is its own palette, not an inversion: olive-tinted near-black
+ * surfaces (hue ~127, low chroma), Cornsilk text dimmed to #F2EED6,
+ * and Olive Leaf raised to #B3C17A so it stays readable as text and as a fill.
+ */
 .dark {
-    --background: oklch(0.148 0.004 228.8);
-    --foreground: oklch(0.987 0.002 197.1);
-    --card: oklch(0.218 0.008 223.9);
-    --card-foreground: oklch(0.987 0.002 197.1);
-    --popover: oklch(0.218 0.008 223.9);
-    --popover-foreground: oklch(0.987 0.002 197.1);
-    --primary: oklch(0.768 0.233 130.85);
-    --primary-foreground: oklch(0.405 0.101 131.063);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.275 0.011 216.9);
-    --muted-foreground: oklch(0.723 0.014 214.4);
-    --accent: oklch(0.768 0.233 130.85);
-    --accent-foreground: oklch(0.405 0.101 131.063);
+    --background: oklch(0.213 0.024 126.7);           /* #161B0F */
+    --foreground: oklch(0.946 0.032 99.2);            /* #F2EED6, 15.0:1 */
+    --card: oklch(0.253 0.029 128.6);                 /* #1E2516 */
+    --card-foreground: oklch(0.946 0.032 99.2);
+    --popover: oklch(0.272 0.032 128.8);              /* #222A19 */
+    --popover-foreground: oklch(0.946 0.032 99.2);
+    --primary: oklch(0.783 0.095 117.7);              /* #B3C17A raised olive, 9.0:1 on bg */
+    --primary-foreground: oklch(0.232 0.030 125.4);   /* #1A2010 on primary, 8.6:1 */
+    --secondary: oklch(0.753 0.110 67.8);             /* #DDA15E Sunlit Clay */
+    --secondary-foreground: oklch(0.206 0.028 80.5);  /* #1E1608, 8.0:1 */
+    --muted: oklch(0.291 0.035 129);                  /* #262F1C */
+    --muted-foreground: oklch(0.712 0.043 110.5);     /* #A3A586, 6.9:1 on bg, 5.5:1 on muted */
+    --accent: oklch(0.323 0.030 88.2);                /* #3A3322 clay-tinted dark */
+    --accent-foreground: oklch(0.922 0.052 83.4);     /* #F6E3BF, 9.9:1 */
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.56 0.021 213.5);
-    --chart-1: oklch(0.872 0.007 219.6);
-    --chart-2: oklch(0.56 0.021 213.5);
-    --chart-3: oklch(0.45 0.017 213.2);
-    --chart-4: oklch(0.378 0.015 216);
-    --chart-5: oklch(0.275 0.011 216.9);
-    --sidebar: oklch(0.218 0.008 223.9);
-    --sidebar-foreground: oklch(0.987 0.002 197.1);
-    --sidebar-primary: oklch(0.768 0.233 130.85);
-    --sidebar-primary-foreground: oklch(0.274 0.072 132.109);
-    --sidebar-accent: oklch(0.275 0.011 216.9);
-    --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.56 0.021 213.5);
+    --highlight: oklch(0.720 0.130 58.9);             /* #E08F4A raised Copperwood, 6.8:1 */
+    --border: oklch(0.348 0.040 127.5);               /* #343E27 */
+    --input: oklch(0.392 0.044 127);                  /* #3F4A30 */
+    --ring: oklch(0.783 0.095 117.7);
+    --chart-1: oklch(0.783 0.095 117.7);
+    --chart-2: oklch(0.753 0.110 67.8);
+    --chart-3: oklch(0.720 0.130 58.9);
+    --chart-4: oklch(0.946 0.032 99.2);
+    --chart-5: oklch(0.607 0.090 119.3);              /* #7C8A4A */
+    --sidebar: oklch(0.233 0.027 127.2);              /* #1A2012 */
+    --sidebar-foreground: oklch(0.946 0.032 99.2);
+    --sidebar-primary: oklch(0.783 0.095 117.7);
+    --sidebar-primary-foreground: oklch(0.232 0.030 125.4);
+    --sidebar-accent: oklch(0.323 0.030 88.2);
+    --sidebar-accent-foreground: oklch(0.922 0.052 83.4);
+    --sidebar-border: oklch(0.348 0.040 127.5);
+    --sidebar-ring: oklch(0.783 0.095 117.7);
 }
 
 @theme inline {
-    --font-sans: 'Geist Variable', sans-serif;
-    --font-heading: 'Raleway Variable', sans-serif;
+    --font-sans: 'Manrope Variable', 'Noto Sans Sinhala Variable', 'Noto Sans Tamil Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: var(--font-sans);
+    --font-mono: 'Space Mono', ui-monospace, monospace;
+    --color-highlight: var(--highlight);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -131,4 +152,14 @@
   html {
     @apply font-sans;
     }
+}
+
+/* Respect reduced-motion: keep state changes, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
