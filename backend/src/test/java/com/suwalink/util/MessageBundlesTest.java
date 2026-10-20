@@ -29,6 +29,13 @@ class MessageBundlesTest {
         }
     }
 
+    @Test
+    void keySetsAreEqualAcrossLanguages() throws Exception {
+        Set<String> en = load("messages").stringPropertyNames();
+        assertThat(load("messages_si").stringPropertyNames()).isEqualTo(en);
+        assertThat(load("messages_ta").stringPropertyNames()).isEqualTo(en);
+    }
+
     private static Set<String> placeholders(String text) {
         Set<String> names = new HashSet<>();
         if (text != null) {

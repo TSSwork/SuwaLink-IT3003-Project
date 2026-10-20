@@ -225,6 +225,15 @@ class NotificationMailerTest {
         assertThat(customerMailBody).contains("http://localhost:3000/reservations/" + reservationId);
     }
 
+    @Test
+    void paramsAreHtmlEscapedInBody() throws Exception {
+        notificationService.notify(customer, NotificationType.SYSTEM_ALERT,
+                NotificationKeys.PHARMACY_APPROVED, Map.of("pharmacy", "<b>x</b>"), "/x");
+
+        String html = content(onlySentMessage());
+        assertThat(html).contains("&lt;b&gt;x&lt;/b&gt;").doesNotContain("<b>x</b>");
+    }
+
     private org.springframework.test.web.servlet.RequestBuilder reservationRequest() {
         String token = jwtService.generateToken(customer.getId(), customer.getEmail(), customer.getRole());
         return post("/api/reservations")
