@@ -226,6 +226,7 @@ class PrescriptionResponseControllerTest {
     private String createPrescription(String token, int age, String note) throws Exception {
         MvcResult result = mockMvc.perform(multipart("/api/prescriptions")
                         .file(samplePrescriptionImage())
+                        .with(com.suwalink.support.TestPayloads.prescriptionTargetAll())
                         .param("patientAge", String.valueOf(age))
                         .param("note", note)
                         .header("Authorization", "Bearer " + token))

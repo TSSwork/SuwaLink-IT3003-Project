@@ -78,6 +78,14 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(NoPharmaciesInScopeException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoPharmaciesInScope(NoPharmaciesInScopeException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<ApiErrorResponse> handleInsufficientStock(InsufficientStockException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

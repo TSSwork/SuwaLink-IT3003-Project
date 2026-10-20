@@ -24,10 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Lets a patient submit a prescription request (photo + note + age) and manage their own
- * requests, and lets pharmacies browse pending ones. Tagging pharmacy inventory against a
- * request and notifications are separate modules - not built here (see
- * README/READ_PRESCRIPTION_MODULE.md).
+ * Lets a patient submit a prescription request (photo, note, age, target scope, consent) and
+ * manage their own requests, and lets pharmacies list the open requests sent to them.
  */
 @RestController
 @RequestMapping("/api/prescriptions")
@@ -54,13 +52,13 @@ public class PrescriptionRequestController {
 
     @GetMapping
     @PreAuthorize("hasRole('PHARMACY_OWNER')")
-    public ResponseEntity<ApiResponse<List<PrescriptionRequestResponse>>> listPending() {
-        List<PrescriptionRequestResponse> responses = prescriptionRequestService.listPending();
-        return ResponseEntity.ok(ApiResponse.success("Pending prescription requests", responses));
+    public ResponseEntity<ApiResponse<List<PrescriptionRequestResponse>>> listForMyPharmacy() {
+        List<PrescriptionRequestResponse> responses = prescriptionRequestService.listForMyPharmacy();
+        return ResponseEntity.ok(ApiResponse.success("Open prescription requests sent to your pharmacy", responses));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_OWNER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_OWNER', 'ADMIN')")
     public ResponseEntity<ApiResponse<PrescriptionRequestResponse>> getById(@PathVariable UUID id) {
         PrescriptionRequestResponse response = prescriptionRequestService.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Prescription request", response));
