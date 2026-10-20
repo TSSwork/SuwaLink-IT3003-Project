@@ -137,7 +137,7 @@ public class AuthServiceImpl implements AuthService {
             user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
             userRepository.save(user);
 
-            mailService.sendPasswordResetOtp(user.getEmail(), otp);
+            mailService.sendPasswordResetOtp(user, otp);
         });
     }
 

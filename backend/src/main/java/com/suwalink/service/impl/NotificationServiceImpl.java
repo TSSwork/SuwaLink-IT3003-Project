@@ -4,6 +4,7 @@ import com.suwalink.dto.response.NotificationResponse;
 import com.suwalink.entity.Notification;
 import com.suwalink.entity.NotificationType;
 import com.suwalink.entity.User;
+import com.suwalink.event.NotificationCreatedEvent;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.NotificationRepository;
 import com.suwalink.security.CurrentUserProvider;
@@ -15,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +27,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final CurrentUserProvider currentUserProvider;
     private final MessageRenderer messageRenderer;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
     public Notification notify(User recipient, NotificationType type, String messageKey,
                                Map<String, String> params, String link) {
-        return notificationRepository.save(Notification.builder()
+        Notification saved = notificationRepository.save(Notification.builder()
                 .recipient(recipient)
                 .type(type)
                 .messageKey(messageKey)
@@ -38,6 +41,8 @@ public class NotificationServiceImpl implements NotificationService {
                 .link(link)
                 .isRead(false)
                 .build());
+        eventPublisher.publishEvent(new NotificationCreatedEvent(saved.getId()));
+        return saved;
     }
 
     @Override
