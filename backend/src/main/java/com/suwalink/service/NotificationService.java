@@ -1,55 +1,27 @@
 package com.suwalink.service;
 
+import com.suwalink.dto.response.NotificationResponse;
 import com.suwalink.entity.Notification;
 import com.suwalink.entity.NotificationType;
 import com.suwalink.entity.User;
-import com.suwalink.exception.ResourceNotFoundException;
-import com.suwalink.repository.NotificationRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-public class NotificationService {
+/** Keyed in-app notifications, rendered in the reader's language when listed. */
+public interface NotificationService {
 
-    private final NotificationRepository notificationRepository;
+    /** Stores a notification whose text is {@code messageKey + ".title"/".body"} filled with {@code params}. */
+    Notification notify(User recipient, NotificationType type, String messageKey, Map<String, String> params, String link);
 
-    @Transactional
-    public void createNotification(User recipient, String title, String message, NotificationType type) {
-        Notification notification = Notification.builder()
-                .recipient(recipient)
-                .title(title)
-                .message(message)
-                .type(type)
-                .isRead(false)
-                .build();
-        notificationRepository.save(notification);
-    }
+    /** The current user's notifications, newest first, rendered in {@code locale}. */
+    List<NotificationResponse> listMine(Locale locale);
 
-    public List<Notification> getUserNotifications(User user) {
-        return notificationRepository.findByRecipientOrderByCreatedAtDesc(user);
-    }
+    long unreadCount();
 
-    public long getUnreadCount(User user) {
-        return notificationRepository.countByRecipientAndIsReadFalse(user);
-    }
+    /** Marks one of the current user's notifications read; someone else's counts as not found. */
+    void markRead(UUID id);
 
-    @Transactional
-    public void markAsRead(UUID notificationId, User currentUser) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found: " + notificationId));
-
-        // Ensure the notification belongs to the current user; report unowned notifications the
-        // same way as missing ones rather than silently no-oping with a false "success".
-        if (!notification.getRecipient().getId().equals(currentUser.getId())) {
-            throw new ResourceNotFoundException("Notification not found: " + notificationId);
-        }
-
-        notification.setRead(true);
-        notificationRepository.save(notification);
-    }
+    void markAllRead();
 }

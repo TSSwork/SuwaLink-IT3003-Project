@@ -1,6 +1,7 @@
 package com.suwalink.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -51,15 +52,42 @@ public class User {
     @Column(name = "role", nullable = false)
     private Role role;
 
+    @Convert(converter = LanguageConverter.class)
+    @Column(name = "preferred_language", nullable = false, length = 2)
+    @Builder.Default
+    private Language preferredLanguage = Language.EN;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "district")
+    private District district;
+
     @Column(name = "is_demo", nullable = false)
     @Builder.Default
     private boolean demo = false;
+
+    /** Suspended by an admin: cannot log in, existing tokens stop working. */
+    @Column(name = "is_suspended", nullable = false)
+    @Builder.Default
+    private boolean suspended = false;
+
+    /** Set when the account was deleted (personal fields anonymised); the row stays for history. */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    /** When the user accepted the terms and privacy policy (registration time; backfilled for old rows). */
+    @Column(name = "terms_accepted_at", nullable = false)
+    private LocalDateTime termsAcceptedAt;
 
     @Column(name = "reset_otp")
     private String resetOtp;
 
     @Column(name = "reset_otp_expiry")
     private LocalDateTime resetOtpExpiry;
+
+    /** Wrong OTP attempts since the current reset OTP was issued. */
+    @Column(name = "reset_otp_attempts", nullable = false)
+    @Builder.Default
+    private int resetOtpAttempts = 0;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

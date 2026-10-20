@@ -1,6 +1,9 @@
 package com.suwalink.service;
 
+import com.suwalink.entity.User;
+
 public interface MailService {
 
-    void sendPasswordResetOtp(String toEmail, String otp);
+    /** Emails the reset code to the user, in their preferred language. */
+    void sendPasswordResetOtp(User user, String otp);
 }

@@ -1,19 +1,19 @@
 package com.suwalink.controller;
 
-import com.suwalink.dto.NotificationResponse;
 import com.suwalink.dto.response.ApiResponse;
-import com.suwalink.entity.Notification;
-import com.suwalink.entity.User;
-import com.suwalink.security.CurrentUserProvider;
+import com.suwalink.dto.response.NotificationResponse;
 import com.suwalink.service.NotificationService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -21,43 +21,29 @@ import java.util.stream.Collectors;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final CurrentUserProvider currentUserProvider;
 
+    /** The caller's notifications, rendered in the {@code Accept-Language} locale (en/si/ta, default en). */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getUserNotifications() {
-        User currentUser = currentUserProvider.getCurrentUser();
-        List<NotificationResponse> responses = notificationService.getUserNotifications(currentUser)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-        
-        return ResponseEntity.ok(ApiResponse.success("Notifications fetched successfully", responses));
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getUserNotifications(Locale locale) {
+        return ResponseEntity.ok(ApiResponse.success("Notifications fetched successfully",
+                notificationService.listMine(locale)));
     }
 
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getUnreadCount() {
-        User currentUser = currentUserProvider.getCurrentUser();
-        long count = notificationService.getUnreadCount(currentUser);
-        
-        return ResponseEntity.ok(ApiResponse.success("Unread count fetched successfully", Map.of("count", count)));
+        return ResponseEntity.ok(ApiResponse.success("Unread count fetched successfully",
+                Map.of("count", notificationService.unreadCount())));
     }
 
     @PutMapping("/{id}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable UUID id) {
-        User currentUser = currentUserProvider.getCurrentUser();
-        notificationService.markAsRead(id, currentUser);
-        
+        notificationService.markRead(id);
         return ResponseEntity.ok(ApiResponse.success("Notification marked as read"));
     }
 
-    private NotificationResponse mapToResponse(Notification notification) {
-        return NotificationResponse.builder()
-                .id(notification.getId())
-                .title(notification.getTitle())
-                .message(notification.getMessage())
-                .type(notification.getType())
-                .isRead(notification.isRead())
-                .createdAt(notification.getCreatedAt())
-                .build();
+    @PutMapping("/read-all")
+    public ResponseEntity<ApiResponse<Void>> markAllRead() {
+        notificationService.markAllRead();
+        return ResponseEntity.ok(ApiResponse.success("All notifications marked as read"));
     }
 }

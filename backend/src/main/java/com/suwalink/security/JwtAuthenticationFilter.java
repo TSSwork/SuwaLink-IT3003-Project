@@ -41,8 +41,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtService.extractEmail(token);
             try {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                if (!userDetails.isEnabled()) {
-                    // Demo account while demo mode is off: existing tokens stop working (401).
+                if (!userDetails.isEnabled() || !userDetails.isAccountNonLocked()
+                        || !issuedToSameAccount(token, userDetails)) {
+                    // Demo account while demo mode is off, a suspended account, or a token issued to an
+                    // earlier (deleted) account whose email was registered again: the token stops working (401).
                     SecurityContextHolder.clearContext();
                     filterChain.doFilter(request, response);
                     return;
@@ -62,5 +64,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean issuedToSameAccount(String token, UserDetails userDetails) {
+        return userDetails instanceof AppUserDetails account
+            && account.getId().toString().equals(jwtService.extractUserId(token));
     }
 }

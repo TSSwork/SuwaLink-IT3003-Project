@@ -22,7 +22,7 @@ class UserDetailsServiceImplTest {
 
     @Test
     void loadUserByUsername_whenUserExists_returnsUserDetailsWithRoleAuthority() {
-        User user = User.builder()
+        User user = User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
             .id(UUID.randomUUID())
             .name("Nimal Perera")
             .email("nimal@example.com")

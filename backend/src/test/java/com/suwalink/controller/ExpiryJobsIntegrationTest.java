@@ -1,12 +1,14 @@
 package com.suwalink.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.suwalink.entity.Category;
 import com.suwalink.entity.Currency;
 import com.suwalink.entity.District;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.Manufacturer;
+import com.suwalink.entity.Notification;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
@@ -45,6 +47,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
+import com.suwalink.security.JwtService;
+import com.suwalink.service.ImageService;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.springframework.beans.factory.annotation.Value;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -53,6 +66,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * {@code @Transactional}: the seeded rows must be committed to be seen, and {@link #cleanUp()} removes them.
  */
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ExpiryJobsIntegrationTest {
 
@@ -69,6 +83,11 @@ class ExpiryJobsIntegrationTest {
     @Autowired private ReservationService reservationService;
     @Autowired private PrescriptionRequestService prescriptionRequestService;
     @Autowired private TransactionTemplate transactionTemplate;
+    @Autowired private ImageService imageService;
+    @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private MockMvc mockMvc;
+    @Autowired private JwtService jwtService;
+    @Value("${app.upload.dir}") private String uploadDir;
 
     private User patient;
     private User pharmacyUser;
@@ -112,7 +131,7 @@ class ExpiryJobsIntegrationTest {
                 .build());
         image = imageRepository.save(Image.builder()
                 .url("/x").originalFilename("x.png").generatedFilename("x-" + suffix + ".webp")
-                .filePath("x-" + suffix + ".webp").mimeType("image/webp").imageType(ImageType.PRESCRIPTION)
+                .filePath(uploadDir + "/x-" + suffix + ".webp").mimeType("image/webp").imageType(ImageType.PRESCRIPTION)
                 .build());
     }
 
@@ -166,6 +185,122 @@ class ExpiryJobsIntegrationTest {
                 .isEqualTo(PrescriptionRequestStatus.PENDING);
     }
 
+    @Test
+    void reservationExpiryNotifiesBothSides() {
+        Reservation overdue = reservation("NOTIFYEXP1", LocalDateTime.now().minusMinutes(1), item(inventory(1), 2));
+
+        assertThat(reservationService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
+
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(patient))
+                .extracting(Notification::getMessageKey, Notification::getLink)
+                .containsExactly(tuple("notify.reservation.expired", "/reservations/" + overdue.getId()));
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(pharmacyUser))
+                .extracting(Notification::getMessageKey, Notification::getLink)
+                .containsExactly(tuple("notify.reservation.expired", "/pharmacy/reservations"));
+    }
+
+    @Test
+    void expiredRequestNotifiesCustomer() {
+        PrescriptionRequest overdue = request(LocalDateTime.now().minusMinutes(1));
+
+        assertThat(prescriptionRequestService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
+
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(patient))
+                .extracting(Notification::getMessageKey, Notification::getLink)
+                .containsExactly(tuple("notify.prescription.expired", "/prescriptions/" + overdue.getId()));
+        assertThat(notificationRepository.findByRecipientOrderByCreatedAtDesc(pharmacyUser)).isEmpty();
+    }
+
+    @Test
+    void purgeDeletesOldClosedRequestImages() throws Exception {
+        Path file = storedFile(image);
+        PrescriptionRequest closed = request(LocalDateTime.now().plusDays(1));
+        setStatusAndAge(closed, PrescriptionRequestStatus.CLOSED, 31);
+        Image expiredImage = prescriptionImage();
+        PrescriptionRequest expired = requestWithImage(expiredImage);
+        setStatusAndAge(expired, PrescriptionRequestStatus.EXPIRED, 31);
+        Path expiredFile = storedFile(expiredImage);
+
+        try {
+            assertThat(imageService.purgeOldPrescriptionImages(LocalDateTime.now())).isEqualTo(2);
+
+            assertThat(file).doesNotExist();
+            assertThat(expiredFile).doesNotExist();
+            assertThat(imageRepository.findById(image.getId()).orElseThrow().getPurgedAt()).isNotNull();
+            mockMvc.perform(get("/api/images/" + image.getId() + "/content")
+                    .header("Authorization", "Bearer "
+                        + jwtService.generateToken(patient.getId(), patient.getEmail(), patient.getRole())))
+                .andExpect(status().isGone())
+                .andExpect(jsonPath("$.code").value("IMAGE_PURGED"));
+            assertThat(imageService.purgeOldPrescriptionImages(LocalDateTime.now())).isZero();
+        } finally {
+            Files.deleteIfExists(file);
+            Files.deleteIfExists(expiredFile);
+            transactionTemplate.executeWithoutResult(s -> {
+                prescriptionRequestRepository.deleteById(expired.getId());
+                prescriptionRequestRepository.flush();
+                imageRepository.deleteById(expiredImage.getId());
+            });
+        }
+    }
+
+    @Test
+    void purgeKeepsOpenAndRecentRequests() throws Exception {
+        Path file = storedFile(image);
+        PrescriptionRequest pendingOld = request(LocalDateTime.now().plusDays(1));
+        setStatusAndAge(pendingOld, PrescriptionRequestStatus.PENDING, 90);
+        Image recentImage = prescriptionImage();
+        PrescriptionRequest closedRecent = requestWithImage(recentImage);
+        setStatusAndAge(closedRecent, PrescriptionRequestStatus.CLOSED, 5);
+        Path recentFile = storedFile(recentImage);
+
+        try {
+            assertThat(imageService.purgeOldPrescriptionImages(LocalDateTime.now())).isZero();
+
+            assertThat(file).exists();
+            assertThat(recentFile).exists();
+            assertThat(imageRepository.findById(image.getId()).orElseThrow().getPurgedAt()).isNull();
+            assertThat(imageRepository.findById(recentImage.getId()).orElseThrow().getPurgedAt()).isNull();
+        } finally {
+            Files.deleteIfExists(file);
+            Files.deleteIfExists(recentFile);
+            transactionTemplate.executeWithoutResult(s -> {
+                prescriptionRequestRepository.deleteById(closedRecent.getId());
+                prescriptionRequestRepository.flush();
+                imageRepository.deleteById(recentImage.getId());
+            });
+        }
+    }
+
+    private Path storedFile(Image img) throws java.io.IOException {
+        Path file = Path.of(img.getFilePath());
+        Files.createDirectories(file.toAbsolutePath().getParent());
+        Files.writeString(file, "fake image");
+        return file;
+    }
+
+    private Image prescriptionImage() {
+        String name = "ret-" + UUID.randomUUID() + ".webp";
+        return imageRepository.save(Image.builder()
+                .url("/x").originalFilename("x.png").generatedFilename(name)
+                .filePath(uploadDir + "/" + name).mimeType("image/webp").imageType(ImageType.PRESCRIPTION)
+                .build());
+    }
+
+    private PrescriptionRequest requestWithImage(Image img) {
+        PrescriptionRequest saved = prescriptionRequestRepository.save(PrescriptionRequest.builder()
+                .patient(patient).image(img).patientAge(30).targetScope(TargetScope.ALL)
+                .consentAt(LocalDateTime.now()).expiresAt(LocalDateTime.now().plusDays(1)).build());
+        requestIds.add(saved.getId());
+        return saved;
+    }
+
+    /** Sets status and backdates updated_at directly, since auditing overwrites it on every save. */
+    private void setStatusAndAge(PrescriptionRequest request, PrescriptionRequestStatus status, int daysAgo) {
+        jdbcTemplate.update("UPDATE prescription_requests SET status = ?, updated_at = ? WHERE id = ?",
+                status.name(), java.sql.Timestamp.valueOf(LocalDateTime.now().minusDays(daysAgo)), request.getId());
+    }
+
     private Inventory inventory(int stock) {
         Inventory saved = inventoryRepository.save(Inventory.builder()
                 .medicineMaster(medicine)
@@ -217,7 +352,7 @@ class ExpiryJobsIntegrationTest {
     }
 
     private static User user(String email, Role role) {
-        return User.builder()
+        return User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .name("Expiry User")
                 .email(email)
                 .phone("0770000000")

@@ -11,6 +11,6 @@ public interface PharmacyVisibilityService {
     /** Alias of {@link #isDemoModePublic()}, used by queries deciding whether demo rows are included. */
     boolean includeDemo();
 
-    /** A pharmacy is publicly visible when VERIFIED and (not a demo, or demo mode is on). */
+    /** A pharmacy is publicly visible when VERIFIED, its owner is neither suspended nor deleted, and it is not a demo (or demo mode is on). */
     boolean isPubliclyVisible(Pharmacy pharmacy);
 }

@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Audited
@@ -52,4 +53,18 @@ public class MedicineMaster extends BaseAuditEntity {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private MedicineStatus status = MedicineStatus.APPROVED;
+
+    /** The pharmacy that suggested this medicine; null for admin-created entries. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suggested_by_pharmacy_id")
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+    private Pharmacy suggestedByPharmacy;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
 }

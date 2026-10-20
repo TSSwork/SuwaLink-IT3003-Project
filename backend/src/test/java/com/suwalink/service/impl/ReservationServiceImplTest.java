@@ -44,7 +44,7 @@ class ReservationServiceImplTest {
     @Mock private PlatformTransactionManager transactionManager;
     @InjectMocks private ReservationServiceImpl service;
 
-    private final User patient = User.builder().id(UUID.randomUUID()).name("Pat").role(Role.CUSTOMER).build();
+    private final User patient = User.builder().termsAcceptedAt(java.time.LocalDateTime.now()).id(UUID.randomUUID()).name("Pat").role(Role.CUSTOMER).build();
     private final Pharmacy pharmacy = Pharmacy.builder().id(UUID.randomUUID()).name("Pharm").build();
 
     @Test

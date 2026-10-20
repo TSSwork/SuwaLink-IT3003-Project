@@ -3,6 +3,7 @@ package com.suwalink.repository;
 import com.suwalink.entity.Reservation;
 import com.suwalink.entity.ReservationStatus;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,5 +27,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     boolean existsByPickupCode(String pickupCode);
 
+    @EntityGraph(attributePaths = {"items"})
+    List<Reservation> findByPatientIdAndStatus(UUID patientId, ReservationStatus status);
+
+    boolean existsByPharmacyIdAndStatus(UUID pharmacyId, ReservationStatus status);
+
+    boolean existsByPrescriptionRequestId(UUID prescriptionRequestId);
+
     void deleteByPharmacyId(UUID pharmacyId);
+
+    /** Reservations made by any of the customers or held at any of the pharmacies (demo cleanup). */
+    @EntityGraph(attributePaths = {"items"})
+    List<Reservation> findDistinctByPatientIdInOrPharmacyIdIn(Collection<UUID> patientIds, Collection<UUID> pharmacyIds);
 }

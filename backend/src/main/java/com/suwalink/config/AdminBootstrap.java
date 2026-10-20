@@ -56,6 +56,7 @@ public class AdminBootstrap implements ApplicationRunner {
                 .phone("0000000000")
                 .password(passwordEncoder.encode(password))
                 .role(Role.ADMIN)
+                .termsAcceptedAt(java.time.LocalDateTime.now())
                 .build());
         log.info("Bootstrap admin created: {}", email);
     }

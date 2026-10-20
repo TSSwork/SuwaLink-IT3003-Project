@@ -15,6 +15,7 @@ public final class TestPayloads {
               "email": "%s",
               "phone": "0112345678",
               "password": "SecurePass123",
+              "acceptTerms": true,
               "licenceNo": "%s",
               "address": "123 Test Rd",
               "district": "COLOMBO",
@@ -27,7 +28,7 @@ public final class TestPayloads {
 
     public static String customerRegistration(String email) {
         return """
-            { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123" }
+            { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123", "acceptTerms": true }
             """.formatted(email);
     }
 

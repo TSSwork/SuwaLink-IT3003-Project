@@ -21,13 +21,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
+            .filter(found -> found.getDeletedAt() == null)
             .orElseThrow(() -> new UsernameNotFoundException("No user found with email: " + email));
 
         boolean enabled = !(user.isDemo() && !visibility.isDemoModePublic());
-        return new org.springframework.security.core.userdetails.User(
+        return new AppUserDetails(
+            user.getId(),
             user.getEmail(),
             user.getPassword(),
-            enabled, true, true, true,
+            enabled, !user.isSuspended(),
             List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
     }
 }

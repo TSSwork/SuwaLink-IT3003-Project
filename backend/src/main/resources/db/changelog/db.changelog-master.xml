@@ -33,4 +33,32 @@
         <sqlFile path="sql/007-reservation-items.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="008-user-preferences" author="suwalink">
+        <sqlFile path="sql/008-user-preferences.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="009-notification-keys" author="suwalink">
+        <sqlFile path="sql/009-notification-keys.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="010-consent-retention" author="suwalink">
+        <sqlFile path="sql/010-consent-retention.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="011-account-status" author="suwalink">
+        <sqlFile path="sql/011-account-status.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="012-medicine-status" author="suwalink">
+        <sqlFile path="sql/012-medicine-status.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="013-reference-medicines" author="suwalink">
+        <sqlFile path="sql/013-reference-medicines.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="014-otp-attempts" author="suwalink">
+        <sqlFile path="sql/014-otp-attempts.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

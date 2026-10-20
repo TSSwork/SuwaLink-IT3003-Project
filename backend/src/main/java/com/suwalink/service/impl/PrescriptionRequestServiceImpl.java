@@ -14,13 +14,16 @@ import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.District;
 import com.suwalink.entity.TargetScope;
 import com.suwalink.event.PrescriptionAddedEvent;
+import com.suwalink.event.PrescriptionRequestExpiredEvent;
 import com.suwalink.exception.NoPharmaciesInScopeException;
 import com.suwalink.exception.PrescriptionAccessDeniedException;
 import com.suwalink.exception.PrescriptionRequestClosedException;
+import com.suwalink.exception.RequestHasReservationsException;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.ImageRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.PrescriptionRequestRepository;
+import com.suwalink.repository.ReservationRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.ImageService;
 import com.suwalink.service.PrescriptionRequestService;
@@ -57,6 +60,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class PrescriptionRequestServiceImpl implements PrescriptionRequestService {
 
     private final PrescriptionRequestRepository prescriptionRequestRepository;
+    private final ReservationRepository reservationRepository;
     private final ImageRepository imageRepository;
     private final ImageService imageService;
     private final CurrentUserProvider currentUserProvider;
@@ -104,13 +108,14 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .targetPharmacies(new HashSet<>(targets))
             .build();
 
-        PrescriptionRequestResponse response = toResponse(prescriptionRequestRepository.save(prescriptionRequest));
+        PrescriptionRequest saved = prescriptionRequestRepository.save(prescriptionRequest);
+        PrescriptionRequestResponse response = toResponse(saved);
 
         List<UUID> targetUserIds = targets.stream()
             .map(Pharmacy::getUser)
             .map(User::getId)
             .toList();
-        eventPublisher.publishEvent(new PrescriptionAddedEvent(this, targetUserIds));
+        eventPublisher.publishEvent(new PrescriptionAddedEvent(this, saved.getId(), patient.getId(), targetUserIds));
 
         return response;
     }
@@ -171,6 +176,10 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     @Transactional
     public void delete(UUID id) {
         PrescriptionRequest prescriptionRequest = ownedRequest(id);
+        if (reservationRepository.existsByPrescriptionRequestId(id)) {
+            throw new RequestHasReservationsException(
+                "This request has reservations and can't be deleted; close it instead");
+        }
         Image image = prescriptionRequest.getImage();
         prescriptionRequestRepository.delete(prescriptionRequest);
         prescriptionRequestRepository.flush();
@@ -224,6 +233,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
         }
         request.setStatus(PrescriptionRequestStatus.EXPIRED);
         prescriptionRequestRepository.save(request);
+        eventPublisher.publishEvent(new PrescriptionRequestExpiredEvent(this, id, request.getPatient().getId()));
         return true;
     }
 

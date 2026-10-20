@@ -483,8 +483,9 @@ class ReservationControllerTest {
 
         assertThat(inventoryRepository.findById(first).orElseThrow().getStockQuantity()).isEqualTo(5);
         assertThat(inventoryRepository.findById(second).orElseThrow().getStockQuantity()).isEqualTo(3);
-        assertThat(notificationTitles("resv.cc.pharmacy@example.com")).contains("Reservation Cancelled");
-        assertThat(notificationTitles("resv.cc.patient@example.com")).doesNotContain("Reservation Cancelled");
+        assertThat(notificationKeys("resv.cc.pharmacy@example.com")).contains("notify.reservation.cancelled-by-customer");
+        assertThat(notificationKeys("resv.cc.patient@example.com"))
+                .noneMatch(key -> key.startsWith("notify.reservation.cancelled"));
     }
 
     @Test
@@ -504,7 +505,7 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.data.cancelReason").value("Out of stock after all"));
 
         assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(5);
-        assertThat(notificationTitles("resv.pc.patient@example.com")).contains("Reservation Cancelled");
+        assertThat(notificationKeys("resv.pc.patient@example.com")).contains("notify.reservation.cancelled-by-pharmacy");
     }
 
     @Test
@@ -531,7 +532,7 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"));
 
         assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(3);
-        assertThat(notificationTitles("resv.comp.patient@example.com")).contains("Reservation Completed");
+        assertThat(notificationKeys("resv.comp.patient@example.com")).contains("notify.reservation.completed");
         complete(pharmacyToken, id).andExpect(status().isConflict());
     }
 
@@ -615,7 +616,7 @@ class ReservationControllerTest {
         UUID item = createInventoryItem("resv.admin.pharmacy@example.com", new BigDecimal("10.00"), 5);
         String id = createReservation(patientToken, item, 1);
         String code = reservationRepository.findById(UUID.fromString(id)).orElseThrow().getPickupCode();
-        userRepository.save(User.builder()
+        userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .name("Reservation Admin")
                 .email("resv.admin@suwalink.local")
                 .phone("0000000000")
@@ -693,10 +694,10 @@ class ReservationControllerTest {
         reservationRepository.save(reservation);
     }
 
-    private List<String> notificationTitles(String email) {
+    private List<String> notificationKeys(String email) {
         User user = userRepository.findByEmail(email).orElseThrow();
         return notificationRepository.findByRecipientOrderByCreatedAtDesc(user).stream()
-                .map(Notification::getTitle)
+                .map(Notification::getMessageKey)
                 .toList();
     }
 
@@ -792,7 +793,7 @@ class ReservationControllerTest {
         mockMvc.perform(post("/api/auth/register/customer")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123" }
+                            { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123", "acceptTerms": true }
                             """.formatted(email)))
                 .andExpect(status().isCreated());
 

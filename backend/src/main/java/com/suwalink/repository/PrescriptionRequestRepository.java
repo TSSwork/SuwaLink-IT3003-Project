@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,11 +27,12 @@ public interface PrescriptionRequestRepository extends JpaRepository<Prescriptio
 
     Optional<PrescriptionRequest> findByImageId(UUID imageId);
 
-    /** Removes the pharmacy from every request's target list (the join table has no cascade). */
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query(value = "DELETE FROM prescription_request_targets WHERE pharmacy_id = :pharmacyId", nativeQuery = true)
-    void deleteTargetsForPharmacy(@Param("pharmacyId") UUID pharmacyId);
-
     List<PrescriptionRequest> findByStatusInAndExpiresAtBefore(
             Collection<PrescriptionRequestStatus> statuses, LocalDateTime cutoff);
+
+    List<PrescriptionRequest> findByPatientIdIn(Collection<UUID> patientIds);
+
+    /** Requests that target any of the pharmacies. */
+    @Query("SELECT DISTINCT r FROM PrescriptionRequest r JOIN r.targetPharmacies p WHERE p.id IN :pharmacyIds")
+    List<PrescriptionRequest> findTargetingAnyPharmacy(@Param("pharmacyIds") Collection<UUID> pharmacyIds);
 }

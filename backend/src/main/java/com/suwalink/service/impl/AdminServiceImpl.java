@@ -3,20 +3,14 @@ package com.suwalink.service.impl;
 import com.suwalink.dto.response.DashboardResponse;
 import com.suwalink.dto.response.PharmacyResponse;
 import com.suwalink.dto.response.UserResponse;
+import com.suwalink.entity.AccountStatus;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.event.PharmacyRejectedEvent;
 import com.suwalink.event.PharmacyVerifiedEvent;
 import com.suwalink.exception.ResourceNotFoundException;
-import com.suwalink.repository.BookmarkRepository;
-import com.suwalink.repository.ImageRepository;
-import com.suwalink.repository.InventoryRepository;
-import com.suwalink.repository.NotificationRepository;
 import com.suwalink.repository.PharmacyRepository;
-import com.suwalink.repository.PrescriptionRequestRepository;
-import com.suwalink.repository.PrescriptionResponseRepository;
-import com.suwalink.repository.ReservationRepository;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.service.AdminService;
 import java.util.List;
@@ -31,13 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final PharmacyRepository pharmacyRepository;
-    private final ReservationRepository reservationRepository;
-    private final BookmarkRepository bookmarkRepository;
-    private final PrescriptionRequestRepository prescriptionRequestRepository;
-    private final PrescriptionResponseRepository prescriptionResponseRepository;
-    private final InventoryRepository inventoryRepository;
-    private final NotificationRepository notificationRepository;
-    private final ImageRepository imageRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -84,7 +71,7 @@ public class AdminServiceImpl implements AdminService {
         pharmacy.setStatus(PharmacyStatus.VERIFIED);
 
         pharmacyRepository.save(pharmacy);
-        eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId()));
+        eventPublisher.publishEvent(new PharmacyVerifiedEvent(this, pharmacy.getUser().getId(), pharmacy.getName()));
     }
 
     @Override
@@ -96,12 +83,16 @@ public class AdminServiceImpl implements AdminService {
         pharmacy.setStatus(PharmacyStatus.REJECTED);
 
         pharmacyRepository.save(pharmacy);
-        eventPublisher.publishEvent(new PharmacyRejectedEvent(this, pharmacy.getUser().getId()));
+        eventPublisher.publishEvent(new PharmacyRejectedEvent(this, pharmacy.getUser().getId(), pharmacy.getName()));
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll()
+    @Transactional(readOnly = true)
+    public List<UserResponse> getUsers(String q, AccountStatus status) {
+        String query = (q == null || q.isBlank()) ? null : q.trim();
+        boolean deleted = status == AccountStatus.DELETED;
+        Boolean suspended = status == null || deleted ? null : status == AccountStatus.SUSPENDED;
+        return userRepository.searchForAdmin(query, deleted, suspended)
                 .stream()
                 .map(user -> UserResponse.builder()
                         .id(user.getId().toString())
@@ -109,31 +100,8 @@ public class AdminServiceImpl implements AdminService {
                         .email(user.getEmail())
                         .phone(user.getPhone())
                         .role(user.getRole().name())
+                        .status(AccountStatus.of(user).name())
                         .build())
                 .toList();
-    }
-
-    @Override
-    @Transactional
-    public void deleteUser(UUID id) {
-        userRepository.findById(id).ifPresent(user -> {
-            if (user.getRole() == Role.PHARMACY_OWNER) {
-                pharmacyRepository.findByUserId(id).ifPresent(this::deletePharmacyData);
-            }
-        });
-        notificationRepository.deleteByRecipient_Id(id);
-        imageRepository.clearUploadedBy(id);
-        userRepository.deleteById(id);
-    }
-
-    // No ON DELETE CASCADE in the schema, so dependents must be removed in FK order first.
-    private void deletePharmacyData(Pharmacy pharmacy) {
-        UUID pharmacyId = pharmacy.getId();
-        reservationRepository.deleteByPharmacyId(pharmacyId);
-        bookmarkRepository.deleteByInventory_PharmacyId(pharmacyId);
-        prescriptionResponseRepository.deleteByPharmacyId(pharmacyId);
-        prescriptionRequestRepository.deleteTargetsForPharmacy(pharmacyId);
-        inventoryRepository.deleteByPharmacyId(pharmacyId);
-        pharmacyRepository.delete(pharmacy);
     }
 }

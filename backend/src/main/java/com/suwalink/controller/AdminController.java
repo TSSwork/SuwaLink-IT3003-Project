@@ -6,7 +6,10 @@ import com.suwalink.dto.response.AppSettingsResponse;
 import com.suwalink.dto.response.DashboardResponse;
 import com.suwalink.dto.response.PharmacyResponse;
 import com.suwalink.dto.response.UserResponse;
+import com.suwalink.entity.AccountStatus;
+import com.suwalink.service.AccountService;
 import com.suwalink.service.AdminService;
+import com.suwalink.service.DemoDataService;
 import com.suwalink.service.PharmacyVisibilityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +24,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final AccountService accountService;
     private final PharmacyVisibilityService visibility;
+    private final DemoDataService demoDataService;
 
     @GetMapping("/settings")
     public ResponseEntity<ApiResponse<AppSettingsResponse>> getSettings() {
         return ResponseEntity.ok(ApiResponse.success("Settings",
-            new AppSettingsResponse(visibility.isDemoModePublic())));
+            settings()));
     }
 
     @PutMapping("/settings")
@@ -34,7 +39,18 @@ public class AdminController {
             @Valid @RequestBody UpdateAppSettingsRequest request) {
         visibility.setDemoModePublic(request.getDemoModePublic());
         return ResponseEntity.ok(ApiResponse.success("Settings updated",
-            new AppSettingsResponse(visibility.isDemoModePublic())));
+            settings()));
+    }
+
+    /** Deletes all demo-owned data and seeds the demo dataset again; real data is left alone. */
+    @PostMapping("/demo/reset")
+    public ResponseEntity<ApiResponse<Void>> resetDemoData() {
+        demoDataService.reset();
+        return ResponseEntity.ok(ApiResponse.success("Demo data reset"));
+    }
+
+    private AppSettingsResponse settings() {
+        return new AppSettingsResponse(visibility.isDemoModePublic(), demoDataService.loginAccounts());
     }
 
     @GetMapping("/dashboard")
@@ -59,14 +75,29 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Pharmacy application rejected"));
     }
 
+    /** {@code status} omitted lists every account that isn't deleted. */
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
-        return ResponseEntity.ok(ApiResponse.success("Users", adminService.getAllUsers()));
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) AccountStatus status) {
+        return ResponseEntity.ok(ApiResponse.success("Users", adminService.getUsers(q, status)));
+    }
+
+    @PutMapping("/users/{id}/suspend")
+    public ResponseEntity<ApiResponse<Void>> suspend(@PathVariable UUID id) {
+        accountService.suspend(id);
+        return ResponseEntity.ok(ApiResponse.success("User suspended"));
+    }
+
+    @PutMapping("/users/{id}/reactivate")
+    public ResponseEntity<ApiResponse<Void>> reactivate(@PathVariable UUID id) {
+        accountService.reactivate(id);
+        return ResponseEntity.ok(ApiResponse.success("User reactivated"));
     }
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
-        adminService.deleteUser(id);
+        accountService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted"));
     }
 

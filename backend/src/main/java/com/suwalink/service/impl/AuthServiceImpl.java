@@ -10,6 +10,7 @@ import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
+import com.suwalink.event.PharmacyRegisteredEvent;
 import com.suwalink.exception.DuplicateResourceException;
 import com.suwalink.exception.EmailAlreadyExistsException;
 import com.suwalink.exception.InvalidOtpException;
@@ -26,6 +27,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    static final int MAX_OTP_ATTEMPTS = 5;
 
     private final UserRepository userRepository;
     private final PharmacyRepository pharmacyRepository;
@@ -45,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final MailService mailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${app.otp.expiry-minutes}")
     private int otpExpiryMinutes;
@@ -90,7 +94,8 @@ public class AuthServiceImpl implements AuthService {
             .user(savedUser)
             .build();
 
-        pharmacyRepository.save(pharmacy);
+        Pharmacy saved = pharmacyRepository.save(pharmacy);
+        eventPublisher.publishEvent(new PharmacyRegisteredEvent(this, saved.getId(), saved.getName()));
     }
 
     @Override
@@ -131,14 +136,16 @@ public class AuthServiceImpl implements AuthService {
             String otp = generateOtp();
             user.setResetOtp(otp);
             user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
+            user.setResetOtpAttempts(0);
             userRepository.save(user);
 
-            mailService.sendPasswordResetOtp(user.getEmail(), otp);
+            mailService.sendPasswordResetOtp(user, otp);
         });
     }
 
     @Override
-    @Transactional
+    // keep the attempt counter (and an invalidated OTP) when rejecting a wrong code
+    @Transactional(noRollbackFor = InvalidOtpException.class)
     public void resetPassword(ResetPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new ResourceNotFoundException("No account found with that email"));
@@ -150,12 +157,21 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidOtpException("This code has expired. Please request a new one");
         }
         if (!constantTimeEquals(user.getResetOtp(), request.getOtp())) {
+            int attempts = user.getResetOtpAttempts() + 1;
+            if (attempts >= MAX_OTP_ATTEMPTS) {
+                user.setResetOtp(null);
+                user.setResetOtpExpiry(null);
+                attempts = 0;
+            }
+            user.setResetOtpAttempts(attempts);
+            userRepository.save(user);
             throw new InvalidOtpException("Invalid code");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetOtp(null);
         user.setResetOtpExpiry(null);
+        user.setResetOtpAttempts(0);
         userRepository.save(user);
     }
 
@@ -180,6 +196,7 @@ public class AuthServiceImpl implements AuthService {
             .phone(phone)
             .password(passwordEncoder.encode(rawPassword))
             .role(role)
+            .termsAcceptedAt(LocalDateTime.now())
             .build();
 
         return userRepository.save(user);

@@ -16,4 +16,6 @@ public class UserResponse {
     private String email;
     private String phone;
     private String role;
+    /** ACTIVE, SUSPENDED or DELETED ({@link com.suwalink.entity.AccountStatus}). */
+    private String status;
 }

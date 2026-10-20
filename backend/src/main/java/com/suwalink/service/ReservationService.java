@@ -19,6 +19,12 @@ public interface ReservationService {
 
     ReservationResponse complete(UUID id);
 
+    /**
+     * Cancels every CONFIRMED reservation of the patient as cancelled by the patient (stock released,
+     * pharmacy notified), joining the caller's transaction. Used when the patient deletes their account.
+     */
+    void cancelConfirmedForPatient(UUID patientId, String reason);
+
     ReservationResponse getById(UUID id);
 
     ReservationResponse getByPickupCode(String code);

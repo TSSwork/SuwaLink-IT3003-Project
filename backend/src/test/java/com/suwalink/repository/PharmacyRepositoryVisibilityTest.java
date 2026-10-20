@@ -37,7 +37,7 @@ class PharmacyRepositoryVisibilityTest {
 
     private Pharmacy pharmacy(String name, District district, String lat, String lng,
                               PharmacyStatus status, boolean isDemo) {
-        User user = userRepository.save(User.builder()
+        User user = userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .name(name).email(name.replace(' ', '.').toLowerCase() + "@example.com").phone("0771234567")
                 .password("x").role(Role.PHARMACY_OWNER).build());
         return pharmacyRepository.save(Pharmacy.builder()

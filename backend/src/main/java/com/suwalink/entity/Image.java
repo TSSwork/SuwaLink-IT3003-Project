@@ -42,6 +42,10 @@ public class Image {
     @Column(name = "uploaded_by_user_id")
     private UUID uploadedByUserId;
 
+    /** Set when the retention job deleted the stored file; the row is kept so we can answer 410 Gone. */
+    @Column(name = "purged_at")
+    private LocalDateTime purgedAt;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

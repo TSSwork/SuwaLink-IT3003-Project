@@ -12,6 +12,7 @@ public class ApiErrorResponse {
 
     @Builder.Default
     private final boolean success = false;
+    private final String code;
     private final String message;
     private final List<FieldErrorDetail> errors;
 
@@ -20,6 +21,7 @@ public class ApiErrorResponse {
     @AllArgsConstructor
     public static class FieldErrorDetail {
         private final String field;
+        private final String code;
         private final String message;
     }
 }

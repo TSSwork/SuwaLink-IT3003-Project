@@ -1,6 +1,9 @@
 package com.suwalink.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -25,11 +28,22 @@ public class Notification extends BaseAuditEntity {
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private User recipient;
 
-    @Column(name = "title", nullable = false)
-    private String title;
+    /** Bundle key prefix; the text is {@code messageKey + ".title"} / {@code ".body"}. */
+    @Column(name = "message_key", length = 100, nullable = false)
+    private String messageKey;
 
-    @Column(name = "message", columnDefinition = "TEXT", nullable = false)
-    private String message;
+    /** Values for the {@code {name}} placeholders, stored as a JSON object. */
+    @Convert(converter = StringMapJsonConverter.class)
+    @Column(name = "params", columnDefinition = "TEXT", nullable = false)
+    @Builder.Default
+    private Map<String, String> params = new HashMap<>();
+
+    /** Frontend route the notification opens, e.g. {@code /reservations/{id}}. */
+    @Column(name = "link", length = 255)
+    private String link;
+
+    @Column(name = "emailed_at")
+    private LocalDateTime emailedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)

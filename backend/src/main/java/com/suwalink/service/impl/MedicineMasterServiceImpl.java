@@ -5,6 +5,7 @@ import com.suwalink.dto.response.MedicineMasterResponse;
 import com.suwalink.entity.Category;
 import com.suwalink.entity.Manufacturer;
 import com.suwalink.entity.MedicineMaster;
+import com.suwalink.entity.MedicineStatus;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.CategoryRepository;
 import com.suwalink.repository.ManufacturerRepository;
@@ -47,6 +48,12 @@ public class MedicineMasterServiceImpl implements MedicineMasterService {
     @Transactional(readOnly = true)
     public List<MedicineMasterResponse> list() {
         return medicineMasterRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MedicineMasterResponse> listApproved() {
+        return medicineMasterRepository.findByStatus(MedicineStatus.APPROVED).stream().map(this::toResponse).toList();
     }
 
     @Override
@@ -94,20 +101,6 @@ public class MedicineMasterServiceImpl implements MedicineMasterService {
     }
 
     private MedicineMasterResponse toResponse(MedicineMaster medicine) {
-        return MedicineMasterResponse.builder()
-            .id(medicine.getId())
-            .brandName(medicine.getBrandName())
-            .genericName(medicine.getGenericName())
-            .dosageForm(medicine.getDosageForm())
-            .strength(medicine.getStrength())
-            .unitOfMeasure(medicine.getUnitOfMeasure())
-            .description(medicine.getDescription())
-            .legalCategory(medicine.getLegalCategory())
-            .imageUrl(medicine.getImageUrl())
-            .therapeuticCategoryId(medicine.getTherapeuticCategory().getId())
-            .therapeuticCategoryName(medicine.getTherapeuticCategory().getName())
-            .manufacturerId(medicine.getManufacturer().getId())
-            .manufacturerName(medicine.getManufacturer().getName())
-            .build();
+        return MedicineMasterResponse.of(medicine);
     }
 }

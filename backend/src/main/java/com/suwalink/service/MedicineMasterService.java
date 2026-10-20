@@ -11,6 +11,9 @@ public interface MedicineMasterService {
 
     List<MedicineMasterResponse> list();
 
+    /** Catalog entries pharmacies may stock (status APPROVED). */
+    List<MedicineMasterResponse> listApproved();
+
     MedicineMasterResponse get(UUID id);
 
     MedicineMasterResponse update(UUID id, MedicineMasterRequest request);

@@ -268,15 +268,27 @@ public class ReservationServiceImpl implements ReservationService {
         CancelledBy cancelledBy = resolveRequester(reservation, currentUser);
         requireConfirmed(reservation, "cancelled");
 
+        return toResponse(applyCancel(reservation, cancelledBy,
+                request == null ? null : blankToNull(request.getReason())));
+    }
+
+    @Override
+    @Transactional
+    public void cancelConfirmedForPatient(UUID patientId, String reason) {
+        for (Reservation reservation
+                : reservationRepository.findByPatientIdAndStatus(patientId, ReservationStatus.CONFIRMED)) {
+            applyCancel(reservation, CancelledBy.PATIENT, reason);
+        }
+    }
+
+    private Reservation applyCancel(Reservation reservation, CancelledBy cancelledBy, String reason) {
         releaseStock(List.of(reservation));
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservation.setCancelledBy(cancelledBy);
-        reservation.setCancelReason(request == null ? null : blankToNull(request.getReason()));
+        reservation.setCancelReason(reason);
         Reservation saved = reservationRepository.save(reservation);
-
         eventPublisher.publishEvent(new ReservationCancelledEvent(this, saved.getId(), cancelledBy));
-
-        return toResponse(saved);
+        return saved;
     }
 
     @Override

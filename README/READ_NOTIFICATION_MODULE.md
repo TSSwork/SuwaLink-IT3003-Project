@@ -1,78 +1,84 @@
 # Notification Module — What's Built, How to Use It
 
-In-app notifications for patients and pharmacies. Notifications are never created directly by a
-controller — they're always triggered by publishing an `ApplicationEvent`, caught by
-`NotificationEventListener`, which calls `NotificationService.createNotification(...)`. If you add
-a new event source, follow that pattern rather than calling `NotificationService` directly from a
-controller/service that isn't the listener.
+In-app notifications for customers, pharmacies and admins. Notifications are never created directly by a
+controller — they're triggered by publishing an event, caught by `NotificationEventListener`, which calls
+`NotificationService.notify(recipient, type, messageKey, params, link)`. If you add a new event source,
+follow that pattern.
+
+## Keyed, translated text
+
+A notification stores a **message key** and **params**, not fixed text. On read it is rendered in the
+request language (`Accept-Language`: `en`/`si`/`ta`, default `en`):
+
+- title = bundle `messageKey + ".title"`, body = bundle `messageKey + ".body"`
+- `{name}` placeholders are filled from `params` by `com.suwalink.util.MessageRenderer.render(key, params, locale)`
+  (also meant for email text). Unknown placeholders are left as written.
+- All keys are constants in `com.suwalink.event.NotificationKeys`; a test checks every one has `.title` and
+  `.body` in `i18n/messages.properties`, `messages_si.properties` and `messages_ta.properties`.
 
 ## Entity
 
 **`notifications` table** (`com.suwalink.entity.Notification`)
 
-| Column        | Type            | Notes                                      |
-|---------------|-----------------|----------------------------------------------|
-| id            | BINARY(16) (PK) | generated                                     |
-| recipient_id  | FK -> users.id  | who sees it                                   |
-| title         | VARCHAR         | short heading                                 |
-| message       | TEXT            | body                                          |
-| type          | ENUM            | `PRESCRIPTION` / `RESERVATION` / `SYSTEM_ALERT` |
-| is_read       | BOOLEAN         | default `false`                               |
+| Column        | Type             | Notes                                          |
+|---------------|------------------|------------------------------------------------|
+| id            | VARCHAR(36) (PK) | generated                                      |
+| recipient_id  | FK -> users.id   | who sees it                                    |
+| message_key   | VARCHAR(100)     | e.g. `notify.reservation.confirmed`            |
+| params        | TEXT (JSON)      | placeholder values, `{}` when none             |
+| link          | VARCHAR(255)     | frontend route to open, nullable               |
+| emailed_at    | DATETIME         | when the email went out, nullable              |
+| type          | ENUM             | `PRESCRIPTION` / `RESERVATION` / `SYSTEM_ALERT` |
+| is_read       | BOOLEAN          | default `false`                                |
 
-## Events that actually fire notifications
+## Events and recipients (spec §9.6)
 
-| Event | Published from | Recipient(s) | Type |
-|-------|-----------------|--------------|------|
-| `PharmacyVerifiedEvent` | `AdminServiceImpl.approvePharmacy` | the pharmacy applicant | `SYSTEM_ALERT` |
-| `PharmacyRejectedEvent` | `AdminServiceImpl.rejectPharmacy` | the pharmacy applicant | `SYSTEM_ALERT` |
-| `PrescriptionAddedEvent` | `PrescriptionRequestServiceImpl.create` | every currently-`VERIFIED` pharmacy (no geolocation/matching module exists yet, so it's broadcast to all) | `PRESCRIPTION` |
-| `PharmacyRespondedEvent` | `PrescriptionResponseServiceImpl` | the patient who owns the request | `PRESCRIPTION` |
-| `ReservationCreatedEvent` | `ReservationServiceImpl` | both the patient and the pharmacy | `RESERVATION` |
-| `ReservationCancelledEvent` | `ReservationServiceImpl` | whichever side didn't cancel it | `RESERVATION` |
-| `ReservationCompletedEvent` | `ReservationServiceImpl` | the patient | `RESERVATION` |
-| `ReservationExpiredEvent` | `ReservationServiceImpl` (via `ExpiryJobs`) | both the patient and the pharmacy | `RESERVATION` |
+| Event (publisher) | Recipient | messageKey | params | link |
+|---|---|---|---|---|
+| `PharmacyRegisteredEvent` (`AuthServiceImpl.registerPharmacy`) | every admin | `notify.pharmacy.registered` | pharmacy | `/admin/pharmacies` |
+| `PharmacyVerifiedEvent` / `PharmacyRejectedEvent` (`AdminServiceImpl`) | owner | `notify.pharmacy.approved` / `.rejected` | pharmacy | `/pharmacy` / `/` |
+| `PrescriptionAddedEvent` (`PrescriptionRequestServiceImpl.create`) | customer | `notify.prescription.sent` | count | `/prescriptions/{id}` |
+| `PrescriptionAddedEvent` | each targeted pharmacy owner | `notify.prescription.new` | — | `/pharmacy/requests/{id}` |
+| `PharmacyRespondedEvent` (`PrescriptionResponseServiceImpl`) | customer | `notify.prescription.responded` / `.response-updated` | pharmacy | `/prescriptions/{id}` |
+| `PrescriptionRequestExpiredEvent` (`PrescriptionRequestServiceImpl.expireOverdue`) | customer | `notify.prescription.expired` | — | `/prescriptions/{id}` |
+| `ReservationCreatedEvent` | customer / pharmacy owner | `notify.reservation.confirmed` / `.new` | items, pharmacy, code / items, customer | `/reservations/{id}` / `/pharmacy/reservations` |
+| `ReservationCancelledEvent` | the other party | `notify.reservation.cancelled-by-customer` / `-by-pharmacy` | items + customer / pharmacy | `/pharmacy/reservations` / `/reservations/{id}` |
+| `ReservationCompletedEvent` | customer | `notify.reservation.completed` | items, pharmacy | `/reservations/{id}` |
+| `ReservationExpiredEvent` (`ExpiryJobs`) | customer + pharmacy owner | `notify.reservation.expired` | items, pharmacy, customer | `/reservations/{id}` / `/pharmacy/reservations` |
+| medicine suggestion approved / rejected (Phase 1C Task 6) | suggesting owner | `notify.medicine.approved` / `.rejected` | medicine (+ reason when rejected) | `/pharmacy/inventory` |
 
-`PrescriptionAddedEvent` and `PharmacyRespondedEvent` were defined early on but had no publisher
-for a while — if you're looking at old code/notes that say "notifications aren't wired up yet,"
-that's now fixed; check the actual event source above rather than trusting stale comments.
-
-## Standard response envelope
-
-Same as every other module: `{ "success": true, "message": "...", "data": {} }`.
+`items` is a language-neutral list such as `Panadol 500mg × 2, Amoxil 250mg × 1`.
 
 ## Endpoints
 
-All require `Authorization: Bearer <token>` — notifications are always scoped to the caller.
+All require `Authorization: Bearer <token>` and are scoped to the caller.
+Standard envelope: `{ "success": true, "message": "...", "data": ... }`.
 
-### `GET /api/notifications` — any authenticated user
+### `GET /api/notifications`
 
-The current user's notifications, newest first.
+Newest first, rendered in the `Accept-Language` locale.
 
 ```json
-{ "id": "uuid", "title": "...", "message": "...", "type": "PRESCRIPTION", "read": false, "createdAt": "..." }
+{ "id": "uuid", "type": "RESERVATION", "title": "...", "message": "...", "link": "/reservations/uuid", "read": false, "createdAt": "..." }
 ```
 
-Note the JSON field is **`read`**, not `isRead` — Jackson strips the `is` prefix off boolean
-getters (`Notification.isRead()` -> `"read"`). Clients must read `notif.read`, not `notif.isRead`.
-
-### `GET /api/notifications/unread-count` — any authenticated user
+### `GET /api/notifications/unread-count`
 
 ```json
 { "count": 3 }
 ```
 
-### `PUT /api/notifications/{id}/read` — any authenticated user, must be the recipient
+### `PUT /api/notifications/{id}/read`
 
-Marks one notification read. Returns `404` if the notification doesn't exist *or* belongs to
-someone else — deliberately indistinguishable, same reasoning as other ownership checks in this
-codebase (don't leak whether a resource exists to non-owners).
+Marks one notification read. `404` if it doesn't exist *or* belongs to someone else (deliberately
+indistinguishable).
 
-## For other developers
+### `PUT /api/notifications/read-all`
 
-- To add a new notification trigger: define an `ApplicationEvent` subclass in the `event` package,
-  publish it via `ApplicationEventPublisher.publishEvent(...)` from the service that owns the
-  business action, and add an `@EventListener` method in `NotificationEventListener` that resolves
-  the recipient `User` and calls `notificationService.createNotification(...)`.
-- Don't call `NotificationService` directly from a controller — go through an event so the
-  business action and the notification side-effect stay decoupled (and so a test of the business
-  action doesn't need a `NotificationService` mock just to pass).
+Marks all of the caller's unread notifications read.
+
+## Adding a notification
+
+1. Add a key constant to `NotificationKeys` and `<key>.title` / `<key>.body` to all three bundles.
+2. Publish an event from the service that owns the business action.
+3. Handle it in `NotificationEventListener` with `notificationService.notify(...)`.

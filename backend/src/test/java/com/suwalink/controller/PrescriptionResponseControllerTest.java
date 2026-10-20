@@ -235,7 +235,7 @@ class PrescriptionResponseControllerTest {
                 .andExpect(jsonPath("$.data.items[0].unitPrice").value(25.00));
 
         assertThat(notificationRepository.findAll())
-                .anyMatch(n -> "Pharmacy updated its response".equals(n.getTitle()));
+                .anyMatch(n -> "notify.prescription.response-updated".equals(n.getMessageKey()));
     }
 
     @Test
@@ -414,7 +414,7 @@ class PrescriptionResponseControllerTest {
         mockMvc.perform(post("/api/auth/register/customer")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123" }
+                            { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123", "acceptTerms": true }
                             """.formatted(email)))
                 .andExpect(status().isCreated());
 

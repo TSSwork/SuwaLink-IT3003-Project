@@ -50,6 +50,16 @@ public class JwtService {
             .getSubject();
     }
 
+    /** The {@code userId} claim, or null if the token has none. */
+    public String extractUserId(String token) {
+        return Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .get("userId", String.class);
+    }
+
     public boolean isTokenValid(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);

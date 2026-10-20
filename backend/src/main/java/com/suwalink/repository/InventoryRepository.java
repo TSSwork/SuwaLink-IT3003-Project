@@ -21,8 +21,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     Optional<Inventory> findByIdAndPharmacyId(UUID id, UUID pharmacyId);
 
-    void deleteByPharmacyId(UUID pharmacyId);
-
     /** Offers: available, in stock, unexpired, at a publicly visible pharmacy. Every filter is optional. */
     @Query("SELECT i FROM Inventory i "
             + "JOIN FETCH i.medicineMaster m "
@@ -32,6 +30,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             + "WHERE i.available = true "
             + "AND i.stockQuantity > 0 AND i.expireDate > :today "
             + "AND " + VisibilityJpql.VISIBLE_PHARMACY_P + " "
+            + "AND " + VisibilityJpql.APPROVED_MEDICINE_M + " "
             + "AND (:query IS NULL "
             + "     OR LOWER(m.brandName) LIKE LOWER(CONCAT('%', :query, '%')) "
             + "     OR LOWER(m.genericName) LIKE LOWER(CONCAT('%', :query, '%'))) "
@@ -54,6 +53,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             + "AND i.available = true "
             + "AND i.stockQuantity > 0 AND i.expireDate > :today "
             + "AND " + VisibilityJpql.VISIBLE_PHARMACY_P + " "
+            + "AND " + VisibilityJpql.APPROVED_MEDICINE_M + " "
             + "ORDER BY m.brandName, i.unitPrice")
     List<Inventory> findOffersByPharmacy(
             @Param("pharmacyId") UUID pharmacyId,
@@ -70,4 +70,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
     @Query("select i from Inventory i join fetch i.pharmacy join fetch i.medicineMaster "
             + "where i.id in :ids order by i.id")
     List<Inventory> lockAllById(@Param("ids") Collection<UUID> ids);
+
+    List<Inventory> findByPharmacyIdIn(Collection<UUID> pharmacyIds);
 }
