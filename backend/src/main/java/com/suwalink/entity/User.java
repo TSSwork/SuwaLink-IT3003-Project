@@ -84,6 +84,11 @@ public class User {
     @Column(name = "reset_otp_expiry")
     private LocalDateTime resetOtpExpiry;
 
+    /** Wrong OTP attempts since the current reset OTP was issued. */
+    @Column(name = "reset_otp_attempts", nullable = false)
+    @Builder.Default
+    private int resetOtpAttempts = 0;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

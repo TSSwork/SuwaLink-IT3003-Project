@@ -58,6 +58,24 @@ public class RateLimiter {
         return allowed[0];
     }
 
+    /**
+     * True when (bucket, key) still has room in its current window, without counting anything.
+     * A key with no live window is refused only when the table is full (as {@link #tryAcquire} would).
+     */
+    public boolean hasRemaining(String bucket, String key, int limit) {
+        long now = clock.millis();
+        Window w = windows.get(bucket + '|' + key);
+        if (w == null || w.endMillis <= now) {
+            return windows.size() < maxEntries || w != null;
+        }
+        return w.count < limit;
+    }
+
+    /** Counts one attempt regardless of the limit (used after the fact, e.g. for a failed login). */
+    public void record(String bucket, String key, Duration window) {
+        tryAcquire(bucket, key, Integer.MAX_VALUE, window);
+    }
+
     /** Seconds until the current window for (bucket, key) ends; at least 1. */
     public long retryAfterSeconds(String bucket, String key) {
         Window w = windows.get(bucket + '|' + key);

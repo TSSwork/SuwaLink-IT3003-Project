@@ -8,7 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import com.suwalink.entity.Role;
+import com.suwalink.entity.User;
+import com.suwalink.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -18,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,7 +36,8 @@ import org.springframework.test.web.servlet.ResultActions;
     "app.rate-limit.login.ip=10",
     "app.rate-limit.login.email=5",
     "app.rate-limit.forgot-password.email=3",
-    "app.rate-limit.forgot-password.ip=10"
+    "app.rate-limit.forgot-password.ip=10",
+    "app.rate-limit.reset-password.ip=20"
 })
 class RateLimitTest {
 
@@ -59,6 +65,8 @@ class RateLimitTest {
     @Autowired MockMvc mockMvc;
     @Autowired MutableClock clock;
     @Autowired RateLimiter limiter;
+    @Autowired UserRepository users;
+    @Autowired PasswordEncoder passwordEncoder;
 
     private ResultActions postJson(String path, String ip, String json) throws Exception {
         return mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(json)
@@ -111,15 +119,60 @@ class RateLimitTest {
     }
 
     @Test
+    void successfulLoginsAreNotCounted() throws Exception {
+        String email = "ratelimit.ok@example.com";
+        users.save(User.builder().name("Rate Ok").email(email).phone("0771234567")
+            .password(passwordEncoder.encode("SecurePass123")).role(Role.CUSTOMER)
+            .termsAcceptedAt(LocalDateTime.now()).build());
+        try {
+            String ok = "{\"email\":\"%s\",\"password\":\"SecurePass123\"}".formatted(email);
+            for (int i = 0; i < 12; i++) { // above both the email (5) and IP (10) limits
+                postJson("/api/auth/login", "10.7.0.1", ok).andExpect(status().isOk());
+            }
+            for (int i = 0; i < 5; i++) {
+                login("10.7.0." + (10 + i), email).andExpect(status().isUnauthorized());
+            }
+            login("10.7.0.20", email).andExpect(status().isTooManyRequests());
+            // once the email budget is used up, even the right password is refused for the window
+            postJson("/api/auth/login", "10.7.0.21", ok).andExpect(status().isTooManyRequests());
+        } finally {
+            users.findByEmail(email).ifPresent(users::delete);
+        }
+    }
+
+    @Test
+    void resetPasswordLimitedPerIp() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            String body = "{\"email\":\"reset.ip%d@example.com\",\"otp\":\"123456\",\"newPassword\":\"NewSecurePass123\"}"
+                .formatted(i);
+            postJson("/api/auth/reset-password", "10.8.0.1", body).andExpect(status().isNotFound());
+        }
+        postJson("/api/auth/reset-password", "10.8.0.1",
+                "{\"email\":\"reset.ip99@example.com\",\"otp\":\"123456\",\"newPassword\":\"NewSecurePass123\"}")
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
+    }
+
+    @Test
     void oversizeEmailIsLimitedByIpOnlyAndCreatesNoEmailBucket() throws Exception {
         int before = limiter.size();
-        String huge = "a".repeat(300) + "@example.com";
+        String body = "{\"email\":\"" + "a".repeat(300) + "@example.com\"}";
         for (int i = 0; i < 10; i++) {
-            login("10.4.0.1", huge).andExpect(status().isBadRequest());
+            postJson("/api/auth/forgot-password", "10.4.0.1", body).andExpect(status().isBadRequest());
         }
         // only the IP window was created
         org.junit.jupiter.api.Assertions.assertEquals(before + 1, limiter.size());
-        login("10.4.0.1", huge).andExpect(status().isTooManyRequests());
+        postJson("/api/auth/forgot-password", "10.4.0.1", body).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void rejectedLoginThatIsNot401IsNotCounted() throws Exception {
+        int before = limiter.size();
+        String huge = "a".repeat(300) + "@example.com";
+        for (int i = 0; i < 12; i++) {
+            login("10.4.1.1", huge).andExpect(status().isBadRequest());
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(before, limiter.size());
     }
 
     @Test

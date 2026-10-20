@@ -8,6 +8,7 @@ FROM (
   SELECT 'Antihistamines' AS name
   UNION ALL SELECT 'Lipid-lowering agents'
   UNION ALL SELECT 'Dermatologicals'
+  UNION ALL SELECT 'Corticosteroids'
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM categories c WHERE c.name = v.name);
 
@@ -76,7 +77,7 @@ FROM (
   UNION ALL SELECT 'Revital H', 'Multivitamin + Minerals + Ginseng', 'Capsule', '1 capsule', 'CAPSULE', 'OTC', 'Sun Pharmaceutical Industries', 'Nutraceuticals'
   UNION ALL SELECT 'Betnovate', 'Betamethasone valerate', 'Cream', '0.1% (15g)', 'TUBE', 'PRESCRIPTION', 'GlaxoSmithKline', 'Dermatologicals'
   UNION ALL SELECT 'Canesten', 'Clotrimazole', 'Cream', '1% (20g)', 'TUBE', 'OTC', 'Bayer', 'Dermatologicals'
-  UNION ALL SELECT 'Prednisolone', 'Prednisolone', 'Tablet', '5mg', 'TABLET', 'PRESCRIPTION', 'State Pharmaceuticals Manufacturing Corporation', 'Respiratory'
+  UNION ALL SELECT 'Prednisolone', 'Prednisolone', 'Tablet', '5mg', 'TABLET', 'PRESCRIPTION', 'State Pharmaceuticals Manufacturing Corporation', 'Corticosteroids'
 ) v
 JOIN manufacturers m ON m.name = v.mfr
 JOIN categories c ON c.name = v.cat

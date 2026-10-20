@@ -18,6 +18,8 @@ public interface PrescriptionResponseRepository extends JpaRepository<Prescripti
 
     void deleteByPharmacyId(UUID pharmacyId);
 
+    boolean existsByPrescriptionRequestId(UUID prescriptionRequestId);
+
     /** Responses given by any of the pharmacies or made to a request of any of the customers (demo cleanup). */
     @Query("SELECT r FROM PrescriptionResponse r "
             + "WHERE r.pharmacy.id IN :pharmacyIds OR r.prescriptionRequest.patient.id IN :patientIds")

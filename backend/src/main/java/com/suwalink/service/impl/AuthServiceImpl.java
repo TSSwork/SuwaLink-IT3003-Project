@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    static final int MAX_OTP_ATTEMPTS = 5;
 
     private final UserRepository userRepository;
     private final PharmacyRepository pharmacyRepository;
@@ -135,6 +136,7 @@ public class AuthServiceImpl implements AuthService {
             String otp = generateOtp();
             user.setResetOtp(otp);
             user.setResetOtpExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
+            user.setResetOtpAttempts(0);
             userRepository.save(user);
 
             mailService.sendPasswordResetOtp(user, otp);
@@ -142,7 +144,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
+    // keep the attempt counter (and an invalidated OTP) when rejecting a wrong code
+    @Transactional(noRollbackFor = InvalidOtpException.class)
     public void resetPassword(ResetPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new ResourceNotFoundException("No account found with that email"));
@@ -154,12 +157,21 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidOtpException("This code has expired. Please request a new one");
         }
         if (!constantTimeEquals(user.getResetOtp(), request.getOtp())) {
+            int attempts = user.getResetOtpAttempts() + 1;
+            if (attempts >= MAX_OTP_ATTEMPTS) {
+                user.setResetOtp(null);
+                user.setResetOtpExpiry(null);
+                attempts = 0;
+            }
+            user.setResetOtpAttempts(attempts);
+            userRepository.save(user);
             throw new InvalidOtpException("Invalid code");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetOtp(null);
         user.setResetOtpExpiry(null);
+        user.setResetOtpAttempts(0);
         userRepository.save(user);
     }
 

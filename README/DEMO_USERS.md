@@ -12,18 +12,18 @@ All demo accounts use the password **`DemoPass123!`**.
 |------|-------|-------|
 | Admin | `admin@suwalink.local` | The real bootstrap admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD`; dev values in `application-dev.properties`). Not a demo account. |
 | Customer | `customer1@demo.suwalink.lk` | Kasun Jayasinghe, Colombo. Has a prescription request, a quote and three reservations (see below). |
-| Customer | `customer2@demo.suwalink.lk` | Dilini Rathnayake, Kandy, Sinhala UI. |
-| Customer | `customer3@demo.suwalink.lk` | Priya Shanmugam, Galle, Tamil UI. |
+| Customer | `customer2@demo.suwalink.lk` | Dilini Rathnayake, Kandy, Sinhala UI. Has a Kandy request with one quote, not reserved yet. |
+| Customer | `customer3@demo.suwalink.lk` | Priya Shanmugam, Galle, Tamil UI. Has an unanswered request to all pharmacies. |
 | Pharmacy owner | `pharmacy1@demo.suwalink.lk` | Kollupitiya City Pharmacy, Colombo 03. It quoted customer 1's request. |
 | Pharmacy owner | `pharmacy2@demo.suwalink.lk` | Nugegoda Family Pharmacy, Colombo. |
 | Pharmacy owner | `pharmacy3@demo.suwalink.lk` | Negombo Sea Street Pharmacy, Gampaha. |
 | Pharmacy owner | `pharmacy4@demo.suwalink.lk` | Gampaha Town Pharmacy, Gampaha. |
-| Pharmacy owner | `pharmacy5@demo.suwalink.lk` | Dalada Veediya Pharmacy, Kandy. |
+| Pharmacy owner | `pharmacy5@demo.suwalink.lk` | Dalada Veediya Pharmacy, Kandy. It quoted customer 2's request. |
 | Pharmacy owner | `pharmacy6@demo.suwalink.lk` | Peradeniya Health Pharmacy, Kandy. |
 | Pharmacy owner | `pharmacy7@demo.suwalink.lk` | Galle Wakwella Pharmacy, Galle. |
 
-While demo mode is on, `GET /api/settings/public` returns `demoAccounts` (customer 1 and pharmacy 1)
-for the login page's one-click demo buttons. While it is off, the list is empty.
+While demo mode is on and the demo dataset exists, `GET /api/settings/public` returns `demoAccounts`
+(customer 1 and pharmacy 1) for the login page's one-click demo buttons. Otherwise the list is empty.
 
 ## What is seeded
 
@@ -40,10 +40,15 @@ for the login page's one-click demo buttons. While it is off, the list is empty.
   - a quote from Kollupitiya City Pharmacy
   - a CONFIRMED reservation from that quote, held for 24 hours
   - a COMPLETED search reservation and a CANCELLED search reservation
+- **Customer 2**: a prescription request to the Kandy district (both Kandy demo pharmacies), quoted by
+  Dalada Veediya Pharmacy, with no reservation yet.
+- **Customer 3**: a prescription request with scope ALL and no responses yet. Its targets are the 7 demo
+  pharmacies only; seeded demo requests never reach real pharmacies.
 
 The seeder (`DemoDataSeeder`) runs on startup and creates the dataset only if no demo pharmacy exists.
 Set `DEMO_SEED_ENABLED=false` (`app.demo.seed-enabled`) to skip it. It is off in the `test` profile.
-Seeding writes straight to the database, so it creates no notifications and sends no emails.
+Seeding writes straight to the database, so it creates no notifications and sends no emails. If seeding
+fails, the error is logged and the application starts without demo data.
 
 The sample image is a committed 600×800 WebP placeholder ("SAMPLE PRESCRIPTION — Demo data, not a real
 prescription"). It was generated once with Java2D and the project's `webp4j` encoder.
@@ -73,7 +78,9 @@ row, then seeds a fresh dataset. Demo-owned rows are:
 Real data is not touched, with these exceptions:
 
 - A demo customer's CONFIRMED reservation at a real pharmacy gives its stock back.
-- A real customer's request that was sent to demo pharmacies keeps its other target pharmacies.
+- A real customer's request that was sent to demo pharmacies keeps its other target pharmacies. If it was
+  RESPONDED and only demo pharmacies had answered, it goes back to PENDING.
+- Real users' notifications that link to a deleted reservation (`/reservations/<id>`) are deleted.
 - A medicine that a demo pharmacy suggested and an admin approved stays in the catalog, with no
   suggesting pharmacy.
 

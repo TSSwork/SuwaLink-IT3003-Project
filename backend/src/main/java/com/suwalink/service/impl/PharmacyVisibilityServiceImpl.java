@@ -44,6 +44,8 @@ public class PharmacyVisibilityServiceImpl implements PharmacyVisibilityService 
     @Override
     public boolean isPubliclyVisible(Pharmacy pharmacy) {
         return pharmacy.getStatus() == PharmacyStatus.VERIFIED
+            && !pharmacy.getUser().isSuspended()
+            && pharmacy.getUser().getDeletedAt() == null
             && (!pharmacy.isDemo() || isDemoModePublic());
     }
 }

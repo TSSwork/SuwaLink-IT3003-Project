@@ -128,10 +128,30 @@ class MedicineSuggestionTest {
                 .andExpect(jsonPath("$.data.rejectionReason").value("Already listed under another name"));
 
         mockMvc.perform(get("/api/notifications").header("Authorization", "Bearer " + ownerToken))
-                .andExpect(jsonPath("$.data[0].title").value("Medicine suggestion not approved"));
+                .andExpect(jsonPath("$.data[0].title").value("Medicine suggestion not approved"))
+                .andExpect(jsonPath("$.data[0].message").value(
+                        org.hamcrest.Matchers.containsString("Reason: Already listed under another name")));
         mockMvc.perform(post("/api/inventory").header("Authorization", "Bearer " + ownerToken)
                         .contentType(MediaType.APPLICATION_JSON).content(inventoryJson(id)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void reviewingTwiceIs409AlreadyReviewed() throws Exception {
+        String id = suggest("Zentel", "Albendazole", "400mg", "Tablet");
+        mockMvc.perform(put("/api/admin/medicines/suggestions/" + id + "/approve")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/admin/medicines/suggestions/" + id + "/approve")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ALREADY_REVIEWED"));
+        mockMvc.perform(put("/api/admin/medicines/suggestions/" + id + "/reject")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Too late\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ALREADY_REVIEWED"));
     }
 
     @Test

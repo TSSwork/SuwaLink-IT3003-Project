@@ -7,8 +7,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.suwalink.entity.District;
+import com.suwalink.entity.Pharmacy;
+import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
+import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.service.PharmacyVisibilityService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +42,7 @@ class DemoModeTest {
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private PharmacyVisibilityService visibility;
+    @Autowired private PharmacyRepository pharmacyRepository;
 
     @BeforeEach
     void setUp() {
@@ -130,6 +135,17 @@ class DemoModeTest {
             .andExpect(jsonPath("$.data.demoAccounts").isEmpty());
 
         visibility.setDemoModePublic(true);
+        mockMvc.perform(get("/api/settings/public"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.demoAccounts").isEmpty()); // no demo dataset yet
+
+        User demoOwner = userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
+            .name("Demo Owner").email("demo.owner@suwalink.local").phone("0771234567")
+            .password(passwordEncoder.encode(PASSWORD)).role(Role.PHARMACY_OWNER).demo(true).build());
+        pharmacyRepository.save(Pharmacy.builder().name("Demo Pharmacy").phone("0112345678")
+            .district(District.COLOMBO).city("Colombo").latitude(new java.math.BigDecimal("6.927100"))
+            .longitude(new java.math.BigDecimal("79.861200")).licenceNo("LIC-DEMO-MODE").address("1 Demo Road")
+            .status(PharmacyStatus.VERIFIED).demo(true).user(demoOwner).build());
         mockMvc.perform(get("/api/settings/public"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.demoAccounts.length()").value(2))

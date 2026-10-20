@@ -116,7 +116,7 @@ public class DemoDataServiceImpl implements DemoDataService {
     private record DemoCustomer(String name, String phone, District district, Language language) {
     }
 
-    /** The first two are in Colombo; customer 1's request goes to them. */
+    /** The first two are in Colombo (customer 1's request goes to them); the fifth and sixth are in Kandy. */
     private static final List<DemoPharmacy> PHARMACIES = List.of(
             new DemoPharmacy("Kollupitiya City Pharmacy", District.COLOMBO, "Colombo 03",
                     "212 Galle Road, Kollupitiya, Colombo 03", "0112574321", "6.911500", "79.850300",
@@ -192,7 +192,7 @@ public class DemoDataServiceImpl implements DemoDataService {
 
     @Override
     public List<DemoAccountResponse> loginAccounts() {
-        if (!visibility.isDemoModePublic()) {
+        if (!visibility.isDemoModePublic() || !pharmacyRepository.existsByDemoTrue()) {
             return List.of();
         }
         return List.of(
@@ -241,6 +241,8 @@ public class DemoDataServiceImpl implements DemoDataService {
         }
 
         seedCustomerJourney(customers.get(0), pharmacies.get(0), pharmacies.get(1), stock, now);
+        seedQuotedRequest(customers.get(1), pharmacies.get(4), pharmacies.get(5), stock, now);
+        seedOpenRequest(customers.get(2), pharmacies, now);
         log.info("Demo data seeded: {} pharmacies, {} customers", pharmacies.size(), customers.size());
     }
 
@@ -275,37 +277,12 @@ public class DemoDataServiceImpl implements DemoDataService {
      */
     private void seedCustomerJourney(User customer, Pharmacy quoting, Pharmacy other,
                                      Map<Pharmacy, List<Inventory>> stock, LocalDateTime now) {
-        LocalDateTime requestedAt = now.minusHours(3);
-        PrescriptionRequest request = prescriptionRequestRepository.save(PrescriptionRequest.builder()
-                .patient(customer).image(samplePrescriptionImage(customer)).patientAge(34)
-                .note("Please let me know if you have all three medicines.")
-                .status(PrescriptionRequestStatus.RESPONDED).targetScope(TargetScope.DISTRICT)
-                .district(District.COLOMBO).consentAt(requestedAt).expiresAt(requestedAt.plusDays(requestExpiryDays))
-                .targetPharmacies(new HashSet<>(List.of(quoting, other))).build());
-
+        PrescriptionRequest request = prescriptionRequest(customer, TargetScope.DISTRICT, District.COLOMBO,
+                PrescriptionRequestStatus.RESPONDED, List.of(quoting, other),
+                "Please let me know if you have all three medicines.", now.minusHours(3));
+        PrescriptionResponse response = quote(request, quoting, stock.get(quoting),
+                "We have these in stock. Cetirizine is out of stock today.");
         List<Inventory> quotingStock = stock.get(quoting);
-        List<Inventory> quotedLines = new ArrayList<>();
-        addMatching(quotedLines, quotingStock, "Amoxicillin");
-        addMatching(quotedLines, quotingStock, "Paracetamol");
-        for (Inventory line : quotingStock) {
-            if (quotedLines.size() >= 2) {
-                break;
-            }
-            if (!quotedLines.contains(line)) {
-                quotedLines.add(line);
-            }
-        }
-
-        PrescriptionResponse response = PrescriptionResponse.builder()
-                .prescriptionRequest(request).pharmacy(quoting)
-                .message("We have these in stock. Cetirizine is out of stock today.").build();
-        for (Inventory line : quotedLines) {
-            boolean antibiotic = line.getMedicineMaster().getGenericName().contains("Amoxicillin");
-            response.getItems().add(PrescriptionResponseItem.builder()
-                    .prescriptionResponse(response).inventoryItem(line).quantity(antibiotic ? 21 : 10)
-                    .unitPrice(line.getUnitPrice()).build());
-        }
-        response = prescriptionResponseRepository.save(response);
 
         Reservation confirmed = reservation(customer, quoting, ReservationStatus.CONFIRMED, now.plusHours(holdHours));
         confirmed.setPrescriptionRequest(request);
@@ -329,6 +306,58 @@ public class DemoDataServiceImpl implements DemoDataService {
         cancelled.setCancelReason("Found it at a pharmacy closer to home");
         cancelled.addItem(line(dropped, 1, dropped.getUnitPrice(), null));
         reservationRepository.save(cancelled);
+    }
+
+    /** Customer 2: a Kandy request quoted by one of the two Kandy pharmacies, not reserved yet. */
+    private void seedQuotedRequest(User customer, Pharmacy quoting, Pharmacy other,
+                                   Map<Pharmacy, List<Inventory>> stock, LocalDateTime now) {
+        PrescriptionRequest request = prescriptionRequest(customer, TargetScope.DISTRICT, District.KANDY,
+                PrescriptionRequestStatus.RESPONDED, List.of(quoting, other),
+                "Is this available for pickup this evening?", now.minusHours(5));
+        quote(request, quoting, stock.get(quoting), "All items available. You can reserve and collect today.");
+    }
+
+    /** Customer 3: a request to every demo pharmacy that nobody has answered yet. */
+    private void seedOpenRequest(User customer, List<Pharmacy> pharmacies, LocalDateTime now) {
+        prescriptionRequest(customer, TargetScope.ALL, null, PrescriptionRequestStatus.PENDING, pharmacies,
+                "Looking for these for my mother.", now.minusMinutes(40));
+    }
+
+    /** Demo requests target demo pharmacies only, whatever the scope, so no real pharmacy ever sees them. */
+    private PrescriptionRequest prescriptionRequest(User customer, TargetScope scope, District district,
+                                                    PrescriptionRequestStatus status, List<Pharmacy> targets,
+                                                    String note, LocalDateTime requestedAt) {
+        return prescriptionRequestRepository.save(PrescriptionRequest.builder()
+                .patient(customer).image(samplePrescriptionImage(customer)).patientAge(34).note(note)
+                .status(status).targetScope(scope).district(district)
+                .consentAt(requestedAt).expiresAt(requestedAt.plusDays(requestExpiryDays))
+                .targetPharmacies(new HashSet<>(targets)).build());
+    }
+
+    /** A quote for an amoxicillin and a paracetamol line where stocked, topped up to two lines. */
+    private PrescriptionResponse quote(PrescriptionRequest request, Pharmacy pharmacy, List<Inventory> pharmacyStock,
+                                       String message) {
+        List<Inventory> quotedLines = new ArrayList<>();
+        addMatching(quotedLines, pharmacyStock, "Amoxicillin");
+        addMatching(quotedLines, pharmacyStock, "Paracetamol");
+        for (Inventory line : pharmacyStock) {
+            if (quotedLines.size() >= 2) {
+                break;
+            }
+            if (!quotedLines.contains(line)) {
+                quotedLines.add(line);
+            }
+        }
+
+        PrescriptionResponse response = PrescriptionResponse.builder()
+                .prescriptionRequest(request).pharmacy(pharmacy).message(message).build();
+        for (Inventory line : quotedLines) {
+            boolean antibiotic = line.getMedicineMaster().getGenericName().contains("Amoxicillin");
+            response.getItems().add(PrescriptionResponseItem.builder()
+                    .prescriptionResponse(response).inventoryItem(line).quantity(antibiotic ? 21 : 10)
+                    .unitPrice(line.getUnitPrice()).build());
+        }
+        return prescriptionResponseRepository.save(response);
     }
 
     private static void addMatching(List<Inventory> lines, List<Inventory> stock, String generic) {
@@ -408,12 +437,26 @@ public class DemoDataServiceImpl implements DemoDataService {
                 }
             }
         }
+        Set<String> reservationLinks = reservations.stream()
+                .map(r -> "/reservations/" + r.getId()).collect(Collectors.toSet());
         reservationRepository.deleteAll(reservations);
         reservationRepository.flush();
 
-        prescriptionResponseRepository.deleteAll(
-                prescriptionResponseRepository.findByPharmacyIdInOrRequestPatientIdIn(pharmacyIds, userIds));
+        // A real request answered only by demo pharmacies is open again once their quotes are gone.
+        List<PrescriptionResponse> responses =
+                prescriptionResponseRepository.findByPharmacyIdInOrRequestPatientIdIn(pharmacyIds, userIds);
+        Set<PrescriptionRequest> realRequestsAnswered = responses.stream()
+                .map(PrescriptionResponse::getPrescriptionRequest)
+                .filter(r -> !userIds.contains(r.getPatient().getId()))
+                .collect(Collectors.toSet());
+        prescriptionResponseRepository.deleteAll(responses);
         prescriptionResponseRepository.flush();
+        for (PrescriptionRequest request : realRequestsAnswered) {
+            if (request.getStatus() == PrescriptionRequestStatus.RESPONDED
+                    && !prescriptionResponseRepository.existsByPrescriptionRequestId(request.getId())) {
+                request.setStatus(PrescriptionRequestStatus.PENDING);
+            }
+        }
 
         // Real requests that were sent to demo pharmacies keep their other targets.
         for (PrescriptionRequest request : prescriptionRequestRepository.findTargetingAnyPharmacy(pharmacyIds)) {
@@ -428,6 +471,10 @@ public class DemoDataServiceImpl implements DemoDataService {
         List<Bookmark> bookmarks = bookmarkRepository.findByUserIdInOrInventoryPharmacyIdIn(userIds, pharmacyIds);
         bookmarkRepository.deleteAll(bookmarks);
         notificationRepository.deleteAll(notificationRepository.findByRecipientIdIn(userIds));
+        if (!reservationLinks.isEmpty()) {
+            // real users' notifications about a deleted reservation (e.g. a real owner told of a demo booking)
+            notificationRepository.deleteAll(notificationRepository.findByLinkIn(reservationLinks));
+        }
 
         for (MedicineMaster suggestion : medicineMasterRepository.findBySuggestedByPharmacyIdIn(pharmacyIds)) {
             if (suggestion.getStatus() == MedicineStatus.APPROVED) {

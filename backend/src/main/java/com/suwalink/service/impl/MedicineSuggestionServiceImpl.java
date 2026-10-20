@@ -8,6 +8,7 @@ import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.MedicineStatus;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.event.MedicineSuggestionReviewedEvent;
+import com.suwalink.exception.AlreadyReviewedException;
 import com.suwalink.exception.DuplicateResourceException;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.CategoryRepository;
@@ -93,7 +94,7 @@ public class MedicineSuggestionServiceImpl implements MedicineSuggestionService 
         MedicineMaster medicine = pendingSuggestion(id);
         medicine.setStatus(MedicineStatus.APPROVED);
         medicine.setRejectionReason(null);
-        return review(medicine, true);
+        return review(medicine, true, null);
     }
 
     @Override
@@ -102,14 +103,14 @@ public class MedicineSuggestionServiceImpl implements MedicineSuggestionService 
         MedicineMaster medicine = pendingSuggestion(id);
         medicine.setStatus(MedicineStatus.REJECTED);
         medicine.setRejectionReason(reason);
-        return review(medicine, false);
+        return review(medicine, false, reason);
     }
 
-    private MedicineMasterResponse review(MedicineMaster medicine, boolean approved) {
+    private MedicineMasterResponse review(MedicineMaster medicine, boolean approved, String reason) {
         MedicineMaster saved = medicineMasterRepository.save(medicine);
         eventPublisher.publishEvent(new MedicineSuggestionReviewedEvent(
             this, saved.getSuggestedByPharmacy().getUser().getId(),
-            saved.getBrandName() + " " + saved.getStrength(), approved));
+            saved.getBrandName() + " " + saved.getStrength(), approved, reason));
         return MedicineMasterResponse.of(saved);
     }
 
@@ -118,7 +119,7 @@ public class MedicineSuggestionServiceImpl implements MedicineSuggestionService 
             .filter(m -> m.getSuggestedByPharmacy() != null)
             .orElseThrow(() -> new ResourceNotFoundException("Suggestion not found: " + id));
         if (medicine.getStatus() != MedicineStatus.PENDING) {
-            throw new DuplicateResourceException("This suggestion has already been reviewed");
+            throw new AlreadyReviewedException("This suggestion has already been reviewed");
         }
         return medicine;
     }

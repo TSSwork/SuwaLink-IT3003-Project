@@ -175,6 +175,12 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
   not the email is registered, to avoid leaking which emails have accounts. Requires
   `GMAIL_USERNAME`/`GMAIL_APP_PASSWORD` env vars to actually send mail (see `application.properties`);
   without them, `/forgot-password` returns a `502` instead of crashing.
+  A reset code allows 5 wrong attempts; the 5th wrong one clears the code (request a new one). Issuing a
+  code resets the counter (`users.reset_otp_attempts`, changeset 014).
+- Rate limits (in-memory, `RateLimitFilter`, `app.rate-limit.*`): login 10 failed attempts per IP and 5 per
+  email per 5 min (successful logins are not counted); register 5 per IP per hour; forgot-password 10 per IP
+  and 3 per email per hour; reset-password 20 per IP and 10 per email per 15 min. Over the limit: 429
+  `RATE_LIMITED` with `Retry-After`.
 - Inventory, prescription-request, prescription-response, and reservation logic/tables all exist
   now — see `READ_INVENTORY_MODULE.md`, `READ_PRESCRIPTION_MODULE.md`, and the
   `PrescriptionResponse`/`Reservation` entities/controllers.

@@ -7,8 +7,10 @@ import static org.mockito.Mockito.when;
 import com.suwalink.entity.AppSetting;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
+import com.suwalink.entity.User;
 import com.suwalink.repository.AppSettingRepository;
 import com.suwalink.service.impl.PharmacyVisibilityServiceImpl;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +24,18 @@ class PharmacyVisibilityServiceImplTest {
     }
 
     private Pharmacy pharmacy(PharmacyStatus status, boolean demo) {
-        return Pharmacy.builder().status(status).demo(demo).build();
+        return Pharmacy.builder().status(status).demo(demo).user(User.builder().build()).build();
+    }
+
+    @Test
+    void suspendedOrDeletedOwnersPharmacyIsNotVisible() {
+        demoMode("true");
+        Pharmacy suspended = pharmacy(PharmacyStatus.VERIFIED, false);
+        suspended.getUser().setSuspended(true);
+        assertThat(service.isPubliclyVisible(suspended)).isFalse();
+        Pharmacy deleted = pharmacy(PharmacyStatus.VERIFIED, false);
+        deleted.getUser().setDeletedAt(LocalDateTime.now());
+        assertThat(service.isPubliclyVisible(deleted)).isFalse();
     }
 
     @Test

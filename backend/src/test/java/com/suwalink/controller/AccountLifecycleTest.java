@@ -247,6 +247,52 @@ class AccountLifecycleTest {
     }
 
     @Test
+    void suspendedOwnersPharmacyIsNotPublic() throws Exception {
+        String admin = adminToken();
+        String pharmacyEmail = "acct.susp.owner@example.com";
+        registerVerifiedPharmacyAndLogin(pharmacyEmail, "LIC-AD-S1");
+        registerVerifiedPharmacyAndLogin("acct.susp.other@example.com", "LIC-AD-S2"); // keeps ALL in scope
+        UUID inventoryId = createInventoryItem(pharmacyEmail, 5);
+        UUID medicineId = inventoryRepository.findById(inventoryId).orElseThrow().getMedicineMaster().getId();
+        UUID pharmacyId = pharmacyOf(pharmacyEmail).getId();
+        UUID ownerId = userId(pharmacyEmail);
+        String customerToken = registerCustomerAndLogin("acct.susp.customer@example.com");
+
+        mockMvc.perform(put("/api/admin/users/" + ownerId + "/suspend").header("Authorization", bearer(admin)))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/medicines/" + medicineId + "/offers"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[*].pharmacy.id", not(hasItem(pharmacyId.toString()))));
+        mockMvc.perform(get("/api/medicines/search").param("q", "panadol"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[*].medicineId", not(hasItem(medicineId.toString()))));
+        mockMvc.perform(get("/api/pharmacies/" + pharmacyId)).andExpect(status().isNotFound());
+        String requestId = createPrescription(customerToken);
+        assertThat(prescriptionRequestRepository.findById(UUID.fromString(requestId)).orElseThrow()
+            .getTargetPharmacies()).extracting(Pharmacy::getId).doesNotContain(pharmacyId).isNotEmpty();
+        mockMvc.perform(post("/api/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", bearer(customerToken))
+                .content("""
+                    { "lines": [ { "inventoryItemId": "%s", "quantity": 1 } ] }
+                    """.formatted(inventoryId)))
+            .andExpect(status().isNotFound());
+
+        mockMvc.perform(put("/api/admin/users/" + ownerId + "/reactivate").header("Authorization", bearer(admin)))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/medicines/" + medicineId + "/offers"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[*].pharmacy.id", hasItem(pharmacyId.toString())));
+        mockMvc.perform(get("/api/medicines/search").param("q", "panadol"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[*].medicineId", hasItem(medicineId.toString())));
+        mockMvc.perform(get("/api/pharmacies/" + pharmacyId)).andExpect(status().isOk());
+        reserve(customerToken, inventoryId, 1);
+    }
+
+    @Test
     void adminCannotDeleteSelfOrAnotherAdmin() throws Exception {
         String admin = adminToken();
 

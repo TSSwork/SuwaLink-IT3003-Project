@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -18,10 +19,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -257,6 +263,15 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(AlreadyReviewedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAlreadyReviewed(AlreadyReviewedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .code("ALREADY_REVIEWED")
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(MailException.class)
     public ResponseEntity<ApiErrorResponse> handleMailFailure(MailException ex) {
         log.error("Failed to send an email", ex);
@@ -346,6 +361,54 @@ public class GlobalExceptionHandler {
             .body(ApiErrorResponse.builder()
                 .code("MALFORMED_REQUEST")
                 .message("Malformed or invalid request body")
+                .build());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        if (ex.getSupportedHttpMethods() != null) {
+            response.allow(ex.getSupportedHttpMethods().toArray(new HttpMethod[0]));
+        }
+        return response.body(ApiErrorResponse.builder()
+            .code("METHOD_NOT_ALLOWED")
+            .message("Request method '" + ex.getMethod() + "' is not supported here")
+            .build());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+            .body(ApiErrorResponse.builder()
+                .code("UNSUPPORTED_MEDIA_TYPE")
+                .message("Unsupported content type")
+                .build());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return missingParameter(ex.getParameterName());
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingPart(MissingServletRequestPartException ex) {
+        return missingParameter(ex.getRequestPartName());
+    }
+
+    private static ResponseEntity<ApiErrorResponse> missingParameter(String name) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiErrorResponse.builder()
+                .code("MISSING_PARAMETER")
+                .message("Required parameter '" + name + "' is missing")
+                .build());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoResource(NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiErrorResponse.builder()
+                .code("NOT_FOUND")
+                .message("The requested item was not found")
                 .build());
     }
 

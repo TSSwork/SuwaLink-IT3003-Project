@@ -23,7 +23,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/** Throttles the unauthenticated auth POST endpoints per client IP and (where the body has one) per email. */
+/**
+ * Throttles the unauthenticated auth POST endpoints per client IP and (where the body has one) per email.
+ * Login is charged only for failed (401) attempts; the other paths are charged per request.
+ */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
@@ -52,6 +55,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private int forgotIp;
     @Value("${app.rate-limit.reset-password.email:10}")
     private int resetEmail;
+    @Value("${app.rate-limit.reset-password.ip:20}")
+    private int resetIp;
 
     public RateLimitFilter(RateLimiter limiter, ObjectMapper objectMapper, MessageSource messageSource) {
         this.limiter = limiter;
@@ -88,15 +93,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
             email = extractEmail(body);
         }
 
-        boolean allowed;
         if (path.equals("/api/auth/login")) {
-            allowed = check("login-ip", ip, loginIp, LOGIN_WINDOW)
-                    && check("login-email", email, loginEmail, LOGIN_WINDOW);
-        } else if (path.equals("/api/auth/forgot-password")) {
+            filterLogin(request, response, chain, forwarded, ip, email);
+            return;
+        }
+
+        boolean allowed;
+        if (path.equals("/api/auth/forgot-password")) {
             allowed = check("forgot-ip", ip, forgotIp, FORGOT_WINDOW)
                     && check("forgot-email", email, forgotEmail, FORGOT_WINDOW);
         } else if (path.equals("/api/auth/reset-password")) {
-            allowed = check("reset-email", email, resetEmail, RESET_WINDOW);
+            allowed = check("reset-ip", ip, resetIp, RESET_WINDOW)
+                    && check("reset-email", email, resetEmail, RESET_WINDOW);
         } else {
             allowed = check("register-ip", ip, registerIp, REGISTER_WINDOW);
         }
@@ -106,6 +114,27 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         chain.doFilter(forwarded, response);
+    }
+
+    /**
+     * Login counts only failed attempts: refuse up front once a bucket is used up, and charge both
+     * buckets only when the attempt comes back 401 (wrong credentials).
+     */
+    private void filterLogin(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+            HttpServletRequest forwarded, String ip, String email) throws ServletException, IOException {
+        boolean allowed = limiter.hasRemaining("login-ip", ip, loginIp)
+                && (email == null || limiter.hasRemaining("login-email", email, loginEmail));
+        if (!allowed) {
+            reject(request, response, retryAfter(request.getRequestURI(), ip, email));
+            return;
+        }
+        chain.doFilter(forwarded, response);
+        if (response.getStatus() == HttpServletResponse.SC_UNAUTHORIZED) {
+            limiter.record("login-ip", ip, LOGIN_WINDOW);
+            if (email != null) {
+                limiter.record("login-email", email, LOGIN_WINDOW);
+            }
+        }
     }
 
     /** Null keys (no email in body) are not limited. */
@@ -118,7 +147,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String[][] candidates = switch (path) {
             case "/api/auth/login" -> new String[][] {{"login-ip", ip}, {"login-email", email}};
             case "/api/auth/forgot-password" -> new String[][] {{"forgot-ip", ip}, {"forgot-email", email}};
-            case "/api/auth/reset-password" -> new String[][] {{"reset-email", email}};
+            case "/api/auth/reset-password" -> new String[][] {{"reset-ip", ip}, {"reset-email", email}};
             default -> new String[][] {{"register-ip", ip}};
         };
         for (String[] c : candidates) {

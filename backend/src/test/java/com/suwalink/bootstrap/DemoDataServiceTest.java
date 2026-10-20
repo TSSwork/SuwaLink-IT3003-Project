@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.suwalink.dto.response.DemoAccountResponse;
 import com.suwalink.entity.Category;
 import com.suwalink.entity.District;
 import com.suwalink.entity.Image;
@@ -15,7 +16,10 @@ import com.suwalink.entity.Manufacturer;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
+import com.suwalink.entity.Notification;
+import com.suwalink.entity.NotificationType;
 import com.suwalink.entity.PrescriptionRequest;
+import com.suwalink.entity.PrescriptionRequestStatus;
 import com.suwalink.entity.PrescriptionResponse;
 import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.entity.Reservation;
@@ -222,7 +226,49 @@ class DemoDataServiceTest {
             assertThat(confirmed.getItems()).allSatisfy(i -> assertThat(i.getPrescriptionResponseItem()).isNotNull());
             assertThat(confirmed.getExpiresAt()).isBetween(
                     LocalDateTime.now().plusHours(23), LocalDateTime.now().plusHours(25));
+
+            // customer 2: a Kandy request answered by one Kandy demo pharmacy, not reserved yet
+            User customer2 = userRepository.findByEmail("customer2@demo.suwalink.lk").orElseThrow();
+            List<PrescriptionRequest> requests2 = prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(customer2.getId());
+            assertThat(requests2).hasSize(1);
+            PrescriptionRequest kandy = requests2.get(0);
+            assertThat(kandy.getTargetScope()).isEqualTo(TargetScope.DISTRICT);
+            assertThat(kandy.getDistrict()).isEqualTo(District.KANDY);
+            assertThat(kandy.getStatus()).isEqualTo(PrescriptionRequestStatus.RESPONDED);
+            assertThat(kandy.getTargetPharmacies()).hasSize(2)
+                    .allSatisfy(p -> assertThat(p.getDistrict()).isEqualTo(District.KANDY));
+            List<PrescriptionResponse> kandyResponses =
+                    prescriptionResponseRepository.findByPrescriptionRequestIdOrderByCreatedAtDesc(kandy.getId());
+            assertThat(kandyResponses).hasSize(1);
+            assertThat(kandyResponses.get(0).getPharmacy().getDistrict()).isEqualTo(District.KANDY);
+            assertThat(kandyResponses.get(0).getPharmacy().isDemo()).isTrue();
+            assertThat(kandyResponses.get(0).getItems()).isNotEmpty();
+            assertThat(reservationRepository.findByPatientIdOrderByCreatedAtDesc(customer2.getId())).isEmpty();
+
+            // customer 3: an ALL request to the demo pharmacies, no answers yet
+            User customer3 = userRepository.findByEmail("customer3@demo.suwalink.lk").orElseThrow();
+            List<PrescriptionRequest> requests3 = prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(customer3.getId());
+            assertThat(requests3).hasSize(1);
+            PrescriptionRequest open = requests3.get(0);
+            assertThat(open.getTargetScope()).isEqualTo(TargetScope.ALL);
+            assertThat(open.getStatus()).isEqualTo(PrescriptionRequestStatus.PENDING);
+            assertThat(open.getTargetPharmacies()).hasSize(7).allSatisfy(p -> assertThat(p.isDemo()).isTrue());
+            assertThat(prescriptionResponseRepository.findByPrescriptionRequestIdOrderByCreatedAtDesc(open.getId())).isEmpty();
+            assertThat(reservationRepository.findByPatientIdOrderByCreatedAtDesc(customer3.getId())).isEmpty();
         });
+    }
+
+    @Test
+    void loginAccountsNeedDemoModeAndDemoData() {
+        visibility.setDemoModePublic(true);
+        assertThat(demoDataService.loginAccounts()).isEmpty(); // demo mode on, no demo data yet
+
+        demoDataService.seedIfMissing();
+        assertThat(demoDataService.loginAccounts()).extracting(DemoAccountResponse::getEmail)
+                .containsExactlyInAnyOrder(CUSTOMER1, PHARMACY1);
+
+        visibility.setDemoModePublic(false);
+        assertThat(demoDataService.loginAccounts()).isEmpty();
     }
 
     @Test
@@ -269,6 +315,18 @@ class DemoDataServiceTest {
                 .patient(realCustomer).image(realImage).patientAge(40).targetScope(TargetScope.DISTRICT)
                 .district(District.COLOMBO).consentAt(LocalDateTime.now()).expiresAt(LocalDateTime.now().plusDays(7))
                 .targetPharmacies(new HashSet<>(List.of(realPharmacy, demoColombo))).build());
+        // answered only by the demo pharmacy
+        PrescriptionRequest realAnsweredByDemo = prescriptionRequestRepository.save(PrescriptionRequest.builder()
+                .patient(realCustomer).image(realImage).patientAge(41).targetScope(TargetScope.DISTRICT)
+                .district(District.COLOMBO).status(PrescriptionRequestStatus.RESPONDED)
+                .consentAt(LocalDateTime.now()).expiresAt(LocalDateTime.now().plusDays(7))
+                .targetPharmacies(new HashSet<>(List.of(demoColombo))).build());
+        prescriptionResponseRepository.save(PrescriptionResponse.builder()
+                .prescriptionRequest(realAnsweredByDemo).pharmacy(demoColombo).message("In stock").build());
+        // the real owner was told about the demo customer's booking; the real customer about their own
+        Notification aboutDemoBooking = notification(realOwner, "/reservations/" + demoHoldAtReal.getId());
+        Notification aboutBookingAtDemo = notification(realCustomer, "/reservations/" + realAtDemo.getId());
+        Notification aboutRealBooking = notification(realCustomer, "/reservations/" + realHold.getId());
 
         mockMvc.perform(post("/api/admin/demo/reset")
                         .header("Authorization", "Bearer " + jwtService.generateToken(admin.getId(), admin.getEmail(), Role.ADMIN)))
@@ -287,6 +345,16 @@ class DemoDataServiceTest {
         assertThat(pharmacyRepository.findById(realPharmacy.getId())).isPresent();
         assertThat(userRepository.findById(realCustomer.getId())).isPresent();
         assertThat(imageRepository.findById(realImage.getId())).isPresent();
+        assertThat(prescriptionRequestRepository.findById(realAnsweredByDemo.getId())).get()
+                .extracting(PrescriptionRequest::getStatus).isEqualTo(PrescriptionRequestStatus.PENDING);
+        assertThat(notificationRepository.findById(aboutDemoBooking.getId())).isEmpty();
+        assertThat(notificationRepository.findById(aboutBookingAtDemo.getId())).isEmpty();
+        assertThat(notificationRepository.findById(aboutRealBooking.getId())).isPresent();
+    }
+
+    private Notification notification(User recipient, String link) {
+        return notificationRepository.save(Notification.builder().recipient(recipient)
+                .messageKey("notify.reservation.new").link(link).type(NotificationType.RESERVATION).build());
     }
 
     @Test

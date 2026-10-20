@@ -66,9 +66,12 @@ public class NotificationEventListener {
 
     @EventListener
     public void handleMedicineSuggestionReviewedEvent(MedicineSuggestionReviewedEvent event) {
+        Map<String, String> params = event.isApproved()
+                ? Map.of("medicine", event.getMedicineName())
+                : Map.of("medicine", event.getMedicineName(), "reason", event.getReason());
         notificationService.notify(findUser(event.getPharmacyUserId()), NotificationType.SYSTEM_ALERT,
                 event.isApproved() ? NotificationKeys.MEDICINE_APPROVED : NotificationKeys.MEDICINE_REJECTED,
-                Map.of("medicine", event.getMedicineName()), "/pharmacy/inventory");
+                params, "/pharmacy/inventory");
     }
 
     @EventListener

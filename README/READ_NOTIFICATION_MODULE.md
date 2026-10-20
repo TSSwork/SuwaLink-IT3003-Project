@@ -45,7 +45,7 @@ request language (`Accept-Language`: `en`/`si`/`ta`, default `en`):
 | `ReservationCancelledEvent` | the other party | `notify.reservation.cancelled-by-customer` / `-by-pharmacy` | items + customer / pharmacy | `/pharmacy/reservations` / `/reservations/{id}` |
 | `ReservationCompletedEvent` | customer | `notify.reservation.completed` | items, pharmacy | `/reservations/{id}` |
 | `ReservationExpiredEvent` (`ExpiryJobs`) | customer + pharmacy owner | `notify.reservation.expired` | items, pharmacy, customer | `/reservations/{id}` / `/pharmacy/reservations` |
-| medicine suggestion approved / rejected (Phase 1C Task 6) | suggesting owner | `notify.medicine.approved` / `.rejected` | medicine | `/pharmacy/inventory` |
+| medicine suggestion approved / rejected (Phase 1C Task 6) | suggesting owner | `notify.medicine.approved` / `.rejected` | medicine (+ reason when rejected) | `/pharmacy/inventory` |
 
 `items` is a language-neutral list such as `Panadol 500mg × 2, Amoxil 250mg × 1`.
 

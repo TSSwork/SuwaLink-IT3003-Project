@@ -60,6 +60,13 @@ class SchemaMigrationTest {
         assertThat(jdbc.queryForObject("select count(*) from medicine_master", Integer.class)).isGreaterThanOrEqualTo(40);
         assertThat(jdbc.queryForObject(
                 "select count(*) from medicine_master where status <> 'APPROVED'", Integer.class)).isZero();
-        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(13);
+        assertThat(jdbc.queryForObject(
+                "select c.name from medicine_master m join categories c on c.id = m.therapeutic_category_id"
+                        + " where m.brand_name = 'Prednisolone'", String.class)).isEqualTo("Corticosteroids");
+        assertThat(jdbc.queryForObject(
+                "select column_default from information_schema.columns"
+                        + " where table_schema = database() and table_name = 'users' and column_name = 'reset_otp_attempts'",
+                String.class)).isEqualTo("0");
+        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class)).isEqualTo(14);
     }
 }

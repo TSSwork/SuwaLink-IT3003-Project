@@ -24,4 +24,6 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     List<Notification> findMentioningCustomer(@Param("customerId") String customerId);
 
     List<Notification> findByRecipientIdIn(Collection<UUID> recipientIds);
+
+    List<Notification> findByLinkIn(Collection<String> links);
 }
