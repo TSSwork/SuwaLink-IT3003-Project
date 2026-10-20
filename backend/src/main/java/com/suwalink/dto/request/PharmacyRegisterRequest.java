@@ -3,6 +3,7 @@ package com.suwalink.dto.request;
 import com.suwalink.entity.District;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -58,4 +59,8 @@ public class PharmacyRegisterRequest {
 
     @Size(max = 255, message = "Opening hours must be at most 255 characters")
     private String openingHours;
+
+    @NotNull(message = "You must accept the terms and privacy policy")
+    @AssertTrue(message = "You must accept the terms and privacy policy")
+    private Boolean acceptTerms;
 }

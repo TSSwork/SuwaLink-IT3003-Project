@@ -227,7 +227,7 @@ class NotificationControllerTest {
         mockMvc.perform(post("/api/auth/register/customer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    { "name": "Notif Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123" }
+                    { "name": "Notif Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123", "acceptTerms": true }
                     """.formatted(email)))
             .andExpect(status().isCreated());
 

@@ -1,5 +1,6 @@
 package com.suwalink.service.impl;
 
+import com.suwalink.service.ImageService;
 import com.suwalink.service.PrescriptionRequestService;
 import com.suwalink.service.ReservationService;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ public class ExpiryJobs {
 
     private final PrescriptionRequestService prescriptionRequestService;
     private final ReservationService reservationService;
+    private final ImageService imageService;
 
     @Scheduled(cron = "${app.jobs.expiry-cron:0 */15 * * * *}")
     void expirePrescriptionRequests() {
@@ -30,6 +32,14 @@ public class ExpiryJobs {
         int expired = reservationService.expireOverdue(LocalDateTime.now());
         if (expired > 0) {
             log.info("Expired {} overdue reservation(s); their stock was released", expired);
+        }
+    }
+
+    @Scheduled(cron = "${app.jobs.retention-cron:0 30 3 * * *}")
+    void purgeOldPrescriptionImages() {
+        int purged = imageService.purgeOldPrescriptionImages(LocalDateTime.now());
+        if (purged > 0) {
+            log.info("Purged {} prescription image(s) past the retention period", purged);
         }
     }
 }

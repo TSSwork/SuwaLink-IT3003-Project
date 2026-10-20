@@ -65,6 +65,11 @@ public class User {
     @Builder.Default
     private boolean demo = false;
 
+    /** When the user accepted the terms and privacy policy (registration time; backfilled for old rows). */
+    @Column(name = "terms_accepted_at", nullable = false)
+    @Builder.Default
+    private LocalDateTime termsAcceptedAt = LocalDateTime.now();
+
     @Column(name = "reset_otp")
     private String resetOtp;
 

@@ -489,7 +489,7 @@ class PrescriptionRequestControllerTest {
         mockMvc.perform(post("/api/auth/register/customer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123" }
+                    { "name": "Test Customer", "email": "%s", "phone": "0771234567", "password": "SecurePass123", "acceptTerms": true }
                     """.formatted(email)))
             .andExpect(status().isCreated());
 

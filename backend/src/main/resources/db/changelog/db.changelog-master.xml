@@ -41,4 +41,8 @@
         <sqlFile path="sql/009-notification-keys.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="010-consent-retention" author="suwalink">
+        <sqlFile path="sql/010-consent-retention.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

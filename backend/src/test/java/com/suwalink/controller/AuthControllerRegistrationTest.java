@@ -8,6 +8,7 @@ import com.suwalink.entity.User;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.support.TestPayloads;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -44,7 +45,8 @@ class AuthControllerRegistrationTest {
               "name": "Nimal Perera",
               "email": "nimal@example.com",
               "phone": "0771234567",
-              "password": "SecurePass123"
+              "password": "SecurePass123",
+              "acceptTerms": true
             }
             """;
 
@@ -59,13 +61,41 @@ class AuthControllerRegistrationTest {
     }
 
     @Test
+    void registrationRequiresAcceptTerms() throws Exception {
+        String base = "{ \"name\": \"Terms Tester\", \"email\": \"%s\", \"phone\": \"0771234567\", "
+            + "\"password\": \"SecurePass123\"%s }";
+        for (String terms : new String[] {"", ", \"acceptTerms\": false", ", \"acceptTerms\": null"}) {
+            mockMvc.perform(post("/api/auth/register/customer")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(base.formatted("terms.no@example.com", terms)))
+                .andExpect(status().isBadRequest());
+        }
+        assertThat(userRepository.findByEmail("terms.no@example.com")).isEmpty();
+
+        mockMvc.perform(post("/api/auth/register/pharmacy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestPayloads.pharmacyRegistration("terms.pharm@example.com", "LIC-TERMS-1")
+                    .replace("\"acceptTerms\": true", "\"acceptTerms\": false")))
+            .andExpect(status().isBadRequest());
+
+        LocalDateTime before = LocalDateTime.now().minusSeconds(5);
+        mockMvc.perform(post("/api/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(base.formatted("terms.yes@example.com", ", \"acceptTerms\": true")))
+            .andExpect(status().isCreated());
+        assertThat(userRepository.findByEmail("terms.yes@example.com").orElseThrow().getTermsAcceptedAt())
+            .isAfter(before);
+    }
+
+    @Test
     void registerCustomer_withDuplicateEmail_returnsConflict() throws Exception {
         String requestBody = """
             {
               "name": "Nimal Perera",
               "email": "duplicate@example.com",
               "phone": "0771234567",
-              "password": "SecurePass123"
+              "password": "SecurePass123",
+              "acceptTerms": true
             }
             """;
 

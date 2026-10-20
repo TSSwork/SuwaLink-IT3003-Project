@@ -8,6 +8,8 @@ import com.suwalink.exception.FileStorageException;
 import com.suwalink.entity.PrescriptionRequest;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
+import com.suwalink.entity.PrescriptionRequestStatus;
+import com.suwalink.exception.ImagePurgedException;
 import com.suwalink.exception.InvalidFileException;
 import com.suwalink.exception.PrescriptionAccessDeniedException;
 import com.suwalink.exception.ResourceNotFoundException;
@@ -22,17 +24,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageServiceImpl implements ImageService {
@@ -43,6 +52,10 @@ public class ImageServiceImpl implements ImageService {
     private final CurrentUserProvider currentUserProvider;
     private final PrescriptionRequestRepository prescriptionRequestRepository;
     private final PharmacyRepository pharmacyRepository;
+    private final PlatformTransactionManager transactionManager;
+
+    @Value("${app.prescription.image-retention-days:30}")
+    private int retentionDays;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -100,7 +113,58 @@ public class ImageServiceImpl implements ImageService {
         if (image.getImageType() == ImageType.PRESCRIPTION && !canViewPrescriptionImage(image)) {
             throw new PrescriptionAccessDeniedException();
         }
+        if (image.getPurgedAt() != null) {
+            throw new ImagePurgedException();
+        }
         return toContent(image);
+    }
+
+    @Override
+    public void purgeFile(Image image) {
+        if (image.getPurgedAt() != null) {
+            return;
+        }
+        try {
+            Path base = Path.of(uploadDir).toAbsolutePath().normalize();
+            Path file = Path.of(image.getFilePath()).toAbsolutePath().normalize();
+            if (file.startsWith(base)) {
+                Files.deleteIfExists(file);
+            }
+        } catch (IOException e) {
+            throw new FileStorageException("Failed to delete image file", e);
+        }
+        image.setPurgedAt(LocalDateTime.now());
+        imageRepository.save(image);
+    }
+
+    /** Each image is purged in its own transaction, so one failure can't stop the rest. */
+    @Override
+    public int purgeOldPrescriptionImages(LocalDateTime now) {
+        TransactionTemplate each = new TransactionTemplate(transactionManager);
+        each.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        LocalDateTime cutoff = now.minusDays(retentionDays);
+        int purged = 0;
+        for (UUID id : imageRepository.findPurgeableImageIds(
+                List.of(PrescriptionRequestStatus.CLOSED, PrescriptionRequestStatus.EXPIRED), cutoff)) {
+            try {
+                if (Boolean.TRUE.equals(each.execute(status -> purgeOne(id)))) {
+                    purged++;
+                }
+            } catch (RuntimeException e) {
+                log.warn("Could not purge prescription image {}: {}", id, e.getClass().getSimpleName());
+            }
+        }
+        return purged;
+    }
+
+    private boolean purgeOne(UUID id) {
+        Image image = imageRepository.findById(id).orElse(null);
+        if (image == null || image.getPurgedAt() != null) {
+            return false;
+        }
+        purgeFile(image);
+        return true;
     }
 
     private boolean canViewPrescriptionImage(Image image) {

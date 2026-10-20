@@ -146,3 +146,15 @@ rather than being nested here.
   `images.image_type` enum). Tests run against H2 with Hibernate's own schema generation
   (`spring.liquibase.enabled=false` in the test profile), so this migration only matters for the
   real MySQL database — see `commands.md`.
+
+## Data retention
+
+Prescription photos are sensitive, so they are not kept forever. A daily job
+(`ExpiryJobs.purgeOldPrescriptionImages`, cron `app.jobs.retention-cron`, default `0 30 3 * * *`)
+deletes the stored file of every request that is `CLOSED` or `EXPIRED` and was last updated more than
+`app.prescription.image-retention-days` days ago (default **30**, pending lecturer confirmation).
+Each image is purged in its own transaction; the `images` row stays with `purged_at` set, and
+`GET /api/images/{id}/content` then answers `410 Gone` with code `IMAGE_PURGED`.
+The deletion logic is `ImageService.purgeFile(Image)`, reused by account deletion.
+Migration: `db/changelog/sql/010-consent-retention.sql` (also adds `users.terms_accepted_at`, set at
+registration when the user accepts the terms and privacy policy via `acceptTerms: true`).

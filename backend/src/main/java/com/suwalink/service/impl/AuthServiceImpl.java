@@ -184,6 +184,7 @@ public class AuthServiceImpl implements AuthService {
             .phone(phone)
             .password(passwordEncoder.encode(rawPassword))
             .role(role)
+            .termsAcceptedAt(LocalDateTime.now())
             .build();
 
         return userRepository.save(user);

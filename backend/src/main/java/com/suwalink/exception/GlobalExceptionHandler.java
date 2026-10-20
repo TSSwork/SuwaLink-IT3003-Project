@@ -102,6 +102,15 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(ImagePurgedException.class)
+    public ResponseEntity<ApiErrorResponse> handleImagePurged(ImagePurgedException ex) {
+        return ResponseEntity.status(HttpStatus.GONE)
+            .body(ApiErrorResponse.builder()
+                .code("IMAGE_PURGED")
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(NoPharmaciesInScopeException.class)
     public ResponseEntity<ApiErrorResponse> handleNoPharmaciesInScope(NoPharmaciesInScopeException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
