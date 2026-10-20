@@ -3,8 +3,11 @@ package com.suwalink.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jayway.jsonpath.JsonPath;
 import com.suwalink.entity.Category;
@@ -14,7 +17,12 @@ import com.suwalink.entity.Manufacturer;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
+import com.suwalink.entity.PrescriptionRequestStatus;
+import com.suwalink.entity.Reservation;
+import com.suwalink.entity.ReservationItem;
 import com.suwalink.entity.PrescriptionStatus;
+import com.suwalink.repository.NotificationRepository;
+import com.suwalink.repository.PrescriptionRequestRepository;
 import com.suwalink.entity.UnitOfMeasure;
 import com.suwalink.repository.CategoryRepository;
 import com.suwalink.repository.InventoryRepository;
@@ -26,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import com.suwalink.support.TestPayloads;
@@ -63,6 +72,21 @@ class PrescriptionResponseControllerTest {
 
     @Autowired
     private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private PrescriptionRequestRepository prescriptionRequestRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
+    private com.suwalink.repository.PrescriptionResponseRepository prescriptionResponseRepository;
+
+    @Autowired
+    private com.suwalink.repository.ReservationRepository reservationRepository;
+
+    @Autowired
+    private com.suwalink.repository.UserRepository userRepository;
 
     @Test
     void create_asPharmacy_returnsCreatedResponseAndFlipsRequestStatus() throws Exception {
@@ -164,6 +188,156 @@ class PrescriptionResponseControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(1));
     }
 
+    @Test
+    void nonTargetedPharmacyCannotRespond() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient6@example.com");
+        registerVerifiedPharmacyAndLogin("presp.target6@example.com", "LIC-R-8");
+        String requestId = createPrescription(patientToken, 30, "Targeted elsewhere");
+        String lateToken = registerVerifiedPharmacyAndLogin("presp.late6@example.com", "LIC-R-9");
+        UUID inventoryId = createInventoryItem("presp.late6@example.com", new BigDecimal("10.00"), 5);
+
+        postResponse(lateToken, requestId, inventoryId, 1).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void secondResponseFromSamePharmacyIs409() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient7@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy7@example.com", "LIC-R-10");
+        String requestId = createPrescription(patientToken, 30, "Twice");
+        UUID inventoryId = createInventoryItem("presp.pharmacy7@example.com", new BigDecimal("10.00"), 5);
+
+        submitResponse(pharmacyToken, requestId, inventoryId, 1);
+        postResponse(pharmacyToken, requestId, inventoryId, 1)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("You have already responded; update your response instead"));
+    }
+
+    @Test
+    void pharmacyUpdatesItsResponse() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient8@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy8@example.com", "LIC-R-11");
+        String requestId = createPrescription(patientToken, 30, "Update me");
+        UUID first = createInventoryItem("presp.pharmacy8@example.com", new BigDecimal("10.00"), 5);
+        UUID second = createInventoryItem("presp.pharmacy8@example.com", new BigDecimal("25.00"), 5);
+        submitResponse(pharmacyToken, requestId, first, 1);
+
+        mockMvc.perform(put("/api/prescriptions/" + requestId + "/responses/mine")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + pharmacyToken)
+                        .content("""
+                            { "message": "Revised", "items": [ { "inventoryItemId": "%s", "quantity": 3 } ] }
+                            """.formatted(second)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.message").value("Revised"))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].inventoryItemId").value(second.toString()))
+                .andExpect(jsonPath("$.data.items[0].quantity").value(3))
+                .andExpect(jsonPath("$.data.items[0].unitPrice").value(25.00));
+
+        assertThat(notificationRepository.findAll())
+                .anyMatch(n -> "Pharmacy updated its response".equals(n.getTitle()));
+    }
+
+    @Test
+    void updateWithoutExistingResponseIs404() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient9@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy9@example.com", "LIC-R-12");
+        String requestId = createPrescription(patientToken, 30, "Nothing yet");
+        UUID inventoryId = createInventoryItem("presp.pharmacy9@example.com", new BigDecimal("10.00"), 5);
+
+        mockMvc.perform(put("/api/prescriptions/" + requestId + "/responses/mine")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + pharmacyToken)
+                        .content("""
+                            { "items": [ { "inventoryItemId": "%s", "quantity": 1 } ] }
+                            """.formatted(inventoryId)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void cannotUpdateResponseAfterReservation() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient12@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy12@example.com", "LIC-R-16");
+        String requestId = createPrescription(patientToken, 30, "Reserved");
+        UUID first = createInventoryItem("presp.pharmacy12@example.com", new BigDecimal("10.00"), 5);
+        UUID second = createInventoryItem("presp.pharmacy12@example.com", new BigDecimal("25.00"), 5);
+        submitResponse(pharmacyToken, requestId, first, 1);
+
+        var item = prescriptionResponseRepository
+                .findByPrescriptionRequestIdOrderByCreatedAtDesc(UUID.fromString(requestId))
+                .get(0).getItems().get(0);
+        Reservation reservation = Reservation.builder()
+                .patient(userRepository.findByEmail("presp.patient12@example.com").orElseThrow())
+                .pharmacy(item.getInventoryItem().getPharmacy())
+                .prescriptionRequest(item.getPrescriptionResponse().getPrescriptionRequest())
+                .pickupCode("PRESPABCDE")
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+        reservation.addItem(ReservationItem.builder()
+                .inventoryItem(item.getInventoryItem())
+                .prescriptionResponseItem(item)
+                .quantity(1)
+                .unitPrice(item.getUnitPrice())
+                .medicineName("Panadol 500mg")
+                .build());
+        reservationRepository.save(reservation);
+
+        mockMvc.perform(put("/api/prescriptions/" + requestId + "/responses/mine")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + pharmacyToken)
+                        .content("""
+                            { "items": [ { "inventoryItemId": "%s", "quantity": 3 } ] }
+                            """.formatted(second)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("This response already has reservations and can no longer be changed"));
+
+        mockMvc.perform(get("/api/prescriptions/" + requestId + "/responses")
+                        .header("Authorization", "Bearer " + pharmacyToken))
+                .andExpect(jsonPath("$.data[0].items.length()").value(1))
+                .andExpect(jsonPath("$.data[0].items[0].inventoryItemId").value(first.toString()));
+    }
+
+    @Test
+    void cannotRespondToExpiredRequest() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient10@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy10@example.com", "LIC-R-13");
+        String requestId = createPrescription(patientToken, 30, "Old");
+        UUID inventoryId = createInventoryItem("presp.pharmacy10@example.com", new BigDecimal("10.00"), 5);
+        var request = prescriptionRequestRepository.findById(UUID.fromString(requestId)).orElseThrow();
+        request.setStatus(PrescriptionRequestStatus.EXPIRED);
+        prescriptionRequestRepository.save(request);
+
+        // Existing PrescriptionRequestClosedException handler answers 400 (see create_onClosedRequest_isBadRequest).
+        postResponse(pharmacyToken, requestId, inventoryId, 1).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void targetedPharmacySeesOnlyItsOwnResponse() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient11@example.com");
+        String aToken = registerVerifiedPharmacyAndLogin("presp.pharmacyE@example.com", "LIC-R-14");
+        String bToken = registerVerifiedPharmacyAndLogin("presp.pharmacyF@example.com", "LIC-R-15");
+        String requestId = createPrescription(patientToken, 30, "Two offers");
+        submitResponse(aToken, requestId, createInventoryItem("presp.pharmacyE@example.com", new BigDecimal("1.00"), 5), 1);
+        submitResponse(bToken, requestId, createInventoryItem("presp.pharmacyF@example.com", new BigDecimal("2.00"), 5), 1);
+
+        mockMvc.perform(get("/api/prescriptions/" + requestId + "/responses").header("Authorization", "Bearer " + aToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1));
+        mockMvc.perform(get("/api/prescriptions/" + requestId + "/responses").header("Authorization", "Bearer " + patientToken))
+                .andExpect(jsonPath("$.data.length()").value(2));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions postResponse(
+            String pharmacyToken, String requestId, UUID inventoryId, int quantity) throws Exception {
+        return mockMvc.perform(post("/api/prescriptions/" + requestId + "/responses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + pharmacyToken)
+                .content("""
+                    { "items": [ { "inventoryItemId": "%s", "quantity": %d } ] }
+                    """.formatted(inventoryId, quantity)));
+    }
+
     private void submitResponse(String pharmacyToken, String requestId, UUID inventoryId, int quantity)
             throws Exception {
         mockMvc.perform(post("/api/prescriptions/" + requestId + "/responses")
@@ -226,6 +400,7 @@ class PrescriptionResponseControllerTest {
     private String createPrescription(String token, int age, String note) throws Exception {
         MvcResult result = mockMvc.perform(multipart("/api/prescriptions")
                         .file(samplePrescriptionImage())
+                        .with(com.suwalink.support.TestPayloads.prescriptionTargetAll())
                         .param("patientAge", String.valueOf(age))
                         .param("note", note)
                         .header("Authorization", "Bearer " + token))

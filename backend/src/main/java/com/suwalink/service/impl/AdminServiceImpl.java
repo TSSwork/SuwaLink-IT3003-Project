@@ -14,6 +14,7 @@ import com.suwalink.repository.ImageRepository;
 import com.suwalink.repository.InventoryRepository;
 import com.suwalink.repository.NotificationRepository;
 import com.suwalink.repository.PharmacyRepository;
+import com.suwalink.repository.PrescriptionRequestRepository;
 import com.suwalink.repository.PrescriptionResponseRepository;
 import com.suwalink.repository.ReservationRepository;
 import com.suwalink.repository.UserRepository;
@@ -32,6 +33,7 @@ public class AdminServiceImpl implements AdminService {
     private final PharmacyRepository pharmacyRepository;
     private final ReservationRepository reservationRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final PrescriptionRequestRepository prescriptionRequestRepository;
     private final PrescriptionResponseRepository prescriptionResponseRepository;
     private final InventoryRepository inventoryRepository;
     private final NotificationRepository notificationRepository;
@@ -130,6 +132,7 @@ public class AdminServiceImpl implements AdminService {
         reservationRepository.deleteByPharmacyId(pharmacyId);
         bookmarkRepository.deleteByInventory_PharmacyId(pharmacyId);
         prescriptionResponseRepository.deleteByPharmacyId(pharmacyId);
+        prescriptionRequestRepository.deleteTargetsForPharmacy(pharmacyId);
         inventoryRepository.deleteByPharmacyId(pharmacyId);
         pharmacyRepository.delete(pharmacy);
     }

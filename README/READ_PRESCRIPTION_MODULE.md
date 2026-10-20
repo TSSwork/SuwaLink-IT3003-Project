@@ -42,9 +42,25 @@ when a pharmacy responds; `CLOSED` is set by the patient via `PATCH /api/prescri
 ## Image storage
 
 Reuses the inventory module's `ImageService.upload(file, ImageType.PRESCRIPTION)` — same local-disk
-storage (`app.upload.dir`), re-encoded to WebP, metadata-only row in `images`, served back at
-`/uploads/<generated-filename>` (already `permitAll` in `SecurityConfig`). `ImageType` gained a
-third value, `PRESCRIPTION`, alongside the existing `PROFILE`/`INVENTORY`.
+storage (`app.upload.dir`), re-encoded to WebP, metadata-only row in `images`. Prescription images
+are private: they are served at `GET /api/images/{id}/content` (authenticated, `Cache-Control:
+private, no-store`) and only to the uploader, the owning customer, a pharmacy targeted by the request,
+or an `ADMIN` (otherwise `403`). Non-prescription images
+(profile, inventory) are served publicly at `GET /api/images/public/{filename}`, which refuses
+prescription images (`404`). `POST /api/images` rejects `imageType=PRESCRIPTION` (`400`); prescription
+images are only created through `POST /api/prescriptions`.
+
+## Targeting and responses
+
+A request is sent to a set of target pharmacies (radius / district / all, see the targeting section
+of the request endpoints). Only a targeted pharmacy may respond (`403` otherwise). A request is open
+while `PENDING` or `RESPONDED`; responding to a `CLOSED` or `EXPIRED` request is rejected (`400`).
+Each pharmacy gets exactly one response per request: a second `POST /api/prescriptions/{id}/responses`
+returns `409` ("You have already responded; update your response instead"). To change it, the pharmacy
+calls `PUT /api/prescriptions/{id}/responses/mine` (replaces message and items, prices refreshed from
+inventory; `404` if no response yet) and the customer is notified "Pharmacy updated its response".
+`GET /api/prescriptions/{id}/responses`: the owning customer and admins see all responses; a targeted
+pharmacy sees only its own; anyone else gets `403`.
 
 Deleting a request (or replacing its image via update) also deletes the old `images` row and its
 file on disk — a prescription image isn't shared the way an inventory photo might be, so nothing
@@ -108,7 +124,7 @@ Sets `status` to `CLOSED`. `403` if the caller doesn't own the request.
   "patientAge": 34,
   "note": "...",
   "status": "PENDING",
-  "imageUrl": "/uploads/<generated-filename>.webp",
+  "imageUrl": "/api/images/<image-id>/content",
   "createdAt": "2026-...",
   "updatedAt": "2026-..."
 }

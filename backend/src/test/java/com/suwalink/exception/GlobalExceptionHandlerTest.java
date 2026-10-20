@@ -2,14 +2,25 @@ package com.suwalink.exception;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.suwalink.dto.response.ApiErrorResponse;
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Plain unit tests (no Spring context) for the exception-handling gaps found and fixed here:
@@ -70,5 +81,40 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Invalid code", response.getBody().getMessage());
+    }
+
+    /** Lock timeouts and lost optimistic-lock races surface as 409 through the real @ExceptionHandler dispatch. */
+    @Test
+    void lockingFailures_returnConflict_withRetryMessage() throws Exception {
+        List<RuntimeException> failures = List.of(
+            new PessimisticLockingFailureException("lock wait timeout"),
+            new CannotAcquireLockException("deadlock"),
+            new ObjectOptimisticLockingFailureException(Object.class, "id"),
+            new jakarta.persistence.LockTimeoutException("timeout"),
+            new jakarta.persistence.PessimisticLockException("locked"));
+
+        for (RuntimeException failure : failures) {
+            MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new ThrowingController(failure))
+                .setControllerAdvice(handler)
+                .build();
+
+            mockMvc.perform(get("/throw"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This item was just updated by someone else. Please try again."));
+        }
+    }
+
+    @RestController
+    static class ThrowingController {
+        private final RuntimeException failure;
+
+        ThrowingController(RuntimeException failure) {
+            this.failure = failure;
+        }
+
+        @GetMapping("/throw")
+        String fail() {
+            throw failure;
+        }
     }
 }

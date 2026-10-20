@@ -10,5 +10,7 @@ public enum PrescriptionRequestStatus {
     /** At least one pharmacy has tagged inventory against this request (future module). */
     RESPONDED,
     /** Patient has reserved/collected medicines and considers this request done (future module). */
-    CLOSED
+    CLOSED,
+    /** Passed its expiry date while still open; pharmacies no longer see it. */
+    EXPIRED
 }

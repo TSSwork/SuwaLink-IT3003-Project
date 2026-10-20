@@ -29,6 +29,8 @@ controller/service that isn't the listener.
 | `PharmacyRespondedEvent` | `PrescriptionResponseServiceImpl` | the patient who owns the request | `PRESCRIPTION` |
 | `ReservationCreatedEvent` | `ReservationServiceImpl` | both the patient and the pharmacy | `RESERVATION` |
 | `ReservationCancelledEvent` | `ReservationServiceImpl` | whichever side didn't cancel it | `RESERVATION` |
+| `ReservationCompletedEvent` | `ReservationServiceImpl` | the patient | `RESERVATION` |
+| `ReservationExpiredEvent` | `ReservationServiceImpl` (via `ExpiryJobs`) | both the patient and the pharmacy | `RESERVATION` |
 
 `PrescriptionAddedEvent` and `PharmacyRespondedEvent` were defined early on but had no publisher
 for a while — if you're looking at old code/notes that say "notifications aren't wired up yet,"

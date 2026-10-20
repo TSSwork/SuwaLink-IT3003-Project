@@ -167,7 +167,7 @@ Every mutating `Inventory` endpoint checks the row's `pharmacy` matches the *cur
 ## Image uploads
 
 - `POST /api/images` (multipart, any authenticated user) — accepts an image file + `imageType` (`PROFILE` or `INVENTORY`), converts it to **WebP** on the server (via `webp4j`), stores it on local disk under `app.upload.dir` (default `uploads/`, gitignored), and saves only metadata in MySQL (`Image` entity: original filename, generated filename, file path, mime type) — never the binary itself, per `CONTEXT/SPECS.md`.
-- Uploaded files are served back publicly at `/uploads/<generated-filename>.webp` (no auth — browsers can't attach a JWT to a plain `<img>` tag, so this path is explicitly `permitAll()`'d in `SecurityConfig`).
+- Non-prescription images (profile, inventory) are served publicly at `/api/images/public/{file}`. Prescription images are private, served at `/api/images/{id}/content` (authenticated and access-checked).
 - The returned `Image.id` gets passed as `imageId` when creating/updating an `Inventory` item.
 
 ## Swagger / OpenAPI

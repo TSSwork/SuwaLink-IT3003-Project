@@ -55,6 +55,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 | [`README/READ_AUTHENTICATION_ENDPOINT.md`](README/READ_AUTHENTICATION_ENDPOINT.md) | Auth, JWT, roles, password reset |
 | [`README/READ_INVENTORY_MODULE.md`](README/READ_INVENTORY_MODULE.md) | Pharmacy inventory, search |
 | [`README/READ_PRESCRIPTION_MODULE.md`](README/READ_PRESCRIPTION_MODULE.md) | Prescription requests, responses |
+| [`README/READ_RESERVATION_MODULE.md`](README/READ_RESERVATION_MODULE.md) | Reservations, pickup codes, hold and expiry |
 | [`README/READ_ADMIN_MODULE.md`](README/READ_ADMIN_MODULE.md) | Admin dashboard, pharmacy verification |
 | [`README/READ_NOTIFICATION_MODULE.md`](README/READ_NOTIFICATION_MODULE.md) | Notification events |
 | [`README/DIAGRAMS.md`](README/DIAGRAMS.md) | ER, use case, class, sequence, activity, state diagrams |

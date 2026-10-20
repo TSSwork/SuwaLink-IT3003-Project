@@ -18,6 +18,7 @@ import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.entity.Reservation;
+import com.suwalink.entity.ReservationItem;
 import com.suwalink.entity.ReservationStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.UnitOfMeasure;
@@ -27,6 +28,7 @@ import com.suwalink.repository.UserRepository;
 import com.suwalink.service.NotificationService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,7 +82,7 @@ class NotificationEventListenerTest {
         User patient = user("patient@example.com", Role.CUSTOMER);
         when(userRepository.findById(patient.getId())).thenReturn(Optional.of(patient));
 
-        listener.handlePharmacyRespondedEvent(new PharmacyRespondedEvent(this, patient.getId(), "City Pharmacy"));
+        listener.handlePharmacyRespondedEvent(new PharmacyRespondedEvent(this, patient.getId(), "City Pharmacy", false));
 
         verify(notificationService).createNotification(
                 eq(patient), any(), any(), eq(NotificationType.PRESCRIPTION));
@@ -94,9 +96,34 @@ class NotificationEventListenerTest {
         listener.handleReservationCreatedEvent(new ReservationCreatedEvent(this, reservation.getId()));
 
         verify(notificationService).createNotification(
-                eq(reservation.getPatient()), any(), any(), eq(NotificationType.RESERVATION));
+                eq(reservation.getPatient()), any(),
+                eq("Your reservation of 2 x Panadol 500mg at Test Pharmacy is confirmed."),
+                eq(NotificationType.RESERVATION));
         verify(notificationService).createNotification(
                 eq(reservation.getPharmacy().getUser()), any(), any(), eq(NotificationType.RESERVATION));
+    }
+
+    @Test
+    void handleReservationCreatedEvent_withSeveralLines_countsItems() {
+        Reservation reservation = sampleReservation();
+        Inventory inventory = reservation.getItems().get(0).getInventoryItem();
+        for (int i = 0; i < 2; i++) {
+            reservation.addItem(ReservationItem.builder()
+                    .id(UUID.randomUUID())
+                    .inventoryItem(inventory)
+                    .quantity(1)
+                    .unitPrice(BigDecimal.ONE)
+                    .medicineName("Other " + i)
+                    .build());
+        }
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+
+        listener.handleReservationCreatedEvent(new ReservationCreatedEvent(this, reservation.getId()));
+
+        verify(notificationService).createNotification(
+                eq(reservation.getPatient()), any(),
+                eq("Your reservation of 3 items at Test Pharmacy is confirmed."),
+                eq(NotificationType.RESERVATION));
     }
 
     @Test
@@ -183,14 +210,22 @@ class NotificationEventListenerTest {
                 .available(true)
                 .build();
 
-        return Reservation.builder()
+        Reservation reservation = Reservation.builder()
                 .id(UUID.randomUUID())
                 .patient(patient)
                 .pharmacy(pharmacy)
+                .pickupCode("ABCDEFGH23")
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .status(ReservationStatus.CONFIRMED)
+                .build();
+        reservation.addItem(ReservationItem.builder()
+                .id(UUID.randomUUID())
                 .inventoryItem(inventory)
                 .quantity(2)
                 .unitPrice(BigDecimal.TEN)
-                .status(ReservationStatus.CONFIRMED)
-                .build();
+                .medicineName("Panadol 500mg")
+                .requiresPrescription(false)
+                .build());
+        return reservation;
     }
 }

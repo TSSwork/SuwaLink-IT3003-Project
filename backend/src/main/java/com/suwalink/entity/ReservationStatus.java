@@ -3,5 +3,6 @@ package com.suwalink.entity;
 public enum ReservationStatus {
     CONFIRMED,
     CANCELLED,
-    COMPLETED
+    COMPLETED,
+    EXPIRED
 }

@@ -1,10 +1,14 @@
 package com.suwalink.exception;
 
 import com.suwalink.dto.response.ApiErrorResponse;
+import jakarta.persistence.LockTimeoutException;
+import jakarta.persistence.PessimisticLockException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -78,8 +82,32 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(NoPharmaciesInScopeException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoPharmaciesInScope(NoPharmaciesInScopeException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<ApiErrorResponse> handleInsufficientStock(InsufficientStockException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(ItemUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleItemUnavailable(ItemUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(InvalidReservationRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidReservationRequest(InvalidReservationRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
                 .message(ex.getMessage())
@@ -96,7 +124,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidReservationStateException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidReservationState(InvalidReservationStateException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
                 .message(ex.getMessage())
                 .build());
@@ -157,6 +185,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(ApiErrorResponse.builder()
                 .message("This action can't be completed because related data still references it")
+                .build());
+    }
+
+    /**
+     * A row lock could not be taken in time, or a concurrent transaction changed the row first
+     * (version check). Both are safe to retry, so the client gets a 409 rather than a 500.
+     */
+    @ExceptionHandler({
+        PessimisticLockingFailureException.class,
+        OptimisticLockingFailureException.class,
+        LockTimeoutException.class,
+        PessimisticLockException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleConcurrentUpdate(Exception ex) {
+        log.warn("Concurrent update conflict: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .message("This item was just updated by someone else. Please try again.")
                 .build());
     }
 

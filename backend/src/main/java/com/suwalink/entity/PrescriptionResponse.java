@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +26,8 @@ import lombok.Setter;
  * {@link PrescriptionResponseItem} lines pulled from that pharmacy's own inventory.
  */
 @Entity
-@Table(name = "prescription_responses")
+@Table(name = "prescription_responses", uniqueConstraints = @UniqueConstraint(
+        name = "UK_presc_responses_request_pharmacy", columnNames = {"prescription_request_id", "pharmacy_id"}))
 @Getter
 @Setter
 @NoArgsConstructor

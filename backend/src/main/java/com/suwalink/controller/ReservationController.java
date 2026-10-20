@@ -49,10 +49,24 @@ public class ReservationController {
                 ApiResponse.success("Incoming reservations", reservationService.getPharmacyReservations()));
     }
 
+    /** Customer owner, owning pharmacy or admin; everyone else gets 404. */
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ReservationResponse>> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success("Reservation", reservationService.getById(id)));
+    }
+
+    /** Target of the QR code ({@code /r/<code>}) and of a code typed at the counter. Same access rule as by id. */
+    @GetMapping("/by-code/{code}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ReservationResponse>> getByPickupCode(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.success("Reservation", reservationService.getByPickupCode(code)));
+    }
+
     @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'PHARMACY_OWNER')")
     public ResponseEntity<ApiResponse<ReservationResponse>> cancel(
-            @PathVariable UUID id, @RequestBody(required = false) CancelReservationRequest request) {
+            @PathVariable UUID id, @Valid @RequestBody(required = false) CancelReservationRequest request) {
         ReservationResponse response = reservationService.cancel(id, request);
         return ResponseEntity.ok(ApiResponse.success("Reservation cancelled", response));
     }

@@ -21,4 +21,16 @@
         <sqlFile path="sql/004-app-settings.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="005-prescription-targeting" author="suwalink">
+        <sqlFile path="sql/005-prescription-targeting.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="006-one-response-per-pharmacy" author="suwalink">
+        <sqlFile path="sql/006-one-response-per-pharmacy.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="007-reservation-items" author="suwalink">
+        <sqlFile path="sql/007-reservation-items.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

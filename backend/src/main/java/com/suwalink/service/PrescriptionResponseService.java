@@ -9,6 +9,8 @@ public interface PrescriptionResponseService {
 
     PrescriptionResponseResponse create(UUID requestId, CreatePrescriptionResponseRequest request);
 
+    PrescriptionResponseResponse updateMine(UUID requestId, CreatePrescriptionResponseRequest request);
+
     List<PrescriptionResponseResponse> listForRequest(UUID requestId);
 
     List<PrescriptionResponseResponse> listMyResponses();

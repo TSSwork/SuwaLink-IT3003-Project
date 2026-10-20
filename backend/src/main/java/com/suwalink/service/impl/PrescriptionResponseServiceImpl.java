@@ -11,6 +11,7 @@ import com.suwalink.entity.PrescriptionResponseItem;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.event.PharmacyRespondedEvent;
+import com.suwalink.exception.DuplicateResourceException;
 import com.suwalink.exception.InventoryAccessDeniedException;
 import com.suwalink.exception.PrescriptionAccessDeniedException;
 import com.suwalink.exception.PrescriptionRequestClosedException;
@@ -19,6 +20,7 @@ import com.suwalink.repository.InventoryRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.PrescriptionRequestRepository;
 import com.suwalink.repository.PrescriptionResponseRepository;
+import com.suwalink.repository.ReservationItemRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.PrescriptionResponseService;
 import java.util.List;
@@ -35,6 +37,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
     private final PrescriptionResponseRepository prescriptionResponseRepository;
     private final PrescriptionRequestRepository prescriptionRequestRepository;
     private final InventoryRepository inventoryRepository;
+    private final ReservationItemRepository reservationItemRepository;
     private final PharmacyRepository pharmacyRepository;
     private final CurrentUserProvider currentUserProvider;
     private final ApplicationEventPublisher eventPublisher;
@@ -42,21 +45,82 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
     @Override
     @Transactional
     public PrescriptionResponseResponse create(UUID requestId, CreatePrescriptionResponseRequest request) {
-        PrescriptionRequest prescriptionRequest = prescriptionRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Prescription request not found: " + requestId));
+        PrescriptionRequest prescriptionRequest = findOpenRequest(requestId);
+        Pharmacy pharmacy = currentTargetedPharmacy(prescriptionRequest);
 
-        if (prescriptionRequest.getStatus() == PrescriptionRequestStatus.CLOSED) {
-            throw new PrescriptionRequestClosedException();
+        if (!prescriptionResponseRepository
+                .findByPrescriptionRequestIdAndPharmacyId(requestId, pharmacy.getId()).isEmpty()) {
+            throw new DuplicateResourceException("You have already responded; update your response instead");
         }
-
-        Pharmacy pharmacy = currentPharmacy();
 
         PrescriptionResponse response = PrescriptionResponse.builder()
                 .prescriptionRequest(prescriptionRequest)
                 .pharmacy(pharmacy)
-                .message(blankToNull(request.getMessage()))
                 .build();
+        applyContent(response, pharmacy, request);
 
+        PrescriptionResponse saved = prescriptionResponseRepository.save(response);
+
+        if (prescriptionRequest.getStatus() == PrescriptionRequestStatus.PENDING) {
+            prescriptionRequest.setStatus(PrescriptionRequestStatus.RESPONDED);
+            prescriptionRequestRepository.save(prescriptionRequest);
+        }
+
+        eventPublisher.publishEvent(new PharmacyRespondedEvent(
+                this, prescriptionRequest.getPatient().getId(), pharmacy.getName(), false));
+
+        return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public PrescriptionResponseResponse updateMine(UUID requestId, CreatePrescriptionResponseRequest request) {
+        PrescriptionRequest prescriptionRequest = findOpenRequest(requestId);
+        Pharmacy pharmacy = currentTargetedPharmacy(prescriptionRequest);
+
+        PrescriptionResponse response = prescriptionResponseRepository
+                .findByPrescriptionRequestIdAndPharmacyId(requestId, pharmacy.getId()).stream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("You have not responded to this request yet"));
+
+        if (reservationItemRepository.existsByPrescriptionResponseItem_PrescriptionResponse_Id(response.getId())) {
+            throw new DuplicateResourceException(
+                    "This response already has reservations and can no longer be changed");
+        }
+
+        response.getItems().clear();
+        applyContent(response, pharmacy, request);
+        PrescriptionResponse saved = prescriptionResponseRepository.save(response);
+
+        eventPublisher.publishEvent(new PharmacyRespondedEvent(
+                this, prescriptionRequest.getPatient().getId(), pharmacy.getName(), true));
+
+        return toResponse(saved);
+    }
+
+    private PrescriptionRequest findOpenRequest(UUID requestId) {
+        PrescriptionRequest prescriptionRequest = prescriptionRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription request not found: " + requestId));
+        if (prescriptionRequest.getStatus() != PrescriptionRequestStatus.PENDING
+                && prescriptionRequest.getStatus() != PrescriptionRequestStatus.RESPONDED) {
+            throw new PrescriptionRequestClosedException();
+        }
+        return prescriptionRequest;
+    }
+
+    private Pharmacy currentTargetedPharmacy(PrescriptionRequest prescriptionRequest) {
+        Pharmacy pharmacy = currentPharmacy();
+        if (!prescriptionRequestRepository.existsByIdAndTargetPharmacies_Id(
+                prescriptionRequest.getId(), pharmacy.getId())) {
+            throw new PrescriptionAccessDeniedException();
+        }
+        return pharmacy;
+    }
+
+    /** Sets the message and (re)builds the items from the pharmacy's own inventory at current prices. */
+    private void applyContent(PrescriptionResponse response, Pharmacy pharmacy,
+            CreatePrescriptionResponseRequest request) {
+        response.setMessage(blankToNull(request.getMessage()));
         for (CreatePrescriptionResponseRequest.ResponseItem itemRequest : request.getItems()) {
             Inventory inventory = inventoryRepository.findById(itemRequest.getInventoryItemId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -73,18 +137,6 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
                     .unitPrice(inventory.getUnitPrice())
                     .build());
         }
-
-        PrescriptionResponse saved = prescriptionResponseRepository.save(response);
-
-        if (prescriptionRequest.getStatus() == PrescriptionRequestStatus.PENDING) {
-            prescriptionRequest.setStatus(PrescriptionRequestStatus.RESPONDED);
-            prescriptionRequestRepository.save(prescriptionRequest);
-        }
-
-        eventPublisher.publishEvent(new PharmacyRespondedEvent(
-                this, prescriptionRequest.getPatient().getId(), pharmacy.getName()));
-
-        return toResponse(saved);
     }
 
     @Override
@@ -96,7 +148,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
         User currentUser = currentUserProvider.getCurrentUser();
 
         if (currentUser.getRole() == Role.PHARMACY_OWNER) {
-            Pharmacy pharmacy = currentPharmacy();
+            Pharmacy pharmacy = currentTargetedPharmacy(prescriptionRequest);
             return prescriptionResponseRepository
                     .findByPrescriptionRequestIdAndPharmacyId(requestId, pharmacy.getId())
                     .stream()
@@ -104,7 +156,8 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
                     .toList();
         }
 
-        if (!prescriptionRequest.getPatient().getId().equals(currentUser.getId())) {
+        if (currentUser.getRole() != Role.ADMIN
+                && !prescriptionRequest.getPatient().getId().equals(currentUser.getId())) {
             throw new PrescriptionAccessDeniedException();
         }
 
