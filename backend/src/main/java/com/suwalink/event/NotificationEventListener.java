@@ -65,6 +65,13 @@ public class NotificationEventListener {
     }
 
     @EventListener
+    public void handleMedicineSuggestionReviewedEvent(MedicineSuggestionReviewedEvent event) {
+        notificationService.notify(findUser(event.getPharmacyUserId()), NotificationType.SYSTEM_ALERT,
+                event.isApproved() ? NotificationKeys.MEDICINE_APPROVED : NotificationKeys.MEDICINE_REJECTED,
+                Map.of("medicine", event.getMedicineName()), "/pharmacy/inventory");
+    }
+
+    @EventListener
     public void handlePrescriptionAddedEvent(PrescriptionAddedEvent event) {
         UUID requestId = event.getRequestId();
         notificationService.notify(findUser(event.getCustomerUserId()), NotificationType.PRESCRIPTION,

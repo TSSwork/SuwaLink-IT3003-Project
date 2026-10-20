@@ -30,6 +30,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             + "WHERE i.available = true "
             + "AND i.stockQuantity > 0 AND i.expireDate > :today "
             + "AND " + VisibilityJpql.VISIBLE_PHARMACY_P + " "
+            + "AND " + VisibilityJpql.APPROVED_MEDICINE_M + " "
             + "AND (:query IS NULL "
             + "     OR LOWER(m.brandName) LIKE LOWER(CONCAT('%', :query, '%')) "
             + "     OR LOWER(m.genericName) LIKE LOWER(CONCAT('%', :query, '%'))) "
@@ -52,6 +53,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             + "AND i.available = true "
             + "AND i.stockQuantity > 0 AND i.expireDate > :today "
             + "AND " + VisibilityJpql.VISIBLE_PHARMACY_P + " "
+            + "AND " + VisibilityJpql.APPROVED_MEDICINE_M + " "
             + "ORDER BY m.brandName, i.unitPrice")
     List<Inventory> findOffersByPharmacy(
             @Param("pharmacyId") UUID pharmacyId,

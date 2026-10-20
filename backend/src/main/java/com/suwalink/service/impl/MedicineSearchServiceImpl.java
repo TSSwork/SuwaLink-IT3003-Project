@@ -7,6 +7,7 @@ import com.suwalink.dto.response.PageResponse;
 import com.suwalink.entity.District;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.MedicineMaster;
+import com.suwalink.entity.MedicineStatus;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.exception.ResourceNotFoundException;
@@ -66,6 +67,7 @@ public class MedicineSearchServiceImpl implements MedicineSearchService {
     @Transactional(readOnly = true)
     public MedicineDetailResponse getMedicine(UUID id) {
         MedicineMaster m = medicineMasterRepository.findById(id)
+                .filter(med -> med.getStatus() == MedicineStatus.APPROVED)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found: " + id));
         return MedicineDetailResponse.builder()
                 .medicineId(m.getId())

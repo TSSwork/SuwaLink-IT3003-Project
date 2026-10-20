@@ -6,6 +6,7 @@ import com.suwalink.dto.response.InventoryResponse;
 import com.suwalink.entity.Image;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.MedicineMaster;
+import com.suwalink.entity.MedicineStatus;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.exception.InventoryAccessDeniedException;
 import com.suwalink.exception.ResourceNotFoundException;
@@ -39,6 +40,9 @@ public class InventoryServiceImpl implements InventoryService {
         MedicineMaster medicineMaster = medicineMasterRepository.findById(request.getMedicineMasterId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Medicine not found: " + request.getMedicineMasterId()));
+        if (medicineMaster.getStatus() != MedicineStatus.APPROVED) {
+            throw new ResourceNotFoundException("Medicine not found: " + request.getMedicineMasterId());
+        }
 
         Image image = null;
         if (request.getImageId() != null) {
