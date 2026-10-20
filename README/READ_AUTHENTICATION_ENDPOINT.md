@@ -179,19 +179,6 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
   now — see `READ_INVENTORY_MODULE.md`, `READ_PRESCRIPTION_MODULE.md`, and the
   `PrescriptionResponse`/`Reservation` entities/controllers.
 
-## Frontend integration (`frontend/`)
-
-- `assets/js/api/apiService.js` — central `fetch` wrapper. Attaches `Authorization: Bearer`,
-  parses the `{success,message,data}` envelope, throws `ApiError` (with `.status` and
-  `.errors`) on failure, clears the stored session and redirects to `login.html` on `401`.
-- `assets/js/auth/auth.js` — `registerCustomer`, `registerPharmacy`, `login`, `logout`,
-  `getCurrentAuth()`, `requireAuth()`, `redirectIfAuthenticated()`. Session is stored in
-  `localStorage` under key `suwalink.auth` as `{ token, role, id, name }`.
-- Pages: `login.html`, `register.html` (customer/pharmacy tabs), `index.html` (stub),
-  `pharmacy-dashboard.html` (stub, calls `/api/users/me`).
-- Styling: hand-rolled CSS implementing MD3 tokens (`assets/css/themes/tokens.css`), **light
-  theme only** (dark mode was removed on purpose).
-
 ## Running it locally
 
 1. **Database**: `docker compose up -d` (starts MySQL on the port/credentials in
@@ -201,13 +188,5 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
    `MYSQL_USER`/`MYSQL_DATABASE`/etc. on first init of an empty volume, not on every restart.
 2. **Backend**: `cd backend && ./mvnw spring-boot:run`. Needs JDK 25 — if your default `java`
    isn't 25, set `JAVA_HOME` to whichever JDK 25 install you have before running Maven.
-3. **Frontend**: it's plain static HTML/CSS/JS, so serve it with a simple static server rather
-   than opening the files directly — from the `frontend/` directory:
-   ```
-   python -m http.server 5500
-   ```
-   This matters: the backend's CORS config (`app.cors.allowed-origins` in
-   `application.properties`) only allows specific origins (`http://localhost:5500` by default).
-   If you open `index.html` straight from disk (a `file://` URL) or serve it on a different
-   port, the browser will block every API call with a CORS error. Either serve it on port 5500,
-   or add whatever port you use to `app.cors.allowed-origins`.
+3. **Frontend**: being rebuilt with TanStack Start in `frontend/`; until then use Swagger at
+   `http://localhost:8080/swagger-ui/index.html`. Dev CORS allows `http://localhost:3000`.

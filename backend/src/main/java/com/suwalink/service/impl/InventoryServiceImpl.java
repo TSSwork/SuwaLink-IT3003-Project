@@ -7,7 +7,6 @@ import com.suwalink.entity.Image;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.Pharmacy;
-import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.exception.InventoryAccessDeniedException;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.ImageRepository;
@@ -16,9 +15,6 @@ import com.suwalink.repository.MedicineMasterRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.InventoryService;
-import com.suwalink.service.PharmacyVisibilityService;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +30,6 @@ public class InventoryServiceImpl implements InventoryService {
     private final ImageRepository imageRepository;
     private final PharmacyRepository pharmacyRepository;
     private final CurrentUserProvider currentUserProvider;
-    private final PharmacyVisibilityService pharmacyVisibilityService;
 
     @Override
     @Transactional
@@ -106,23 +101,6 @@ public class InventoryServiceImpl implements InventoryService {
     public void removeInventoryItem(UUID id) {
         Inventory inventory = ownedInventoryItem(id);
         inventoryRepository.delete(inventory);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<InventoryResponse> search(
-            String query,
-            UUID categoryId,
-            UUID manufacturerId,
-            PrescriptionStatus legalCategory,
-            BigDecimal minPrice,
-            BigDecimal maxPrice) {
-
-        return inventoryRepository.search(query, categoryId, manufacturerId, legalCategory, minPrice, maxPrice,
-                        pharmacyVisibilityService.includeDemo(), LocalDate.now())
-                .stream()
-                .map(this::toResponse)
-                .toList();
     }
 
     private Pharmacy currentPharmacy() {

@@ -71,14 +71,4 @@ you'd need to delete their dependent rows first (out of scope for this module to
 
 ## Frontend
 
-- `frontend/admin-dashboard.html` + `assets/js/admin.js` — reads the five dashboard counts above.
-- `frontend/manage-pharmacies.html` + `assets/js/pages/managePharmaciesPage.js` — lists pharmacies,
-  Approve/Reject buttons call the endpoints above and re-render.
-- `frontend/manage-users.html` + `assets/js/pages/manageUsersPage.js` — lists users, Delete button
-  calls the delete endpoint; a `409` shows an inline error instead of failing silently.
-- These three pages use jQuery for DOM/event handling (per `CONTEXT/SPECS.md`'s tech stack; loaded
-  via CDN in each page) alongside the shared `assets/js/api/apiService.js` for the actual HTTP
-  calls, same as the rest of the frontend.
-- All three read the session via `assets/js/auth/tokenStorage.js` (`suwalink.auth` in
-  `localStorage`) through `requireAuth()` — don't read `localStorage.getItem("token")` directly,
-  that key doesn't exist and silently produces `Authorization: Bearer null`.
+The admin pages are being rebuilt in the TanStack Start app (`frontend/`).

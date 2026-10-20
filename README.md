@@ -21,15 +21,14 @@ docker compose up -d                     # MySQL on localhost:3308, Mailpit on l
 
 # 2. Backend (needs JDK 25; the dev profile is the default, no extra config needed)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
-
-# 3. Frontend (must be port 5500 - see CORS note below)
-cd frontend && python -m http.server 5500
 ```
+
+The web app (TanStack Start, React) will live in `frontend/` — it is being rebuilt; until it lands, use Swagger.
 
 > **Migrations were squashed into a single baseline.** If your local database was created before that change, reset
 > it once after pulling: `docker compose down -v && docker compose up -d` (this wipes local dev data).
 
-Open `http://localhost:5500` for the app, or `http://localhost:8080/swagger-ui/index.html` to
+Open `http://localhost:8080/swagger-ui/index.html` to
 call every endpoint directly and inspect real request/response shapes.
 
 Emails (e.g. password reset OTPs) are caught by Mailpit: open `http://localhost:8025`.
@@ -39,10 +38,9 @@ On startup an admin account is created if none exists. In the `dev` profile it i
 dev-only password in `application-dev.properties` (never use it elsewhere). In production, set `ADMIN_EMAIL` and
 `ADMIN_PASSWORD` (at least 12 characters) in `.env`; optionally `ADMIN_NAME`.
 
-**CORS note**: the frontend must be served on port 5500 (or add your port to
-`app.cors.allowed-origins` in `backend/src/main/resources/application-dev.properties`, or set the
-`CORS_ALLOWED_ORIGINS` env var in production) — opening the
-HTML files directly (`file://`) or serving on another port gets every API call blocked.
+**CORS note**: in dev the backend accepts browser calls from `http://localhost:3000` (the frontend dev server).
+Change `app.cors.allowed-origins` in `backend/src/main/resources/application-dev.properties`, or set
+`CORS_ALLOWED_ORIGINS` in production, if you serve it elsewhere.
 
 More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 [`commands.md`](commands.md).
@@ -65,7 +63,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 
 ```
 backend/    Spring Boot API (com.suwalink)
-frontend/   Static HTML/CSS/JS
+frontend/   Web app (TanStack Start + React) — being rebuilt
 CONTEXT/    Product pitch, design system, specs
 README/     Per-module technical docs + diagrams
 ```

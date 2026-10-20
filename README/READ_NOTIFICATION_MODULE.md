@@ -51,9 +51,7 @@ The current user's notifications, newest first.
 ```
 
 Note the JSON field is **`read`**, not `isRead` — Jackson strips the `is` prefix off boolean
-getters (`Notification.isRead()` -> `"read"`). The old `frontend/assets/js/notification.js` read
-`notif.isRead` (always `undefined`) before this was fixed; if you see that pattern anywhere else,
-it's the same bug.
+getters (`Notification.isRead()` -> `"read"`). Clients must read `notif.read`, not `notif.isRead`.
 
 ### `GET /api/notifications/unread-count` — any authenticated user
 

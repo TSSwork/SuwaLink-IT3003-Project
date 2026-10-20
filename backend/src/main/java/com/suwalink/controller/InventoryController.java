@@ -5,10 +5,8 @@ import com.suwalink.dto.request.UpdateAvailabilityRequest;
 import com.suwalink.dto.request.UpdateInventoryRequest;
 import com.suwalink.dto.response.ApiResponse;
 import com.suwalink.dto.response.InventoryResponse;
-import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.service.InventoryService;
 import jakarta.validation.Valid;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -46,21 +43,6 @@ public class InventoryController {
     public ResponseEntity<ApiResponse<List<InventoryResponse>>>
     listMyInventory() {
         return ResponseEntity.ok(ApiResponse.success("Inventory items", inventoryService.listMyInventory()));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<InventoryResponse>>>
-    search(
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) UUID categoryId,
-            @RequestParam(required = false) UUID manufacturerId,
-            @RequestParam(required = false) PrescriptionStatus legalCategory,
-            @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice
-    ) {
-        List<InventoryResponse> results = inventoryService.search(
-                query, categoryId, manufacturerId, legalCategory, minPrice, maxPrice);
-        return ResponseEntity.ok(ApiResponse.success("Search results", results));
     }
 
     @GetMapping("/{id}")
