@@ -25,4 +25,8 @@
         <sqlFile path="sql/005-prescription-targeting.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="006-one-response-per-pharmacy" author="suwalink">
+        <sqlFile path="sql/006-one-response-per-pharmacy.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

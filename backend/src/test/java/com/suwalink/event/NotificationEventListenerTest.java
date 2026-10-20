@@ -80,7 +80,7 @@ class NotificationEventListenerTest {
         User patient = user("patient@example.com", Role.CUSTOMER);
         when(userRepository.findById(patient.getId())).thenReturn(Optional.of(patient));
 
-        listener.handlePharmacyRespondedEvent(new PharmacyRespondedEvent(this, patient.getId(), "City Pharmacy"));
+        listener.handlePharmacyRespondedEvent(new PharmacyRespondedEvent(this, patient.getId(), "City Pharmacy", false));
 
         verify(notificationService).createNotification(
                 eq(patient), any(), any(), eq(NotificationType.PRESCRIPTION));

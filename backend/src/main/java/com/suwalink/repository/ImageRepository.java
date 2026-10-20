@@ -1,6 +1,7 @@
 package com.suwalink.repository;
 
 import com.suwalink.entity.Image;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ImageRepository extends JpaRepository<Image, UUID> {
+
+    Optional<Image> findByGeneratedFilename(String generatedFilename);
 
     @Modifying
     @Query("UPDATE Image i SET i.uploadedByUserId = NULL WHERE i.uploadedByUserId = :userId")

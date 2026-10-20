@@ -57,8 +57,11 @@ public class NotificationEventListener {
 
     @EventListener
     public void handlePharmacyRespondedEvent(PharmacyRespondedEvent event) {
-        String title = "Pharmacy Responded";
-        String message = event.getPharmacyName() + " has responded to your prescription. Please check your dashboard.";
+        String title = event.isUpdated() ? "Pharmacy updated its response" : "Pharmacy Responded";
+        String message = event.getPharmacyName()
+                + (event.isUpdated() ? " has updated its response to your prescription."
+                        : " has responded to your prescription.")
+                + " Please check your dashboard.";
 
         User recipient = findUser(event.getPatientUserId());
         notificationService.createNotification(recipient, title, message, NotificationType.PRESCRIPTION);
