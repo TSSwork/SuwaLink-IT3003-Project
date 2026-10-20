@@ -6,6 +6,8 @@ import com.suwalink.dto.response.AppSettingsResponse;
 import com.suwalink.dto.response.DashboardResponse;
 import com.suwalink.dto.response.PharmacyResponse;
 import com.suwalink.dto.response.UserResponse;
+import com.suwalink.entity.AccountStatus;
+import com.suwalink.service.AccountService;
 import com.suwalink.service.AdminService;
 import com.suwalink.service.PharmacyVisibilityService;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final AccountService accountService;
     private final PharmacyVisibilityService visibility;
 
     @GetMapping("/settings")
@@ -59,14 +62,29 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Pharmacy application rejected"));
     }
 
+    /** {@code status} omitted lists every account that isn't deleted. */
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
-        return ResponseEntity.ok(ApiResponse.success("Users", adminService.getAllUsers()));
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) AccountStatus status) {
+        return ResponseEntity.ok(ApiResponse.success("Users", adminService.getUsers(q, status)));
+    }
+
+    @PutMapping("/users/{id}/suspend")
+    public ResponseEntity<ApiResponse<Void>> suspend(@PathVariable UUID id) {
+        accountService.suspend(id);
+        return ResponseEntity.ok(ApiResponse.success("User suspended"));
+    }
+
+    @PutMapping("/users/{id}/reactivate")
+    public ResponseEntity<ApiResponse<Void>> reactivate(@PathVariable UUID id) {
+        accountService.reactivate(id);
+        return ResponseEntity.ok(ApiResponse.success("User reactivated"));
     }
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
-        adminService.deleteUser(id);
+        accountService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User deleted"));
     }
 

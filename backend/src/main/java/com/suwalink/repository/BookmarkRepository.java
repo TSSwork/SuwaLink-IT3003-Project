@@ -17,5 +17,5 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, UUID> {
 
     void deleteByUserIdAndInventoryId(UUID userId, UUID inventoryId);
 
-    void deleteByInventory_PharmacyId(UUID pharmacyId);
+    void deleteByUserId(UUID userId);
 }

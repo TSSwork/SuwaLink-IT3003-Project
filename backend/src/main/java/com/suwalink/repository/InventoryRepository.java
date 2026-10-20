@@ -21,8 +21,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     Optional<Inventory> findByIdAndPharmacyId(UUID id, UUID pharmacyId);
 
-    void deleteByPharmacyId(UUID pharmacyId);
-
     /** Offers: available, in stock, unexpired, at a publicly visible pharmacy. Every filter is optional. */
     @Query("SELECT i FROM Inventory i "
             + "JOIN FETCH i.medicineMaster m "

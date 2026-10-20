@@ -65,6 +65,15 @@ public class User {
     @Builder.Default
     private boolean demo = false;
 
+    /** Suspended by an admin: cannot log in, existing tokens stop working. */
+    @Column(name = "is_suspended", nullable = false)
+    @Builder.Default
+    private boolean suspended = false;
+
+    /** Set when the account was deleted (personal fields anonymised); the row stays for history. */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     /** When the user accepted the terms and privacy policy (registration time; backfilled for old rows). */
     @Column(name = "terms_accepted_at", nullable = false)
     private LocalDateTime termsAcceptedAt;

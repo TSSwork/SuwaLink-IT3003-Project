@@ -17,6 +17,8 @@ public class PrescriptionResponseResponse {
     private final UUID prescriptionRequestId;
     private final UUID pharmacyId;
     private final String pharmacyName;
+    /** False once the pharmacy was deactivated (owner deleted their account): "pharmacy no longer available". */
+    private final boolean pharmacyActive;
     private final String message;
     private final List<ResponseItemSummary> items;
     private final LocalDateTime createdAt;

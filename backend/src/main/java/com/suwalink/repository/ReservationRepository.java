@@ -26,5 +26,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     boolean existsByPickupCode(String pickupCode);
 
+    @EntityGraph(attributePaths = {"items"})
+    List<Reservation> findByPatientIdAndStatus(UUID patientId, ReservationStatus status);
+
+    boolean existsByPharmacyIdAndStatus(UUID pharmacyId, ReservationStatus status);
+
+    boolean existsByPrescriptionRequestId(UUID prescriptionRequestId);
+
     void deleteByPharmacyId(UUID pharmacyId);
 }

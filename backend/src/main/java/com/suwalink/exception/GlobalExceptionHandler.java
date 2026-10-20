@@ -17,6 +17,7 @@ import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -207,6 +208,52 @@ public class GlobalExceptionHandler {
             .body(ApiErrorResponse.builder()
                 .code("DEMO_DISABLED")
                 .message("Demo accounts are currently disabled")
+                .build());
+    }
+
+    /** Suspended by an admin; distinct from {@link DisabledException}, which means demo accounts are off. */
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ApiErrorResponse> handleLocked(LockedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiErrorResponse.builder()
+                .code("ACCOUNT_SUSPENDED")
+                .message("Your account has been suspended")
+                .build());
+    }
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidPassword(InvalidPasswordException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiErrorResponse.builder()
+                .code("INVALID_PASSWORD")
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(AccountActionNotAllowedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccountActionNotAllowed(AccountActionNotAllowedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .code("ACCOUNT_ACTION_NOT_ALLOWED")
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(OpenReservationsException.class)
+    public ResponseEntity<ApiErrorResponse> handleOpenReservations(OpenReservationsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .code("OPEN_RESERVATIONS")
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(RequestHasReservationsException.class)
+    public ResponseEntity<ApiErrorResponse> handleRequestHasReservations(RequestHasReservationsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .code("REQUEST_HAS_RESERVATIONS")
+                .message(ex.getMessage())
                 .build());
     }
 

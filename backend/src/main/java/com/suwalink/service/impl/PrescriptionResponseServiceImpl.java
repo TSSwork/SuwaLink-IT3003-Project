@@ -4,6 +4,7 @@ import com.suwalink.dto.request.CreatePrescriptionResponseRequest;
 import com.suwalink.dto.response.PrescriptionResponseResponse;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.Pharmacy;
+import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.PrescriptionRequest;
 import com.suwalink.entity.PrescriptionRequestStatus;
 import com.suwalink.entity.PrescriptionResponse;
@@ -203,6 +204,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
                 .prescriptionRequestId(response.getPrescriptionRequest().getId())
                 .pharmacyId(response.getPharmacy().getId())
                 .pharmacyName(response.getPharmacy().getName())
+                .pharmacyActive(response.getPharmacy().getStatus() != PharmacyStatus.DEACTIVATED)
                 .message(response.getMessage())
                 .items(items)
                 .createdAt(response.getCreatedAt())

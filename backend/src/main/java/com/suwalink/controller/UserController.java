@@ -7,11 +7,14 @@ import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.security.CurrentUserProvider;
+import com.suwalink.dto.request.DeleteAccountRequest;
 import com.suwalink.dto.request.UpdatePreferencesRequest;
+import com.suwalink.service.AccountService;
 import com.suwalink.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +29,7 @@ public class UserController {
     private final CurrentUserProvider currentUserProvider;
     private final PharmacyRepository pharmacyRepository;
     private final UserService userService;
+    private final AccountService accountService;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileResponse>>
@@ -54,6 +58,13 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> updatePreferences(@Valid @RequestBody UpdatePreferencesRequest request) {
         userService.updatePreferences(currentUserProvider.getCurrentUser(), request);
         return ResponseEntity.ok(ApiResponse.success("Preferences updated"));
+    }
+
+    /** Deletes the caller's account (anonymised); the password confirms it. Admins get 409. */
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> deleteMe(@Valid @RequestBody DeleteAccountRequest request) {
+        accountService.deleteMyAccount(request);
+        return ResponseEntity.ok(ApiResponse.success("Account deleted"));
     }
 
     private UserProfileResponse.PharmacyInfo

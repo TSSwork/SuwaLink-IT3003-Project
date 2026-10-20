@@ -1,5 +1,6 @@
 package com.suwalink.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.suwalink.entity.Pharmacy;
+import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.repository.PharmacyRepository;
@@ -36,8 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Covers the admin module - previously untested. Exercises the real bugs found and fixed here:
- * the dashboard used to be hardcoded to all-zeros, and deleting a user with dependent rows used
- * to throw an unhandled 500 instead of a clean 409.
+ * the dashboard used to be hardcoded to all-zeros. User deletion anonymises the account (see
+ * {@link AccountLifecycleTest} for the full rules).
  *
  * <p>Each test creates its own admin user directly rather than relying on the account that
  * {@code AdminBootstrap} creates from {@code app.admin.*} at startup.
@@ -139,7 +141,7 @@ class AdminControllerTest {
     }
 
     @Test
-    void deleteUser_withNoDependentRows_succeeds() throws Exception {
+    void deleteUser_anonymisesCustomer() throws Exception {
         String adminToken = loginAndGetToken(ADMIN_EMAIL, ADMIN_PASSWORD);
         String email = "admin.delete.clean@example.com";
         registerCustomer(email);
@@ -147,10 +149,16 @@ class AdminControllerTest {
 
         mockMvc.perform(delete("/api/admin/users/" + userId).header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk());
+
+        User deleted = userRepository.findById(userId).orElseThrow();
+        assertThat(deleted.getEmail()).isEqualTo("deleted-" + userId + "@deleted.suwalink.invalid");
+        assertThat(deleted.getDeletedAt()).isNotNull();
+        mockMvc.perform(delete("/api/admin/users/" + userId).header("Authorization", "Bearer " + adminToken))
+            .andExpect(status().isNotFound());
     }
 
     @Test
-    void deletePharmacyOwner_targetedByPrescriptionRequest_succeedsAndKeepsRequest() throws Exception {
+    void deletePharmacyOwner_targetedByPrescriptionRequest_deactivatesPharmacyAndKeepsRequest() throws Exception {
         String adminToken = loginAndGetToken(ADMIN_EMAIL, ADMIN_PASSWORD);
         String pharmacyEmail = "admin.delete.targeted@example.com";
         registerPharmacy(pharmacyEmail, "LIC-DEL-T1");
@@ -172,23 +180,18 @@ class AdminControllerTest {
             .andReturn();
         String requestId = JsonPath.read(created.getResponse().getContentAsString(), "$.data.id");
 
+        UUID pharmacyId = findPharmacyId(pharmacyEmail);
         mockMvc.perform(delete("/api/admin/users/" + findUserId(pharmacyEmail))
                 .header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk());
 
+        // Deletion anonymises the owner and deactivates the pharmacy; nothing is hard-deleted.
+        assertThat(pharmacyRepository.findById(pharmacyId).orElseThrow().getStatus())
+            .isEqualTo(PharmacyStatus.DEACTIVATED);
         mockMvc.perform(get("/api/prescriptions/" + requestId).header("Authorization", "Bearer " + customerToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.targetCount").value(0));
+            .andExpect(jsonPath("$.data.targetCount").value(1));
     }
-
-    // Note: deleting a user with dependent rows (a Pharmacy, PrescriptionRequest, etc.) returning
-    // 409 instead of 500 depends on the real MySQL foreign key constraints defined in the
-    // Liquibase migrations. The H2 test database (Hibernate's own schema generation, Liquibase
-    // disabled per application-test.properties) doesn't reproduce that constraint reliably, so
-    // this is covered by a focused unit test on GlobalExceptionHandler instead - see
-    // GlobalExceptionHandlerTest.handleDataIntegrityViolation_returnsConflict - plus it was
-    // manually verified against real MySQL during this bug-fix pass (DELETE on a pharmacy-owning
-    // user correctly returned 409).
 
     @Test
     void adminEndpoints_asNonAdmin_areForbidden() throws Exception {
