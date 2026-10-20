@@ -15,31 +15,47 @@ import com.suwalink.entity.Currency;
 import com.suwalink.entity.Inventory;
 import com.suwalink.entity.Manufacturer;
 import com.suwalink.entity.MedicineMaster;
+import com.suwalink.entity.Notification;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
+import com.suwalink.entity.PrescriptionRequest;
+import com.suwalink.entity.PrescriptionRequestStatus;
 import com.suwalink.entity.PrescriptionStatus;
+import com.suwalink.entity.Reservation;
+import com.suwalink.entity.ReservationStatus;
+import com.suwalink.entity.Role;
 import com.suwalink.entity.UnitOfMeasure;
+import com.suwalink.entity.User;
 import com.suwalink.repository.CategoryRepository;
 import com.suwalink.repository.InventoryRepository;
 import com.suwalink.repository.ManufacturerRepository;
 import com.suwalink.repository.MedicineMasterRepository;
+import com.suwalink.repository.NotificationRepository;
 import com.suwalink.repository.PharmacyRepository;
+import com.suwalink.repository.PrescriptionRequestRepository;
 import com.suwalink.repository.PrescriptionResponseRepository;
+import com.suwalink.repository.ReservationRepository;
+import com.suwalink.repository.UserRepository;
+import com.suwalink.service.ReservationService;
 import com.suwalink.support.TestPayloads;
+import jakarta.persistence.EntityManager;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import javax.imageio.ImageIO;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -72,6 +88,27 @@ class ReservationControllerTest {
 
     @Autowired
     private PrescriptionResponseRepository prescriptionResponseRepository;
+
+    @Autowired
+    private PrescriptionRequestRepository prescriptionRequestRepository;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
+
+    @Autowired
+    private ReservationService reservationService;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EntityManager entityManager;
 
     // --- create ---------------------------------------------------------------------------------
 
@@ -303,6 +340,313 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.data[0].items[0].quantity").value(1));
     }
 
+    // --- request validation and quoted-line rules -----------------------------------------------
+
+    @Test
+    void nullLineIsRejected() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.null.patient@example.com");
+
+        reserve(patientToken, "null").andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void quotedQuantityIsReducedByWhatIsAlreadyHeld() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.held.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.held.pharmacy@example.com", "LIC-RQ-4");
+        UUID item = createInventoryItem("resv.held.pharmacy@example.com", new BigDecimal("9.50"), 10);
+        String requestId = createPrescription(patientToken);
+        UUID responseItemId = submitResponse(pharmacyToken, requestId, item, 3);
+
+        reserve(patientToken, quotedLine(item, 2, responseItemId)).andExpect(status().isCreated());
+        reserve(patientToken, quotedLine(item, 2, responseItemId)).andExpect(status().isBadRequest());
+        reserve(patientToken, quotedLine(item, 1, responseItemId)).andExpect(status().isCreated());
+        reserve(patientToken, quotedLine(item, 1, responseItemId)).andExpect(status().isBadRequest());
+        assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(7);
+    }
+
+    @Test
+    void cancelledReservationNoLongerHoldsQuotedQuantity() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.heldc.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.heldc.pharmacy@example.com", "LIC-RQ-5");
+        UUID item = createInventoryItem("resv.heldc.pharmacy@example.com", new BigDecimal("9.50"), 10);
+        String requestId = createPrescription(patientToken);
+        UUID responseItemId = submitResponse(pharmacyToken, requestId, item, 3);
+
+        String first = JsonPath.read(reserve(patientToken, quotedLine(item, 3, responseItemId))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.data.id");
+        cancel(patientToken, first).andExpect(status().isOk());
+
+        reserve(patientToken, quotedLine(item, 3, responseItemId)).andExpect(status().isCreated());
+    }
+
+    @Test
+    void rejectsQuotedLinesFromTwoPrescriptionRequests() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.tworeq.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.tworeq.pharmacy@example.com", "LIC-RQ-6");
+        UUID first = createInventoryItem("resv.tworeq.pharmacy@example.com", new BigDecimal("9.50"), 10);
+        UUID second = createInventoryItem("resv.tworeq.pharmacy@example.com", new BigDecimal("4.00"), 10);
+        UUID firstQuote = submitResponse(pharmacyToken, createPrescription(patientToken), first, 2);
+        UUID secondQuote = submitResponse(pharmacyToken, createPrescription(patientToken), second, 2);
+
+        reserve(patientToken, quotedLine(first, 1, firstQuote), quotedLine(second, 1, secondQuote))
+                .andExpect(status().isBadRequest());
+        assertThat(inventoryRepository.findById(first).orElseThrow().getStockQuantity()).isEqualTo(10);
+        assertThat(inventoryRepository.findById(second).orElseThrow().getStockQuantity()).isEqualTo(10);
+    }
+
+    @Test
+    void quotesOfExpiredOrClosedRequestCannotBeReserved() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.closedreq.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.closedreq.pharmacy@example.com", "LIC-RQ-7");
+        UUID item = createInventoryItem("resv.closedreq.pharmacy@example.com", new BigDecimal("9.50"), 10);
+
+        for (PrescriptionRequestStatus closed : List.of(PrescriptionRequestStatus.EXPIRED, PrescriptionRequestStatus.CLOSED)) {
+            String requestId = createPrescription(patientToken);
+            UUID responseItemId = submitResponse(pharmacyToken, requestId, item, 2);
+            PrescriptionRequest request = prescriptionRequestRepository.findById(UUID.fromString(requestId)).orElseThrow();
+            request.setStatus(closed);
+            prescriptionRequestRepository.save(request);
+
+            reserve(patientToken, quotedLine(item, 1, responseItemId)).andExpect(status().isConflict());
+        }
+        assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(10);
+    }
+
+    @Test
+    void quotedItemMustMatchLineInventory() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.mismatch.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.mismatch.pharmacy@example.com", "LIC-RQ-8");
+        UUID quoted = createInventoryItem("resv.mismatch.pharmacy@example.com", new BigDecimal("9.50"), 10);
+        UUID other = createInventoryItem("resv.mismatch.pharmacy@example.com", new BigDecimal("1.00"), 10);
+        UUID responseItemId = submitResponse(pharmacyToken, createPrescription(patientToken), quoted, 2);
+
+        reserve(patientToken, quotedLine(other, 1, responseItemId)).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void unknownPrescriptionResponseItemIs404() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.unknownq.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.unknownq.pharmacy@example.com", "LIC-RQ-9");
+        UUID item = createInventoryItem("resv.unknownq.pharmacy@example.com", new BigDecimal("9.50"), 10);
+
+        reserve(patientToken, quotedLine(item, 1, UUID.randomUUID())).andExpect(status().isNotFound());
+    }
+
+    // --- lifecycle: cancel, complete, expiry ----------------------------------------------------
+
+    @Test
+    void customerCancelsAndStockReturns() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.cc.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.cc.pharmacy@example.com", "LIC-LC-1");
+        UUID first = createInventoryItem("resv.cc.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        UUID second = createInventoryItem("resv.cc.pharmacy@example.com", new BigDecimal("10.00"), 3);
+        String id = JsonPath.read(reserve(patientToken, line(first, 2), line(second, 3))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.data.id");
+
+        cancel(patientToken, id)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.data.cancelledBy").value("PATIENT"));
+
+        assertThat(inventoryRepository.findById(first).orElseThrow().getStockQuantity()).isEqualTo(5);
+        assertThat(inventoryRepository.findById(second).orElseThrow().getStockQuantity()).isEqualTo(3);
+        assertThat(notificationTitles("resv.cc.pharmacy@example.com")).contains("Reservation Cancelled");
+        assertThat(notificationTitles("resv.cc.patient@example.com")).doesNotContain("Reservation Cancelled");
+    }
+
+    @Test
+    void pharmacyCancelsWithReason() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.pc.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.pc.pharmacy@example.com", "LIC-LC-2");
+        UUID item = createInventoryItem("resv.pc.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 2);
+
+        mockMvc.perform(patch("/api/reservations/" + id + "/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + pharmacyToken)
+                        .content("{ \"reason\": \"Out of stock after all\" }"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.data.cancelledBy").value("PHARMACY"))
+                .andExpect(jsonPath("$.data.cancelReason").value("Out of stock after all"));
+
+        assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(5);
+        assertThat(notificationTitles("resv.pc.patient@example.com")).contains("Reservation Cancelled");
+    }
+
+    @Test
+    void cannotCancelTwice() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.twice.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.twice.pharmacy@example.com", "LIC-LC-3");
+        UUID item = createInventoryItem("resv.twice.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 2);
+
+        cancel(patientToken, id).andExpect(status().isOk());
+        cancel(patientToken, id).andExpect(status().isConflict());
+        assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void pharmacyCompletes() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.comp.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.comp.pharmacy@example.com", "LIC-LC-4");
+        UUID item = createInventoryItem("resv.comp.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 2);
+
+        complete(pharmacyToken, id)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"));
+
+        assertThat(inventoryRepository.findById(item).orElseThrow().getStockQuantity()).isEqualTo(3);
+        assertThat(notificationTitles("resv.comp.patient@example.com")).contains("Reservation Completed");
+        complete(pharmacyToken, id).andExpect(status().isConflict());
+    }
+
+    @Test
+    void otherPharmacyCannotComplete() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.ocomp.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.ocomp.pharmacy@example.com", "LIC-LC-5");
+        String otherToken = registerVerifiedPharmacyAndLogin("resv.ocomp.other@example.com", "LIC-LC-6");
+        UUID item = createInventoryItem("resv.ocomp.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 1);
+
+        complete(otherToken, id).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cannotCompleteExpiredHold() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.cexp.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.cexp.pharmacy@example.com", "LIC-LC-7");
+        UUID item = createInventoryItem("resv.cexp.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 1);
+        expireHold(id);
+
+        complete(pharmacyToken, id)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This reservation has expired"));
+    }
+
+    @Test
+    void expireOverdueReleasesStock() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.job.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.job.pharmacy@example.com", "LIC-LC-8");
+        UUID first = createInventoryItem("resv.job.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        UUID second = createInventoryItem("resv.job.pharmacy@example.com", new BigDecimal("10.00"), 4);
+        String overdue = JsonPath.read(reserve(patientToken, line(first, 2), line(second, 4))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.data.id");
+        String current = createReservation(patientToken, first, 1);
+        expireHold(overdue);
+
+        assertThat(reservationService.expireOverdue(LocalDateTime.now())).isEqualTo(1);
+
+        assertThat(reservationRepository.findById(UUID.fromString(overdue)).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.EXPIRED);
+        assertThat(reservationRepository.findById(UUID.fromString(current)).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+        assertThat(inventoryRepository.findById(first).orElseThrow().getStockQuantity()).isEqualTo(4);
+        assertThat(inventoryRepository.findById(second).orElseThrow().getStockQuantity()).isEqualTo(4);
+        assertThat(notificationTitles("resv.job.patient@example.com")).contains("Reservation Expired");
+        assertThat(notificationTitles("resv.job.pharmacy@example.com")).contains("Reservation Expired");
+        assertThat(reservationService.expireOverdue(LocalDateTime.now())).isZero();
+    }
+
+    // --- lookup by id and pickup code -----------------------------------------------------------
+
+    @Test
+    void ownerAndPharmacyCanOpenByPickupCode() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.code.patient@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("resv.code.pharmacy@example.com", "LIC-PC-1");
+        UUID item = createInventoryItem("resv.code.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 1);
+        String code = reservationRepository.findById(UUID.fromString(id)).orElseThrow().getPickupCode();
+
+        for (String token : List.of(patientToken, pharmacyToken)) {
+            mockMvc.perform(get("/api/reservations/by-code/" + code).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.id").value(id))
+                    .andExpect(jsonPath("$.data.pickupCode").value(code));
+            mockMvc.perform(get("/api/reservations/" + id).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.id").value(id));
+        }
+    }
+
+    @Test
+    void strangerGets404ByPickupCode() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.scode.patient@example.com");
+        String strangerToken = registerCustomerAndLogin("resv.scode.stranger@example.com");
+        registerVerifiedPharmacyAndLogin("resv.scode.pharmacy@example.com", "LIC-PC-2");
+        String otherPharmacyToken = registerVerifiedPharmacyAndLogin("resv.scode.other@example.com", "LIC-PC-3");
+        UUID item = createInventoryItem("resv.scode.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 1);
+        String code = reservationRepository.findById(UUID.fromString(id)).orElseThrow().getPickupCode();
+
+        for (String token : List.of(strangerToken, otherPharmacyToken)) {
+            mockMvc.perform(get("/api/reservations/by-code/" + code).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isNotFound());
+            mockMvc.perform(get("/api/reservations/" + id).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Test
+    void unknownPickupCodeIs404() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.ucode.patient@example.com");
+
+        mockMvc.perform(get("/api/reservations/by-code/ABCDEFGHJK").header("Authorization", "Bearer " + patientToken))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/reservations/" + UUID.randomUUID()).header("Authorization", "Bearer " + patientToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void adminCanOpenAnyReservation() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.admin.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.admin.pharmacy@example.com", "LIC-PC-4");
+        UUID item = createInventoryItem("resv.admin.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 1);
+        String code = reservationRepository.findById(UUID.fromString(id)).orElseThrow().getPickupCode();
+        userRepository.save(User.builder()
+                .name("Reservation Admin")
+                .email("resv.admin@suwalink.local")
+                .phone("0000000000")
+                .password(passwordEncoder.encode("SecurePass123"))
+                .role(Role.ADMIN)
+                .build());
+        String adminToken = loginAndGetToken("resv.admin@suwalink.local");
+
+        mockMvc.perform(get("/api/reservations/" + id).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(id));
+        mockMvc.perform(get("/api/reservations/by-code/" + code).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(id));
+    }
+
+    @Test
+    void listQueriesFetchItemsPharmacyAndCustomer() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.fetch.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.fetch.pharmacy@example.com", "LIC-PC-5");
+        UUID item = createInventoryItem("resv.fetch.pharmacy@example.com", new BigDecimal("10.00"), 5);
+        String id = createReservation(patientToken, item, 1);
+        Reservation saved = reservationRepository.findById(UUID.fromString(id)).orElseThrow();
+        UUID patientId = saved.getPatient().getId();
+        UUID pharmacyId = saved.getPharmacy().getId();
+        entityManager.flush();
+        entityManager.clear();
+
+        for (List<Reservation> list : List.of(
+                reservationRepository.findByPatientIdOrderByCreatedAtDesc(patientId),
+                reservationRepository.findByPharmacyIdOrderByCreatedAtDesc(pharmacyId))) {
+            assertThat(list).hasSize(1);
+            Reservation reservation = list.get(0);
+            assertThat(Hibernate.isInitialized(reservation.getItems())).isTrue();
+            assertThat(Hibernate.isInitialized(reservation.getPharmacy())).isTrue();
+            assertThat(Hibernate.isInitialized(reservation.getPatient())).isTrue();
+            entityManager.clear();
+        }
+    }
+
     // --- helpers ---------------------------------------------------------------------------------
 
     private static String line(UUID inventoryId, int quantity) {
@@ -321,6 +665,30 @@ class ReservationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + patientToken)
                 .content("{ \"lines\": [ " + String.join(", ", lines) + " ] }"));
+    }
+
+    private ResultActions cancel(String token, String reservationId) throws Exception {
+        return mockMvc.perform(patch("/api/reservations/" + reservationId + "/cancel")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + token));
+    }
+
+    private ResultActions complete(String token, String reservationId) throws Exception {
+        return mockMvc.perform(patch("/api/reservations/" + reservationId + "/complete")
+                .header("Authorization", "Bearer " + token));
+    }
+
+    private void expireHold(String reservationId) {
+        Reservation reservation = reservationRepository.findById(UUID.fromString(reservationId)).orElseThrow();
+        reservation.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+        reservationRepository.save(reservation);
+    }
+
+    private List<String> notificationTitles(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow();
+        return notificationRepository.findByRecipientOrderByCreatedAtDesc(user).stream()
+                .map(Notification::getTitle)
+                .toList();
     }
 
     private String createReservation(String patientToken, UUID inventoryId, int quantity) throws Exception {

@@ -17,7 +17,9 @@ import com.suwalink.entity.ReservationStatus;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.event.ReservationCancelledEvent;
+import com.suwalink.event.ReservationCompletedEvent;
 import com.suwalink.event.ReservationCreatedEvent;
+import com.suwalink.event.ReservationExpiredEvent;
 import com.suwalink.exception.InsufficientStockException;
 import com.suwalink.exception.InvalidReservationRequestException;
 import com.suwalink.exception.InvalidReservationStateException;
@@ -28,6 +30,7 @@ import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.InventoryRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.PrescriptionResponseItemRepository;
+import com.suwalink.repository.ReservationItemRepository;
 import com.suwalink.repository.ReservationRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.PharmacyVisibilityService;
@@ -37,8 +40,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -48,6 +53,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -57,9 +63,14 @@ public class ReservationServiceImpl implements ReservationService {
     private static final Set<PrescriptionRequestStatus> CLOSED_REQUEST_STATUSES =
             EnumSet.of(PrescriptionRequestStatus.EXPIRED, PrescriptionRequestStatus.CLOSED);
 
+    /** Reservations that still count against a quoted quantity (cancelled and expired ones give it back). */
+    private static final Set<ReservationStatus> HOLDING_STATUSES =
+            EnumSet.of(ReservationStatus.CONFIRMED, ReservationStatus.COMPLETED);
+
     private final ReservationRepository reservationRepository;
     private final InventoryRepository inventoryRepository;
     private final PrescriptionResponseItemRepository prescriptionResponseItemRepository;
+    private final ReservationItemRepository reservationItemRepository;
     private final PharmacyRepository pharmacyRepository;
     private final CurrentUserProvider currentUserProvider;
     private final ApplicationEventPublisher eventPublisher;
@@ -72,9 +83,13 @@ public class ReservationServiceImpl implements ReservationService {
     /**
      * All-or-nothing: the inventory rows are locked (in id order) before any check, so two customers
      * racing for the same stock are serialised and the loser sees the decremented quantity.
+     *
+     * <p>READ_COMMITTED so the quoted-quantity check, a plain read made after the lock is taken, sees
+     * reservations committed by the transaction that held the lock before us. Under MySQL's default
+     * REPEATABLE READ it would read from a snapshot taken before we waited.
      */
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ReservationResponse create(CreateReservationRequest request) {
         User patient = currentUserProvider.getCurrentUser();
         List<CreateReservationRequest.Line> lines = request.getLines();
@@ -125,7 +140,12 @@ public class ReservationServiceImpl implements ReservationService {
             if (line.getPrescriptionResponseItemId() != null) {
                 responseItem = findQuotedItem(line, patient);
                 unitPrice = responseItem.getUnitPrice();
-                prescriptionRequest = responseItem.getPrescriptionResponse().getPrescriptionRequest();
+                PrescriptionRequest quotedFor = responseItem.getPrescriptionResponse().getPrescriptionRequest();
+                if (prescriptionRequest != null && !prescriptionRequest.getId().equals(quotedFor.getId())) {
+                    throw new InvalidReservationRequestException(
+                            "All quoted items in one reservation must come from the same prescription request");
+                }
+                prescriptionRequest = quotedFor;
             }
 
             MedicineMaster medicine = inventory.getMedicineMaster();
@@ -168,7 +188,10 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
-    /** Validates a quoted line: the caller's own open request, the same inventory, within the quoted quantity. */
+    /**
+     * Validates a quoted line: the caller's own open request, the same inventory, and no more than the
+     * quoted quantity minus what CONFIRMED or COMPLETED reservations already hold on that quote.
+     */
     private PrescriptionResponseItem findQuotedItem(CreateReservationRequest.Line line, User patient) {
         PrescriptionResponseItem item = prescriptionResponseItemRepository.findById(line.getPrescriptionResponseItemId())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -187,9 +210,12 @@ public class ReservationServiceImpl implements ReservationService {
             throw new InvalidReservationRequestException(
                     "The quoted item does not match inventory item " + line.getInventoryItemId());
         }
-        if (line.getQuantity() > item.getQuantity()) {
+        long held = reservationItemRepository.sumQuantityByResponseItem(item.getId(), HOLDING_STATUSES);
+        long remaining = item.getQuantity() - held;
+        if (line.getQuantity() > remaining) {
             throw new InvalidReservationRequestException(
-                    "Cannot reserve more than the quoted quantity of " + item.getQuantity());
+                    "Only " + Math.max(remaining, 0) + " of the quoted quantity of " + item.getQuantity()
+                            + " can still be reserved");
         }
         return item;
     }
@@ -227,18 +253,9 @@ public class ReservationServiceImpl implements ReservationService {
         User currentUser = currentUserProvider.getCurrentUser();
 
         CancelledBy cancelledBy = resolveRequester(reservation, currentUser);
+        requireConfirmed(reservation, "cancelled");
 
-        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
-            throw new InvalidReservationStateException(
-                    "Only a CONFIRMED reservation can be cancelled (current status: "
-                            + reservation.getStatus() + ")");
-        }
-
-        for (ReservationItem item : reservation.getItems()) {
-            Inventory inventory = item.getInventoryItem();
-            inventory.setStockQuantity(inventory.getStockQuantity() + item.getQuantity());
-        }
-
+        releaseStock(List.of(reservation));
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservation.setCancelledBy(cancelledBy);
         reservation.setCancelReason(request == null ? null : blankToNull(request.getReason()));
@@ -258,15 +275,95 @@ public class ReservationServiceImpl implements ReservationService {
         if (!reservation.getPharmacy().getId().equals(pharmacy.getId())) {
             throw new ReservationAccessDeniedException();
         }
-
-        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
-            throw new InvalidReservationStateException(
-                    "Only a CONFIRMED reservation can be completed (current status: "
-                            + reservation.getStatus() + ")");
+        requireConfirmed(reservation, "completed");
+        if (reservation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new InvalidReservationStateException("This reservation has expired");
         }
 
         reservation.setStatus(ReservationStatus.COMPLETED);
-        return toResponse(reservationRepository.save(reservation));
+        Reservation saved = reservationRepository.save(reservation);
+
+        eventPublisher.publishEvent(new ReservationCompletedEvent(this, saved.getId()));
+
+        return toResponse(saved);
+    }
+
+    /** Owner, owning pharmacy or admin; anyone else gets the same 404 as for a missing reservation. */
+    @Override
+    @Transactional(readOnly = true)
+    public ReservationResponse getById(UUID id) {
+        return reservationRepository.findById(id)
+                .filter(this::canView)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found: " + id));
+    }
+
+    /** Same access rule as {@link #getById}; never 403, so pickup codes can't be probed. */
+    @Override
+    @Transactional(readOnly = true)
+    public ReservationResponse getByPickupCode(String code) {
+        String normalised = code.trim().toUpperCase(Locale.ROOT);
+        return reservationRepository.findByPickupCode(normalised)
+                .filter(this::canView)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for pickup code: " + normalised));
+    }
+
+    /**
+     * CONFIRMED reservations whose hold ended before {@code now} become EXPIRED and give their stock
+     * back. A cancel racing with this on the same reservation loses on the reservation's version check.
+     */
+    @Override
+    @Transactional
+    public int expireOverdue(LocalDateTime now) {
+        List<Reservation> overdue =
+                reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.CONFIRMED, now);
+        if (overdue.isEmpty()) {
+            return 0;
+        }
+
+        releaseStock(overdue);
+        overdue.forEach(reservation -> reservation.setStatus(ReservationStatus.EXPIRED));
+        reservationRepository.saveAll(overdue);
+
+        overdue.forEach(reservation ->
+                eventPublisher.publishEvent(new ReservationExpiredEvent(this, reservation.getId())));
+        return overdue.size();
+    }
+
+    /**
+     * Returns every line's quantity to stock through {@link InventoryRepository#lockAllById}, the same
+     * id-ordered row locks a create takes, so a release can't interleave with a concurrent reservation.
+     */
+    private void releaseStock(List<Reservation> reservations) {
+        Map<UUID, Integer> quantities = new HashMap<>();
+        for (Reservation reservation : reservations) {
+            for (ReservationItem item : reservation.getItems()) {
+                quantities.merge(item.getInventoryItem().getId(), item.getQuantity(), Integer::sum);
+            }
+        }
+        for (Inventory inventory : inventoryRepository.lockAllById(quantities.keySet())) {
+            inventory.setStockQuantity(inventory.getStockQuantity() + quantities.get(inventory.getId()));
+        }
+    }
+
+    private void requireConfirmed(Reservation reservation, String action) {
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new InvalidReservationStateException(
+                    "Only a CONFIRMED reservation can be " + action + " (current status: "
+                            + reservation.getStatus() + ")");
+        }
+    }
+
+    private boolean canView(Reservation reservation) {
+        User user = currentUserProvider.getCurrentUser();
+        return switch (user.getRole()) {
+            case ADMIN -> true;
+            case CUSTOMER -> reservation.getPatient().getId().equals(user.getId());
+            case PHARMACY_OWNER -> pharmacyRepository.findByUserId(user.getId())
+                    .map(pharmacy -> pharmacy.getId().equals(reservation.getPharmacy().getId()))
+                    .orElse(false);
+        };
     }
 
     private CancelledBy resolveRequester(Reservation reservation, User currentUser) {

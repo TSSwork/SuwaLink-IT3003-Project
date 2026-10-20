@@ -1,6 +1,7 @@
 package com.suwalink.service.impl;
 
 import com.suwalink.service.PrescriptionRequestService;
+import com.suwalink.service.ReservationService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,12 +15,21 @@ import org.springframework.stereotype.Component;
 public class ExpiryJobs {
 
     private final PrescriptionRequestService prescriptionRequestService;
+    private final ReservationService reservationService;
 
     @Scheduled(cron = "${app.jobs.expiry-cron:0 */15 * * * *}")
     void expirePrescriptionRequests() {
         int expired = prescriptionRequestService.expireOverdue(LocalDateTime.now());
         if (expired > 0) {
             log.info("Expired {} overdue prescription request(s)", expired);
+        }
+    }
+
+    @Scheduled(cron = "${app.jobs.expiry-cron:0 */15 * * * *}")
+    void expireReservations() {
+        int expired = reservationService.expireOverdue(LocalDateTime.now());
+        if (expired > 0) {
+            log.info("Expired {} overdue reservation(s); their stock was released", expired);
         }
     }
 }

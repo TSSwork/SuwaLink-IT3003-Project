@@ -108,6 +108,37 @@ public class NotificationEventListener {
         }
     }
 
+    @EventListener
+    public void handleReservationCompletedEvent(ReservationCompletedEvent event) {
+        Reservation reservation = findReservation(event.getReservationId());
+
+        notificationService.createNotification(
+                reservation.getPatient(),
+                "Reservation Completed",
+                "You collected " + describeItems(reservation) + " from " + reservation.getPharmacy().getName() + ".",
+                NotificationType.RESERVATION);
+    }
+
+    @EventListener
+    public void handleReservationExpiredEvent(ReservationExpiredEvent event) {
+        Reservation reservation = findReservation(event.getReservationId());
+        String reserved = describeItems(reservation);
+
+        notificationService.createNotification(
+                reservation.getPatient(),
+                "Reservation Expired",
+                "Your reservation of " + reserved + " at " + reservation.getPharmacy().getName()
+                        + " was not collected in time and has expired.",
+                NotificationType.RESERVATION);
+
+        notificationService.createNotification(
+                reservation.getPharmacy().getUser(),
+                "Reservation Expired",
+                reservation.getPatient().getName() + "'s reservation of " + reserved
+                        + " expired uncollected; the stock was released.",
+                NotificationType.RESERVATION);
+    }
+
     /** "3 items" for a multi-line reservation, otherwise "2 x Panadol 500mg". */
     private String describeItems(Reservation reservation) {
         List<ReservationItem> items = reservation.getItems();

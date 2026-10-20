@@ -14,7 +14,7 @@ import lombok.Setter;
 public class CreateReservationRequest {
 
     @NotEmpty(message = "lines must contain at least one item")
-    private List<@Valid Line> lines;
+    private List<@NotNull(message = "lines must not contain empty entries") @Valid Line> lines;
 
     @Getter
     @Setter
