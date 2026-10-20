@@ -31,6 +31,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         ApiErrorResponse body = ApiErrorResponse.builder()
+            .code("UNAUTHENTICATED")
             .message("Authentication required")
             .build();
 

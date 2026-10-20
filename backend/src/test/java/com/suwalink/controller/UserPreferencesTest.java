@@ -97,6 +97,23 @@ class UserPreferencesTest {
     }
 
     @Test
+    void unauthenticatedRequestCarriesCode() throws Exception {
+        mockMvc.perform(get("/api/users/me"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    }
+
+    @Test
+    void urlRuleDenialCarriesAccessDeniedCode() throws Exception {
+        String token = registerAndLogin("prefs.denied@example.com");
+
+        mockMvc.perform(get("/api/admin/dashboard").header("Authorization", "Bearer " + token))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
+            .andExpect(jsonPath("$.message").value("You do not have permission to perform this action"));
+    }
+
+    @Test
     void notFoundCarriesCode() throws Exception {
         String token = registerAndLogin("prefs.nf@example.com");
 
