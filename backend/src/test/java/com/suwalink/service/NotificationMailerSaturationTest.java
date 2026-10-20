@@ -51,7 +51,7 @@ class NotificationMailerSaturationTest {
             return null;
         }).when(mailSender).send(any(MimeMessage.class));
 
-        User user = userRepository.save(User.builder().name("Sat").phone("0770000000").password("hash")
+        User user = userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now()).name("Sat").phone("0770000000").password("hash")
                 .email("sat." + UUID.randomUUID() + "@example.com").role(Role.CUSTOMER).build());
         try {
             notificationService.notify(user, NotificationType.SYSTEM_ALERT,

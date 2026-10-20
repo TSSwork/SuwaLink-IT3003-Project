@@ -352,7 +352,7 @@ class ExpiryJobsIntegrationTest {
     }
 
     private static User user(String email, Role role) {
-        return User.builder()
+        return User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .name("Expiry User")
                 .email(email)
                 .phone("0770000000")

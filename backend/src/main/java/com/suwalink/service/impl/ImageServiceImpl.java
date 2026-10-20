@@ -127,9 +127,11 @@ public class ImageServiceImpl implements ImageService {
         try {
             Path base = Path.of(uploadDir).toAbsolutePath().normalize();
             Path file = Path.of(image.getFilePath()).toAbsolutePath().normalize();
-            if (file.startsWith(base)) {
-                Files.deleteIfExists(file);
+            if (!file.startsWith(base)) {
+                log.warn("Not purging image {}: stored path is outside the upload directory", image.getId());
+                return;
             }
+            Files.deleteIfExists(file);
         } catch (IOException e) {
             throw new FileStorageException("Failed to delete image file", e);
         }

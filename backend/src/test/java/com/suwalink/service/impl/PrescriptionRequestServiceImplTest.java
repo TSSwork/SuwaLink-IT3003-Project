@@ -57,7 +57,7 @@ class PrescriptionRequestServiceImplTest {
     private static PrescriptionRequest request(LocalDateTime expiresAt) {
         return PrescriptionRequest.builder()
                 .id(UUID.randomUUID())
-                .patient(User.builder().id(UUID.randomUUID()).build())
+                .patient(User.builder().termsAcceptedAt(java.time.LocalDateTime.now()).id(UUID.randomUUID()).build())
                 .status(PrescriptionRequestStatus.PENDING)
                 .expiresAt(expiresAt)
                 .build();

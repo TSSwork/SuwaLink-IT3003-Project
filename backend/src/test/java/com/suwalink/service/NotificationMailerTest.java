@@ -281,7 +281,7 @@ class NotificationMailerTest {
     }
 
     private User user(String email, Role role) {
-        return User.builder().name("Mail User").email(email).phone("0770000000")
+        return User.builder().termsAcceptedAt(java.time.LocalDateTime.now()).name("Mail User").email(email).phone("0770000000")
                 .password("hash").role(role).build();
     }
 }

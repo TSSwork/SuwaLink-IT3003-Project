@@ -48,7 +48,7 @@ class DemoModeTest {
     }
 
     private void save(String email, Role role, boolean demo) {
-        userRepository.save(User.builder()
+        userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
             .name("Test").email(email).phone("0771234567")
             .password(passwordEncoder.encode(PASSWORD)).role(role).demo(demo).build());
     }

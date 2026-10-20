@@ -60,7 +60,7 @@ class NotificationControllerTest {
     @BeforeEach
     void createAdminUser() {
         if (userRepository.findByEmail(ADMIN_EMAIL).isPresent()) return;
-        userRepository.save(User.builder()
+        userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
             .name("Test Admin")
             .email(ADMIN_EMAIL)
             .phone("0000000000")

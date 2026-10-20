@@ -171,7 +171,7 @@ class ReservationConcurrencyTest {
     }
 
     private static User user(String email, Role role) {
-        return User.builder()
+        return User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .name("Race User")
                 .email(email)
                 .phone("0770000000")

@@ -257,7 +257,7 @@ class NotificationEventListenerTest {
     }
 
     private User user(String email, Role role) {
-        return User.builder()
+        return User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .id(UUID.randomUUID())
                 .name("Test User")
                 .email(email)

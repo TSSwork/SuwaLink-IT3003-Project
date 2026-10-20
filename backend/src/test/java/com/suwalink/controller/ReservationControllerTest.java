@@ -616,7 +616,7 @@ class ReservationControllerTest {
         UUID item = createInventoryItem("resv.admin.pharmacy@example.com", new BigDecimal("10.00"), 5);
         String id = createReservation(patientToken, item, 1);
         String code = reservationRepository.findById(UUID.fromString(id)).orElseThrow().getPickupCode();
-        userRepository.save(User.builder()
+        userRepository.save(User.builder().termsAcceptedAt(java.time.LocalDateTime.now())
                 .name("Reservation Admin")
                 .email("resv.admin@suwalink.local")
                 .phone("0000000000")
