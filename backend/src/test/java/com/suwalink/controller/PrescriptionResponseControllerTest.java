@@ -18,6 +18,7 @@ import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.PrescriptionRequestStatus;
+import com.suwalink.entity.Reservation;
 import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.repository.NotificationRepository;
 import com.suwalink.repository.PrescriptionRequestRepository;
@@ -75,6 +76,15 @@ class PrescriptionResponseControllerTest {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private com.suwalink.repository.PrescriptionResponseRepository prescriptionResponseRepository;
+
+    @Autowired
+    private com.suwalink.repository.ReservationRepository reservationRepository;
+
+    @Autowired
+    private com.suwalink.repository.UserRepository userRepository;
 
     @Test
     void create_asPharmacy_returnsCreatedResponseAndFlipsRequestStatus() throws Exception {
@@ -240,6 +250,43 @@ class PrescriptionResponseControllerTest {
                             { "items": [ { "inventoryItemId": "%s", "quantity": 1 } ] }
                             """.formatted(inventoryId)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void cannotUpdateResponseAfterReservation() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.patient12@example.com");
+        String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy12@example.com", "LIC-R-16");
+        String requestId = createPrescription(patientToken, 30, "Reserved");
+        UUID first = createInventoryItem("presp.pharmacy12@example.com", new BigDecimal("10.00"), 5);
+        UUID second = createInventoryItem("presp.pharmacy12@example.com", new BigDecimal("25.00"), 5);
+        submitResponse(pharmacyToken, requestId, first, 1);
+
+        var item = prescriptionResponseRepository
+                .findByPrescriptionRequestIdOrderByCreatedAtDesc(UUID.fromString(requestId))
+                .get(0).getItems().get(0);
+        reservationRepository.save(Reservation.builder()
+                .patient(userRepository.findByEmail("presp.patient12@example.com").orElseThrow())
+                .pharmacy(item.getInventoryItem().getPharmacy())
+                .inventoryItem(item.getInventoryItem())
+                .prescriptionResponseItem(item)
+                .quantity(1)
+                .unitPrice(item.getUnitPrice())
+                .build());
+
+        mockMvc.perform(put("/api/prescriptions/" + requestId + "/responses/mine")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + pharmacyToken)
+                        .content("""
+                            { "items": [ { "inventoryItemId": "%s", "quantity": 3 } ] }
+                            """.formatted(second)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("This response already has reservations and can no longer be changed"));
+
+        mockMvc.perform(get("/api/prescriptions/" + requestId + "/responses")
+                        .header("Authorization", "Bearer " + pharmacyToken))
+                .andExpect(jsonPath("$.data[0].items.length()").value(1))
+                .andExpect(jsonPath("$.data[0].items[0].inventoryItemId").value(first.toString()));
     }
 
     @Test

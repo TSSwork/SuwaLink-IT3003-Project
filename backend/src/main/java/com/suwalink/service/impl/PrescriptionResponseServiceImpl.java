@@ -20,6 +20,7 @@ import com.suwalink.repository.InventoryRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.PrescriptionRequestRepository;
 import com.suwalink.repository.PrescriptionResponseRepository;
+import com.suwalink.repository.ReservationRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.PrescriptionResponseService;
 import java.util.List;
@@ -36,6 +37,7 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
     private final PrescriptionResponseRepository prescriptionResponseRepository;
     private final PrescriptionRequestRepository prescriptionRequestRepository;
     private final InventoryRepository inventoryRepository;
+    private final ReservationRepository reservationRepository;
     private final PharmacyRepository pharmacyRepository;
     private final CurrentUserProvider currentUserProvider;
     private final ApplicationEventPublisher eventPublisher;
@@ -80,6 +82,11 @@ public class PrescriptionResponseServiceImpl implements PrescriptionResponseServ
                 .findByPrescriptionRequestIdAndPharmacyId(requestId, pharmacy.getId()).stream()
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("You have not responded to this request yet"));
+
+        if (reservationRepository.existsByPrescriptionResponseItem_PrescriptionResponse_Id(response.getId())) {
+            throw new DuplicateResourceException(
+                    "This response already has reservations and can no longer be changed");
+        }
 
         response.getItems().clear();
         applyContent(response, pharmacy, request);
