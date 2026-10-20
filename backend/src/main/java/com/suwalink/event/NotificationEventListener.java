@@ -68,7 +68,7 @@ public class NotificationEventListener {
     public void handleReservationCreatedEvent(ReservationCreatedEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
         String medicineBrandName = reservation.getInventoryItem().getMedicineMaster().getBrandName();
-        String pharmacyName = reservation.getPharmacy().getUser().getName();
+        String pharmacyName = reservation.getPharmacy().getName();
 
         notificationService.createNotification(
                 reservation.getPatient(),

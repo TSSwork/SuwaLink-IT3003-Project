@@ -16,7 +16,9 @@ import com.suwalink.repository.MedicineMasterRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.InventoryService;
+import com.suwalink.service.PharmacyVisibilityService;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final ImageRepository imageRepository;
     private final PharmacyRepository pharmacyRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final PharmacyVisibilityService pharmacyVisibilityService;
 
     @Override
     @Transactional
@@ -115,7 +118,8 @@ public class InventoryServiceImpl implements InventoryService {
             BigDecimal minPrice,
             BigDecimal maxPrice) {
 
-        return inventoryRepository.search(query, categoryId, manufacturerId, legalCategory, minPrice, maxPrice)
+        return inventoryRepository.search(query, categoryId, manufacturerId, legalCategory, minPrice, maxPrice,
+                        pharmacyVisibilityService.includeDemo(), LocalDate.now())
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -156,7 +160,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         InventoryResponse.PharmacySummary pharmacySummary = InventoryResponse.PharmacySummary.builder()
                 .id(inventory.getPharmacy().getId())
-                .name(inventory.getPharmacy().getUser().getName())
+                .name(inventory.getPharmacy().getName())
                 .address(inventory.getPharmacy().getAddress())
                 .build();
 

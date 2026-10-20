@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.suwalink.entity.Role;
 import com.suwalink.entity.User;
 import com.suwalink.repository.UserRepository;
+import com.suwalink.service.PharmacyVisibilityService;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 class UserDetailsServiceImplTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final UserDetailsServiceImpl userDetailsService = new UserDetailsServiceImpl(userRepository);
+    private final UserDetailsServiceImpl userDetailsService = new UserDetailsServiceImpl(userRepository, mock(PharmacyVisibilityService.class));
 
     @Test
     void loadUserByUsername_whenUserExists_returnsUserDetailsWithRoleAuthority() {

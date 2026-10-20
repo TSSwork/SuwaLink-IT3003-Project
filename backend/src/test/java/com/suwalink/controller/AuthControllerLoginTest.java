@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.repository.PharmacyRepository;
+import com.suwalink.support.TestPayloads;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -96,9 +97,7 @@ class AuthControllerLoginTest {
     private void registerPharmacy(String email, String licenceNo) throws Exception {
         mockMvc.perform(post("/api/auth/register/pharmacy")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    { "name": "Test Pharmacy", "email": "%s", "phone": "0112345678", "password": "SecurePass123", "licenceNo": "%s", "address": "123 Test Rd" }
-                    """.formatted(email, licenceNo)))
+                .content(TestPayloads.pharmacyRegistration(email, licenceNo)))
             .andExpect(status().isCreated());
     }
 

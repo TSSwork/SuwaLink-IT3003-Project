@@ -13,6 +13,7 @@ import com.suwalink.entity.User;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.UserRepository;
 import java.util.UUID;
+import com.suwalink.support.TestPayloads;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,9 +110,7 @@ class NotificationControllerTest {
     private String registerAndApprovePharmacy(String email, String licenceNo) throws Exception {
         mockMvc.perform(post("/api/auth/register/pharmacy")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    { "name": "Notif Test Pharmacy", "email": "%s", "phone": "0112345678", "password": "SecurePass123", "licenceNo": "%s", "address": "123 Test Rd" }
-                    """.formatted(email, licenceNo)))
+                .content(TestPayloads.pharmacyRegistration(email, licenceNo)))
             .andExpect(status().isCreated());
 
         String adminToken = loginAndGetToken(ADMIN_EMAIL, ADMIN_PASSWORD);

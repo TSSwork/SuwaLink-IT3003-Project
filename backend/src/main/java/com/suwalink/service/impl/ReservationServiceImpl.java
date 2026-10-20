@@ -181,7 +181,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .patientId(reservation.getPatient().getId())
                 .patientName(reservation.getPatient().getName())
                 .pharmacyId(reservation.getPharmacy().getId())
-                .pharmacyName(reservation.getPharmacy().getUser().getName())
+                .pharmacyName(reservation.getPharmacy().getName())
                 .inventoryItemId(reservation.getInventoryItem().getId())
                 .medicineBrandName(reservation.getInventoryItem().getMedicineMaster().getBrandName())
                 .quantity(reservation.getQuantity())

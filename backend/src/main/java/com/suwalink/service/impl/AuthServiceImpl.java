@@ -77,6 +77,13 @@ public class AuthServiceImpl implements AuthService {
             request.getName(), request.getEmail(), request.getPhone(), request.getPassword(), Role.PHARMACY_OWNER);
 
         Pharmacy pharmacy = Pharmacy.builder()
+            .name(request.getPharmacyName())
+            .phone(request.getPhone())
+            .district(request.getDistrict())
+            .city(request.getCity())
+            .latitude(request.getLatitude())
+            .longitude(request.getLongitude())
+            .openingHours(request.getOpeningHours())
             .licenceNo(request.getLicenceNo())
             .address(request.getAddress())
             .status(PharmacyStatus.PENDING)
