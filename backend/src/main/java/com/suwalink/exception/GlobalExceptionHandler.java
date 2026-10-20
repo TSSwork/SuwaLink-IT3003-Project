@@ -88,6 +88,22 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<ApiErrorResponse> handleInsufficientStock(InsufficientStockException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(ItemUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleItemUnavailable(ItemUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiErrorResponse.builder()
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(InvalidReservationRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidReservationRequest(InvalidReservationRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiErrorResponse.builder()
                 .message(ex.getMessage())

@@ -11,7 +11,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     List<Reservation> findByPharmacyIdOrderByCreatedAtDesc(UUID pharmacyId);
 
-    boolean existsByPrescriptionResponseItem_PrescriptionResponse_Id(UUID responseId);
+    boolean existsByPickupCode(String pickupCode);
 
     void deleteByPharmacyId(UUID pharmacyId);
 }

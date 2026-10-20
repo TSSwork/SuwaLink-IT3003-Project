@@ -1,5 +1,6 @@
 package com.suwalink.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,8 +11,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,9 +25,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * A patient holding stock at a pharmacy, created either directly from a search result or from
- * a {@link PrescriptionResponseItem}. Auto-confirmed on creation; the pharmacy or patient can
- * cancel later, and the pharmacy marks it COMPLETED once picked up.
+ * A customer holding stock at one pharmacy: one or more {@link ReservationItem lines}, collected
+ * with a pickup code before {@code expiresAt}. Lines may come from a search result or from a
+ * pharmacy's prescription quote. Auto-confirmed on creation; the pharmacy or customer can cancel
+ * later, and the pharmacy marks it COMPLETED once picked up.
  */
 @Entity
 @Table(name = "reservations")
@@ -46,19 +52,21 @@ public class Reservation extends BaseAuditEntity {
     @JoinColumn(name = "pharmacy_id", nullable = false)
     private Pharmacy pharmacy;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "inventory_id", nullable = false)
-    private Inventory inventoryItem;
-
+    /** Set when any line was reserved from a prescription quote. */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prescription_response_item_id")
-    private PrescriptionResponseItem prescriptionResponseItem;
+    @JoinColumn(name = "prescription_request_id")
+    private PrescriptionRequest prescriptionRequest;
 
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("medicineName ASC")
+    @Builder.Default
+    private List<ReservationItem> items = new ArrayList<>();
 
-    @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
+    @Column(name = "pickup_code", nullable = false, unique = true, length = 10)
+    private String pickupCode;
+
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -67,4 +75,18 @@ public class Reservation extends BaseAuditEntity {
 
     @Column(name = "cancel_reason")
     private String cancelReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancelled_by")
+    private CancelledBy cancelledBy;
+
+    /** Copied from the pharmacy at creation, so demo data can be told apart. */
+    @Column(name = "is_demo", nullable = false)
+    @Builder.Default
+    private boolean demo = false;
+
+    public void addItem(ReservationItem item) {
+        item.setReservation(this);
+        items.add(item);
+    }
 }

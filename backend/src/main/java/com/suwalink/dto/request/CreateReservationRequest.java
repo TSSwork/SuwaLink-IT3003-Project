@@ -1,7 +1,10 @@
 package com.suwalink.dto.request;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,12 +13,21 @@ import lombok.Setter;
 @Setter
 public class CreateReservationRequest {
 
-    @NotNull(message = "inventoryItemId is required")
-    private UUID inventoryItemId;
+    @NotEmpty(message = "lines must contain at least one item")
+    private List<@Valid Line> lines;
 
-    @NotNull(message = "quantity is required")
-    @Positive(message = "quantity must be greater than 0")
-    private Integer quantity;
+    @Getter
+    @Setter
+    public static class Line {
 
-    private UUID prescriptionResponseItemId;
+        @NotNull(message = "inventoryItemId is required")
+        private UUID inventoryItemId;
+
+        @NotNull(message = "quantity is required")
+        @Positive(message = "quantity must be greater than 0")
+        private Integer quantity;
+
+        /** Optional: reserve at the price quoted in this prescription response item. */
+        private UUID prescriptionResponseItemId;
+    }
 }

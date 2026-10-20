@@ -3,6 +3,7 @@ package com.suwalink.event;
 import com.suwalink.entity.CancelledBy;
 import com.suwalink.entity.NotificationType;
 import com.suwalink.entity.Reservation;
+import com.suwalink.entity.ReservationItem;
 import com.suwalink.entity.User;
 import com.suwalink.repository.ReservationRepository;
 import com.suwalink.repository.UserRepository;
@@ -10,6 +11,7 @@ import com.suwalink.service.NotificationService;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -70,42 +72,50 @@ public class NotificationEventListener {
     @EventListener
     public void handleReservationCreatedEvent(ReservationCreatedEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
-        String medicineBrandName = reservation.getInventoryItem().getMedicineMaster().getBrandName();
+        String reserved = describeItems(reservation);
         String pharmacyName = reservation.getPharmacy().getName();
 
         notificationService.createNotification(
                 reservation.getPatient(),
                 "Reservation Confirmed",
-                "Your reservation for " + medicineBrandName + " at " + pharmacyName + " is confirmed.",
+                "Your reservation of " + reserved + " at " + pharmacyName + " is confirmed.",
                 NotificationType.RESERVATION);
 
         notificationService.createNotification(
                 reservation.getPharmacy().getUser(),
                 "New Reservation",
-                reservation.getPatient().getName() + " reserved " + reservation.getQuantity()
-                        + " x " + medicineBrandName + ".",
+                reservation.getPatient().getName() + " reserved " + reserved + ".",
                 NotificationType.RESERVATION);
     }
 
     @EventListener
     public void handleReservationCancelledEvent(ReservationCancelledEvent event) {
         Reservation reservation = findReservation(event.getReservationId());
-        String medicineBrandName = reservation.getInventoryItem().getMedicineMaster().getBrandName();
+        String reserved = describeItems(reservation);
 
         if (event.getCancelledBy() == CancelledBy.PATIENT) {
             notificationService.createNotification(
                     reservation.getPharmacy().getUser(),
                     "Reservation Cancelled",
-                    reservation.getPatient().getName() + " cancelled their reservation for "
-                            + medicineBrandName + ".",
+                    reservation.getPatient().getName() + " cancelled their reservation of " + reserved + ".",
                     NotificationType.RESERVATION);
         } else {
             notificationService.createNotification(
                     reservation.getPatient(),
                     "Reservation Cancelled",
-                    "Your reservation for " + medicineBrandName + " was cancelled by the pharmacy.",
+                    "Your reservation of " + reserved + " was cancelled by the pharmacy.",
                     NotificationType.RESERVATION);
         }
+    }
+
+    /** "3 items" for a multi-line reservation, otherwise "2 x Panadol 500mg". */
+    private String describeItems(Reservation reservation) {
+        List<ReservationItem> items = reservation.getItems();
+        if (items.size() == 1) {
+            ReservationItem item = items.get(0);
+            return item.getQuantity() + " x " + item.getMedicineName();
+        }
+        return items.size() + " items";
     }
 
     private User findUser(UUID userId) {

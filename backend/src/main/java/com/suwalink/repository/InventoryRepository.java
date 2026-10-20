@@ -2,12 +2,17 @@ package com.suwalink.repository;
 
 import com.suwalink.entity.District;
 import com.suwalink.entity.Inventory;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
@@ -54,4 +59,15 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             @Param("pharmacyId") UUID pharmacyId,
             @Param("includeDemo") boolean includeDemo,
             @Param("today") LocalDate today);
+
+    /**
+     * Loads and row-locks (SELECT ... FOR UPDATE) the given items until the transaction ends, so
+     * concurrent reservations of the same stock run one after another. Ordered by id so that two
+     * transactions locking overlapping sets always lock in the same order (no deadlock).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "10000"))
+    @Query("select i from Inventory i join fetch i.pharmacy join fetch i.medicineMaster "
+            + "where i.id in :ids order by i.id")
+    List<Inventory> lockAllById(@Param("ids") Collection<UUID> ids);
 }

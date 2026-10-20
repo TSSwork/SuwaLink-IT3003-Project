@@ -19,6 +19,7 @@ import com.suwalink.entity.Pharmacy;
 import com.suwalink.entity.PharmacyStatus;
 import com.suwalink.entity.PrescriptionRequestStatus;
 import com.suwalink.entity.Reservation;
+import com.suwalink.entity.ReservationItem;
 import com.suwalink.entity.PrescriptionStatus;
 import com.suwalink.repository.NotificationRepository;
 import com.suwalink.repository.PrescriptionRequestRepository;
@@ -33,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import com.suwalink.support.TestPayloads;
@@ -264,14 +266,21 @@ class PrescriptionResponseControllerTest {
         var item = prescriptionResponseRepository
                 .findByPrescriptionRequestIdOrderByCreatedAtDesc(UUID.fromString(requestId))
                 .get(0).getItems().get(0);
-        reservationRepository.save(Reservation.builder()
+        Reservation reservation = Reservation.builder()
                 .patient(userRepository.findByEmail("presp.patient12@example.com").orElseThrow())
                 .pharmacy(item.getInventoryItem().getPharmacy())
+                .prescriptionRequest(item.getPrescriptionResponse().getPrescriptionRequest())
+                .pickupCode("PRESPABCDE")
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+        reservation.addItem(ReservationItem.builder()
                 .inventoryItem(item.getInventoryItem())
                 .prescriptionResponseItem(item)
                 .quantity(1)
                 .unitPrice(item.getUnitPrice())
+                .medicineName("Panadol 500mg")
                 .build());
+        reservationRepository.save(reservation);
 
         mockMvc.perform(put("/api/prescriptions/" + requestId + "/responses/mine")
                         .contentType(MediaType.APPLICATION_JSON)
