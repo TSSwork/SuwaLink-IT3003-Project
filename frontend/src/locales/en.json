@@ -24,7 +24,8 @@
     "language": "Language",
     "languageCurrent": "Language: {{name}}",
     "comingSoonTitle": "Coming soon",
-    "comingSoonBody": "This area is still being built. Please check back later."
+    "comingSoonBody": "This area is still being built. Please check back later.",
+    "chooseDistrict": "Choose a district"
   },
   "nav": {
     "home": "Home",
@@ -105,7 +106,48 @@
     "latitude": "Latitude",
     "longitude": "Longitude",
     "pickOnMap": "Choose the location on the map",
-    "submit": "Submit for verification"
+    "submit": "Submit for verification",
+    "subtitle": "Tell us about your pharmacy. An admin checks every registration before it goes live.",
+    "stepOf": "Step {{current}} of {{total}}",
+    "progress": "Registration progress",
+    "steps": {
+      "owner": "Your account",
+      "pharmacy": "Pharmacy details",
+      "location": "Location",
+      "review": "Review and submit"
+    },
+    "intro": {
+      "owner": "You will sign in with this email once your pharmacy is approved.",
+      "pharmacy": "Use the details on your pharmacy licence.",
+      "location": "Put the pin on your pharmacy's entrance so customers can find it.",
+      "review": "Check your details before you send them."
+    },
+    "phoneHint": "Customers will also see this number for your pharmacy.",
+    "city": "City",
+    "openingHours": "Opening hours (optional)",
+    "openingHoursHint": "For example: Mon–Sat 8.00 am – 9.00 pm",
+    "coordinatesHint": "Filled in from the map. You can also type them.",
+    "draftRestored": "We kept what you entered. For your security, enter your password again.",
+    "licenceTaken": "A pharmacy with this licence number is already registered.",
+    "edit": "Edit",
+    "editSection": "Edit {{section}}",
+    "openingHoursNone": "Not given",
+    "viewOnMap": "View on OpenStreetMap",
+    "submitting": "Sending…",
+    "failed": "Could not send your registration",
+    "successTitle": "Thanks — an admin will review your pharmacy.",
+    "successBody": "We'll email you when it's approved.",
+    "backHome": "Back to home"
+  },
+  "map": {
+    "useMyLocation": "Use my location",
+    "locating": "Finding your location…",
+    "chosen": "Pin",
+    "noneChosen": "Tap the map to drop the pin, then drag it to the exact spot.",
+    "denied": "Location access is blocked. Tap the map to place the pin instead.",
+    "unavailable": "We could not find your location. Tap the map to place the pin instead.",
+    "unsupported": "This browser cannot share your location. Tap the map to place the pin instead.",
+    "label": "Map. Tap to place the pin."
   },
   "theme": {
     "label": "Theme",
@@ -158,7 +200,9 @@
     "NotNull": "This field is required.",
     "Email": "Enter a valid email address.",
     "Size": "This value is too short or too long.",
-    "AssertTrue": "You must accept the Terms and the Privacy Policy."
+    "AssertTrue": "You must accept the Terms and the Privacy Policy.",
+    "tooLong": "This is too long.",
+    "number": "Enter a number."
   },
   "districts": {
     "AMPARA": "Ampara",

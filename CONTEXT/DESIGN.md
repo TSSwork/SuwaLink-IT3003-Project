@@ -28,6 +28,12 @@ Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foregr
 
 - `font-sans` (and `font-heading`): **Manrope** for UI, with **Noto Sans Sinhala** and **Noto Sans Tamil** in the same stack so සිංහල and தமிழ் text falls through to them automatically.
 - `font-mono`: **Space Mono**, only for codes and IDs (pickup codes, licence numbers).
+
+### Maps
+
+- One component chooses a location: `LocationPicker` (`frontend/src/components/map/`). It shows OpenStreetMap tiles with their attribution, a draggable pin, tap-to-place, "Use my location" (10 s timeout), and the chosen point in `font-mono` to 6 dp. When location access is denied, times out or is unsupported, it shows a hint and the map still works. A point outside Sri Lanka (lat 5.85–9.90, lng 79.50–81.95) is flagged.
+- Leaflet loads lazily in the browser only. Its wrapper uses `isolate`, so map panes never cover the header or menus. On touch devices the zoom buttons are 44 px (`styles.css`).
+- Districts are chosen with `DistrictSelect` (`frontend/src/components/forms/`). It lists the 25 districts, labelled and sorted in the current language.
 - All are self-hosted via `@fontsource` packages imported in `styles.css`; no font CDNs.
 
 ### Dark mode rules

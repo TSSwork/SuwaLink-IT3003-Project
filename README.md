@@ -8,8 +8,9 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 - **Backend**: Spring Boot 4 (Java 25), Spring Security + JWT, Spring Data JPA/Hibernate, MySQL 8
   via Liquibase migrations, springdoc-openapi.
-- **Frontend**: Plain HTML/CSS/vanilla JS (ES modules) + jQuery, Material Design 3 styling — no
-  frontend framework. See [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md).
+- **Frontend**: React 19 single-page app (TanStack Start in SPA mode, TanStack Router/Query, Tailwind CSS 4,
+  shadcn/ui, react-i18next for English/Sinhala/Tamil, Leaflet + OpenStreetMap for maps). See
+  [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md) and [`CONTEXT/SPECS.md`](CONTEXT/SPECS.md).
 - **Tests**: JUnit 5 + MockMvc against an in-memory H2 database, plus one Testcontainers test that applies the
   Liquibase changelog to MySQL 8 (needs a running Docker or Podman; see [`commands.md`](commands.md)).
 

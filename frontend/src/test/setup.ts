@@ -14,3 +14,8 @@ window.ResizeObserver = class {
 }
 
 afterEach(() => cleanup())
+
+// jsdom lacks pointer capture and scrollIntoView; Radix Select calls them.
+Element.prototype.hasPointerCapture = () => false
+Element.prototype.releasePointerCapture = () => {}
+Element.prototype.scrollIntoView = () => {}

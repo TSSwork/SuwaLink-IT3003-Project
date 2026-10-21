@@ -102,6 +102,7 @@ Technology
 - axios (single API client, base path `/api`)
 - react-hook-form + zod (forms and validation)
 - react-i18next (English, Sinhala, Tamil)
+- Leaflet + react-leaflet with OpenStreetMap tiles (`components/map/LocationPicker`: pick a point in Sri Lanka)
 - Vitest + Testing Library (tests)
 
 Design Rules

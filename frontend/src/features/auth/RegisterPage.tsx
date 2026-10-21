@@ -1,22 +1,14 @@
-import { useId } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { Controller, useForm } from "react-hook-form"
-import { Trans, useTranslation } from "react-i18next"
-import type { ReactNode } from "react"
+import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import type { CustomerRegisterValues } from "@/features/auth/schemas"
 import { ApiError } from "@/api/client"
 import { registerCustomer } from "@/api/auth"
+import { TermsCheckbox } from "@/components/forms/TermsCheckbox"
 import { TextField } from "@/components/forms/TextField"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field"
 import {
   AuthFooterLine,
   AuthLayout,
@@ -133,79 +125,11 @@ export function RegisterPage() {
           type="password"
           autoComplete="new-password"
         />
-        <TermsCheckbox control={form.control} />
+        <TermsCheckbox control={form.control} name="acceptTerms" />
         <Button type="submit" size="lg" disabled={signUp.isPending}>
           {signUp.isPending ? t("register.submitting") : t("register.submit")}
         </Button>
       </form>
     </AuthLayout>
-  )
-}
-
-function TermsCheckbox({
-  control,
-}: {
-  control: ReturnType<typeof useForm<CustomerRegisterValues>>["control"]
-}) {
-  const { t } = useTranslation()
-  const id = useId()
-  const errorId = `${id}-error`
-  return (
-    <Controller
-      control={control}
-      name="acceptTerms"
-      render={({ field, fieldState }) => (
-        <Field orientation="horizontal" data-invalid={fieldState.invalid}>
-          <Checkbox
-            id={id}
-            ref={field.ref}
-            name={field.name}
-            checked={field.value}
-            onCheckedChange={(checked) => field.onChange(checked === true)}
-            onBlur={field.onBlur}
-            aria-invalid={fieldState.invalid}
-            aria-describedby={fieldState.error ? errorId : undefined}
-          />
-          <FieldContent>
-            <FieldLabel htmlFor={id} className="block font-normal">
-              <Trans
-                i18nKey="register.acceptTerms"
-                components={{
-                  terms: <LegalLink to="/terms" />,
-                  privacy: <LegalLink to="/privacy" />,
-                }}
-              />
-            </FieldLabel>
-            {fieldState.error?.message && (
-              <FieldError id={errorId}>
-                {t(fieldState.error.message)}
-              </FieldError>
-            )}
-          </FieldContent>
-        </Field>
-      )}
-    />
-  )
-}
-
-/** Opens in a new tab so the half-filled form is not lost. */
-function LegalLink({
-  to,
-  children,
-}: {
-  to: "/terms" | "/privacy"
-  children?: ReactNode
-}) {
-  const { t } = useTranslation()
-  return (
-    <Link
-      to={to}
-      target="_blank"
-      rel="noopener"
-      className="font-medium text-primary underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-    >
-      {children}
-      <span className="sr-only"> {t("register.opensInNewTab")}</span>
-    </Link>
   )
 }

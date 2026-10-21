@@ -163,3 +163,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Leaflet's zoom buttons are 30 px; give them a >= 44 px target on touch
+   devices (Ruling 5), matching the shadcn controls. */
+@media (pointer: coarse) {
+  /* .leaflet-container raises specificity above leaflet.css, which loads later. */
+  .leaflet-container.leaflet-touch .leaflet-bar a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+}

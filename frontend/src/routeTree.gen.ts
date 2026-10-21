@@ -18,6 +18,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PharmacyIndexRouteImport } from './routes/pharmacy/index'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
+import { Route as RegisterPharmacyRouteImport } from './routes/register/pharmacy'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const RegisterIndexRoute = RegisterIndexRouteImport.update({
   path: '/register/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterPharmacyRoute = RegisterPharmacyRouteImport.update({
+  id: '/register/pharmacy',
+  path: '/register/pharmacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/register/pharmacy': typeof RegisterPharmacyRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
   '/register/': typeof RegisterIndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/register/pharmacy': typeof RegisterPharmacyRoute
   '/admin': typeof AdminIndexRoute
   '/pharmacy': typeof PharmacyIndexRoute
   '/register': typeof RegisterIndexRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/register/pharmacy': typeof RegisterPharmacyRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
   '/register/': typeof RegisterIndexRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/register/pharmacy'
     | '/admin/'
     | '/pharmacy/'
     | '/register/'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/register/pharmacy'
     | '/admin'
     | '/pharmacy'
     | '/register'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/register/pharmacy'
     | '/admin/'
     | '/pharmacy/'
     | '/register/'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  RegisterPharmacyRoute: typeof RegisterPharmacyRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PharmacyIndexRoute: typeof PharmacyIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register/pharmacy': {
+      id: '/register/pharmacy'
+      path: '/register/pharmacy'
+      fullPath: '/register/pharmacy'
+      preLoaderRoute: typeof RegisterPharmacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  RegisterPharmacyRoute: RegisterPharmacyRoute,
   AdminIndexRoute: AdminIndexRoute,
   PharmacyIndexRoute: PharmacyIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,

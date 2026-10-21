@@ -82,10 +82,9 @@ export function LoginPage() {
             </Link>
           </AuthFooterLine>
           <AuthFooterLine question={t("auth.ownPharmacy")}>
-            {/* Plain anchor until the /register/pharmacy route exists (Task 6). */}
-            <a href="/register/pharmacy" className={authLinkClass}>
+            <Link to="/register/pharmacy" className={authLinkClass}>
               {t("auth.registerPharmacy")}
-            </a>
+            </Link>
           </AuthFooterLine>
         </div>
       }
