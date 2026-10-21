@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   HeadContent,
   Outlet,
@@ -10,6 +11,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
 import { AppShell } from "@/components/layout/AppShell"
+import { getCurrentLanguage, startLanguageSync } from "@/i18n"
 import { startThemeSync, themeInitScript } from "@/lib/theme"
 
 export const Route = createRootRoute({
@@ -38,20 +40,24 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  notFoundComponent: () => (
-    <div className="py-8">
-      <h1 className="text-2xl font-bold">404</h1>
-      <p className="text-muted-foreground">
-        The requested page could not be found.
-      </p>
-    </div>
-  ),
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
   component: RootLayout,
 })
 
+function NotFound() {
+  const { t } = useTranslation()
+  return (
+    <div className="py-8">
+      <h1 className="text-2xl font-bold">{t("common.notFoundTitle")}</h1>
+      <p className="text-muted-foreground">{t("common.notFoundBody")}</p>
+    </div>
+  )
+}
+
 function RootLayout() {
   useEffect(() => startThemeSync(), [])
+  useEffect(() => startLanguageSync(), [])
   return (
     <AppShell>
       <Outlet />
@@ -61,7 +67,7 @@ function RootLayout() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={getCurrentLanguage()} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

@@ -1,4 +1,5 @@
 import { CircleAlertIcon, RotateCwIcon } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
@@ -9,7 +10,7 @@ interface ErrorStateProps {
   description?: string
   /** When given, shows a retry button that calls it. */
   onRetry?: () => void
-  /** Becomes t("common.retry") in Task 3. */
+  /** Defaults to t("common.retry"). */
   retryLabel?: string
   className?: string
 }
@@ -18,9 +19,10 @@ export function ErrorState({
   title,
   description,
   onRetry,
-  retryLabel = "Try again",
+  retryLabel,
   className,
 }: ErrorStateProps) {
+  const { t } = useTranslation()
   return (
     <Alert variant="destructive" className={className}>
       <CircleAlertIcon aria-hidden />
@@ -30,7 +32,7 @@ export function ErrorState({
         <div className="col-start-2 mt-3">
           <Button variant="outline" className="min-h-11" onClick={onRetry}>
             <RotateCwIcon aria-hidden />
-            {retryLabel}
+            {retryLabel ?? t("common.retry")}
           </Button>
         </div>
       )}

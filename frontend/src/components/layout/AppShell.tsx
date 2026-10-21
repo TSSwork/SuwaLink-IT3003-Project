@@ -1,7 +1,9 @@
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { MenuIcon } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { ReactNode } from "react"
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,20 +18,13 @@ import {
 interface AppShellProps {
   /** Primary navigation links; inline from 768 px, inside a Sheet below. */
   nav?: ReactNode
-  /** LanguageSwitcher slot (Task 3). */
-  languageSwitcher?: ReactNode
   /** Sign-in button or user menu (Task 4/5). */
   account?: ReactNode
   children: ReactNode
 }
 
-// Visible strings become t() calls in Task 3.
-export function AppShell({
-  nav,
-  languageSwitcher,
-  account,
-  children,
-}: AppShellProps) {
+export function AppShell({ nav, account, children }: AppShellProps) {
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -38,7 +33,7 @@ export function AppShell({
         href="#main"
         className="sr-only z-50 rounded-xl bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
       >
-        Skip to content
+        {t("common.skipToContent")}
       </a>
 
       <header className="sticky top-0 z-40 border-b bg-background">
@@ -47,7 +42,7 @@ export function AppShell({
 
           {nav && (
             <nav
-              aria-label="Main"
+              aria-label={t("common.mainNav")}
               className="ml-6 hidden items-center gap-1 md:flex"
             >
               {nav}
@@ -55,7 +50,7 @@ export function AppShell({
           )}
 
           <div className="ml-auto flex items-center gap-1">
-            {languageSwitcher}
+            <LanguageSwitcher />
             <ThemeToggle />
             {account}
 
@@ -66,21 +61,21 @@ export function AppShell({
                     variant="ghost"
                     size="icon"
                     className="size-11 md:hidden"
-                    aria-label="Open menu"
+                    aria-label={t("common.openMenu")}
                   >
                     <MenuIcon className="size-5" aria-hidden />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right">
                   <SheetHeader>
-                    <SheetTitle>Menu</SheetTitle>
+                    <SheetTitle>{t("common.menu")}</SheetTitle>
                     <SheetDescription className="sr-only">
-                      Main navigation
+                      {t("common.mainNavigation")}
                     </SheetDescription>
                   </SheetHeader>
                   {/* Any link chosen inside the sheet closes it. */}
                   <nav
-                    aria-label="Main menu"
+                    aria-label={t("common.mainMenuNav")}
                     className="flex flex-col gap-1 px-4"
                     onClick={(event) => {
                       if ((event.target as HTMLElement).closest("a")) {
@@ -107,20 +102,20 @@ export function AppShell({
 
       <footer className="border-t">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-4 text-sm text-muted-foreground">
-          <p>SuwaLink · Sri Lanka</p>
-          <nav aria-label="Legal" className="flex gap-2">
+          <p>{t("common.footerTagline")}</p>
+          <nav aria-label={t("common.legalNav")} className="flex gap-2">
             {/* Plain anchors until the routes exist (Task 5). */}
             <a
               href="/privacy"
               className="inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
-              Privacy
+              {t("legal.privacy")}
             </a>
             <a
               href="/terms"
               className="inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
-              Terms
+              {t("legal.terms")}
             </a>
           </nav>
         </div>
@@ -134,10 +129,11 @@ export function AppShell({
  * Leaf tile, with a Copperwood dot - the one decorative accent in the shell.
  */
 function Wordmark() {
+  const { t } = useTranslation()
   return (
     <Link
       to="/"
-      aria-label="SuwaLink home"
+      aria-label={t("common.homeLink")}
       className="-ml-1 flex min-h-11 items-center gap-2.5 rounded-xl px-1 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <span
