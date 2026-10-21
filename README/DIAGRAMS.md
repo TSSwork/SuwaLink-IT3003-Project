@@ -391,9 +391,9 @@ sequenceDiagram
         AS->>DB: save new BCrypt password, clear resetOtp
         AS-->>AC: void
         AC-->>FE: 200 "Password reset successful"
-    else invalid/expired
+    else unknown email / no reset requested / invalid / expired
         AS-->>AC: InvalidOtpException
-        AC-->>FE: 400 with reason
+        AC-->>FE: 400 VALIDATION_FAILED "Invalid code" (same for every case - no enumeration)
     end
 ```
 

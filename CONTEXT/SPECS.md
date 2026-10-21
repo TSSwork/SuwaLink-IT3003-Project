@@ -90,16 +90,20 @@ Additional recommended dependencies
 
 ## Frontend
 
+Lives in `frontend/` (see `frontend/README.md`).
+
 Technology
 
-- HTML5
-- CSS3
-- Vanilla JavaScript (ES6+)
-- jQuery
-
-UI
-
-- Material Design 3
+- TanStack Start in SPA mode (TanStack Router, file-based routes)
+- React 19 + TypeScript
+- Tailwind CSS 4 + shadcn/ui (`radix-rhea` preset)
+- TanStack Query (server state)
+- Zustand (client state: session, theme, language)
+- axios (single API client, base path `/api`)
+- react-hook-form + zod (forms and validation)
+- react-i18next (English, Sinhala, Tamil)
+- Leaflet + react-leaflet with OpenStreetMap tiles (`components/map/LocationPicker`: pick a point in Sri Lanka)
+- Vitest + Testing Library (tests)
 
 Design Rules
 
@@ -109,7 +113,7 @@ Refer to
 DESIGN.md
 ```
 
-No frontend framework should be introduced for the MVP.
+(The "Implementation (shadcn)" section there is binding.) The earlier HTML/jQuery plan is superseded.
 
 ---
 
@@ -589,58 +593,28 @@ should plug into the same service.
 
 # Frontend Structure
 
-Recommended structure
-
 ```
-/
+frontend/src/
 
-index.html
+routes/            file-based routes (TanStack Router)
 
-assets/
+components/ui/     shadcn components (added via the shadcn CLI)
 
-css/
+components/layout/ AppShell, ThemeToggle, LanguageSwitcher
 
-js/
+components/feedback/ LoadingState, EmptyState, ErrorState
 
-images/
+features/          feature modules (auth, inventory, reservation, ...)
 
-icons/
+api/               axios client, typed endpoint functions
 
-fonts/
+stores/            Zustand stores
 
-pages/
+lib/               helpers (theme, query client, guards)
 
-components/
+locales/           en.json, si.json, ta.json
 
-layouts/
-
-```
-
-JavaScript
-
-```
-assets/js
-
-api/
-
-auth/
-
-inventory/
-
-prescription/
-
-reservation/
-
-notification/
-
-utils/
-
-components/
-
-pages/
-
-config/
-
+styles.css         Tailwind + brand tokens (light and dark)
 ```
 
 Avoid putting everything into one file.
@@ -649,24 +623,9 @@ Avoid putting everything into one file.
 
 # CSS Structure
 
-```
-base/
+Styling is Tailwind utility classes on top of the shadcn tokens in `styles.css`.
 
-components/
-
-layout/
-
-utilities/
-
-pages/
-
-themes/
-
-```
-
-Keep CSS modular.
-
-Avoid one massive stylesheet.
+Do not add page-specific stylesheets or raw colour values; add or reuse tokens instead.
 
 ---
 
@@ -982,10 +941,11 @@ Use these as the source of truth before introducing custom solutions.
 
 ## Frontend
 
-- HTML Living Standard
+- React Documentation
+- TanStack Start / Router / Query Documentation
+- shadcn/ui Documentation
+- Tailwind CSS Documentation
 - MDN Web Docs
-- ECMAScript Specification
-- jQuery Documentation
 
 ## Design
 
@@ -995,7 +955,7 @@ Refer to `DESIGN.md`.
 
 # Summary
 
-SuwaLink follows a clean, layered architecture with a strict separation between presentation, business logic, and persistence. The backend is built using Spring Boot with interface-driven services, DTO-based APIs, JWT authentication, and JPA persistence. The frontend uses HTML, CSS, Vanilla JavaScript, and jQuery while adhering strictly to the Material Design 3 principles defined in `DESIGN.md`.
+SuwaLink follows a clean, layered architecture with a strict separation between presentation, business logic, and persistence. The backend is built using Spring Boot with interface-driven services, DTO-based APIs, JWT authentication, and JPA persistence. The frontend is a React single-page app (TanStack Start in SPA mode, shadcn/ui) that follows the design principles and tokens defined in `DESIGN.md`.
 
 Every feature should be designed before it is implemented, every API should be contract-first, and every contribution should favor consistency, maintainability, and long-term scalability over quick or tightly coupled solutions.
 

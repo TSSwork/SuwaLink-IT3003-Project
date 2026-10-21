@@ -8,8 +8,9 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 - **Backend**: Spring Boot 4 (Java 25), Spring Security + JWT, Spring Data JPA/Hibernate, MySQL 8
   via Liquibase migrations, springdoc-openapi.
-- **Frontend**: Plain HTML/CSS/vanilla JS (ES modules) + jQuery, Material Design 3 styling — no
-  frontend framework. See [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md).
+- **Frontend**: React 19 single-page app (TanStack Start in SPA mode, TanStack Router/Query, Tailwind CSS 4,
+  shadcn/ui, react-i18next for English/Sinhala/Tamil, Leaflet + OpenStreetMap for maps). See
+  [`CONTEXT/DESIGN.md`](CONTEXT/DESIGN.md) and [`CONTEXT/SPECS.md`](CONTEXT/SPECS.md).
 - **Tests**: JUnit 5 + MockMvc against an in-memory H2 database, plus one Testcontainers test that applies the
   Liquibase changelog to MySQL 8 (needs a running Docker or Podman; see [`commands.md`](commands.md)).
 
@@ -21,9 +22,10 @@ docker compose up -d                     # MySQL on localhost:3308, Mailpit on l
 
 # 2. Backend (needs JDK 25; the dev profile is the default, no extra config needed)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
-```
 
-The web app (TanStack Start, React) will live in `frontend/` — it is being rebuilt; until it lands, use Swagger.
+# 3. Web app (Node 22+; /api is proxied to the backend on :8080)
+cd frontend && npm install && npm run dev   # http://localhost:3000
+```
 
 > **Migrations were squashed into a single baseline.** If your local database was created before that change, reset
 > it once after pulling: `docker compose down -v && docker compose up -d` (this wipes local dev data).
@@ -64,7 +66,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 
 ```
 backend/    Spring Boot API (com.suwalink)
-frontend/   Web app (TanStack Start + React) — being rebuilt
+frontend/   Web app (TanStack Start in SPA mode + React, Tailwind, shadcn/ui)
 CONTEXT/    Product pitch, design system, specs
 README/     Per-module technical docs + diagrams
 ```

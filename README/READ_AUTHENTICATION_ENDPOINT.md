@@ -175,6 +175,8 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
   not the email is registered, to avoid leaking which emails have accounts. Requires
   `GMAIL_USERNAME`/`GMAIL_APP_PASSWORD` env vars to actually send mail (see `application.properties`);
   without them, `/forgot-password` returns a `502` instead of crashing.
+  `resetPassword` answers an unknown email, no pending reset, an expired code and a wrong code identically
+  (`400 VALIDATION_FAILED`, message `Invalid code`), so it does not reveal which emails have accounts either.
   A reset code allows 5 wrong attempts; the 5th wrong one clears the code (request a new one). Issuing a
   code resets the counter (`users.reset_otp_attempts`, changeset 014).
 - Rate limits (in-memory, `RateLimitFilter`, `app.rate-limit.*`): login 10 failed attempts per IP and 5 per
