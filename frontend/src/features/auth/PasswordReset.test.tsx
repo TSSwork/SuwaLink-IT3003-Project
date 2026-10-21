@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { toast } from "sonner"
@@ -88,19 +88,47 @@ describe("password reset", () => {
     expect(resetMock).not.toHaveBeenCalled()
   })
 
-  it("says when the code is wrong or expired", async () => {
-    resetMock.mockRejectedValue(
-      new ApiError(400, "VALIDATION_FAILED", "Invalid or expired code")
-    )
+  // The backend answers an unknown email exactly like a wrong code.
+  const INVALID_CODE = new ApiError(400, "VALIDATION_FAILED", "Invalid code")
+
+  async function submitReset(path: string) {
     const user = userEvent.setup()
-    renderFlow("/reset-password?email=nimal%40example.lk")
+    renderFlow(path)
     await user.type(await screen.findByLabelText("6-digit code"), "999999")
     await user.type(screen.getByLabelText("New password"), "newsecret1")
     await user.type(screen.getByLabelText("Confirm new password"), "newsecret1")
     await user.click(screen.getByRole("button", { name: "Change password" }))
+  }
 
-    expect(screen.getByLabelText("6-digit code")).toHaveAccessibleDescription(
-      "That code is wrong or has expired. Request a new one."
+  it.each([
+    ["a wrong or expired code", "nimal%40example.lk"],
+    ["an email with no account", "nobody%40example.lk"],
+  ])("shows the same message for %s", async (_, email) => {
+    resetMock.mockRejectedValue(INVALID_CODE)
+    await submitReset(`/reset-password?email=${email}`)
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("6-digit code")).toHaveAccessibleDescription(
+        "That code is wrong or has expired. Request a new one."
+      )
     )
+    expect(screen.queryByText("That did not work")).not.toBeInTheDocument()
+  })
+
+  it("reaches the reset screen with a neutral notice for an email with no account", async () => {
+    // forgot-password answers the same success whether or not the email exists
+    forgotMock.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+    renderFlow("/forgot-password")
+    await user.type(await screen.findByLabelText("Email"), "nobody@example.lk")
+    await user.click(screen.getByRole("button", { name: "Send code" }))
+
+    expect(
+      await screen.findByText(
+        "If nobody@example.lk belongs to an account, a code is on its way. Check your inbox and spam folder."
+      )
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Email")).toHaveValue("nobody@example.lk")
+    expect(screen.queryByText("That did not work")).not.toBeInTheDocument()
   })
 })

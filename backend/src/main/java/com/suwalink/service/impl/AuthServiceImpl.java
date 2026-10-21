@@ -15,7 +15,6 @@ import com.suwalink.exception.DuplicateResourceException;
 import com.suwalink.exception.EmailAlreadyExistsException;
 import com.suwalink.exception.InvalidOtpException;
 import com.suwalink.exception.PharmacyNotVerifiedException;
-import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.security.JwtService;
@@ -40,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String INVALID_OTP_MESSAGE = "Invalid code";
     static final int MAX_OTP_ATTEMPTS = 5;
 
     private final UserRepository userRepository;
@@ -147,14 +147,16 @@ public class AuthServiceImpl implements AuthService {
     // keep the attempt counter (and an invalidated OTP) when rejecting a wrong code
     @Transactional(noRollbackFor = InvalidOtpException.class)
     public void resetPassword(ResetPasswordRequest request) {
+        // Unknown email, no pending reset, expired and wrong code all answer the
+        // same way, so the endpoint never reveals whether an account exists.
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new ResourceNotFoundException("No account found with that email"));
+            .orElseThrow(() -> new InvalidOtpException(INVALID_OTP_MESSAGE));
 
         if (user.getResetOtp() == null || user.getResetOtpExpiry() == null) {
-            throw new InvalidOtpException("No password reset was requested for this account");
+            throw new InvalidOtpException(INVALID_OTP_MESSAGE);
         }
         if (LocalDateTime.now().isAfter(user.getResetOtpExpiry())) {
-            throw new InvalidOtpException("This code has expired. Please request a new one");
+            throw new InvalidOtpException(INVALID_OTP_MESSAGE);
         }
         if (!constantTimeEquals(user.getResetOtp(), request.getOtp())) {
             int attempts = user.getResetOtpAttempts() + 1;
@@ -165,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
             }
             user.setResetOtpAttempts(attempts);
             userRepository.save(user);
-            throw new InvalidOtpException("Invalid code");
+            throw new InvalidOtpException(INVALID_OTP_MESSAGE);
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

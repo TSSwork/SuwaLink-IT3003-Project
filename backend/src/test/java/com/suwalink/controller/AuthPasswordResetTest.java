@@ -1,5 +1,6 @@
 package com.suwalink.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import com.suwalink.entity.User;
 import com.suwalink.repository.UserRepository;
 import com.suwalink.service.MailService;
@@ -20,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -128,7 +131,8 @@ class AuthPasswordResetTest {
                     { "email": "%s", "otp": "123456", "newPassword": "NewSecurePass123" }
                     """.formatted(email)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("This code has expired. Please request a new one"));
+            .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.message").value("Invalid code"));
     }
 
     @Test
@@ -142,7 +146,37 @@ class AuthPasswordResetTest {
                     { "email": "%s", "otp": "123456", "newPassword": "NewSecurePass123" }
                     """.formatted(email)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("No password reset was requested for this account"));
+            .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.message").value("Invalid code"));
+    }
+
+    @Test
+    void resetPassword_unknownEmail_answersExactlyLikeAWrongCode() throws Exception {
+        String email = "reset.compare@example.com";
+        registerCustomer(email);
+        setOtp(email, "123456", LocalDateTime.now().plusMinutes(10));
+
+        MvcResult wrongCode = resetWith(email, "000000");
+        MvcResult unknownEmail = resetWith("nobody.here@example.com", "000000");
+
+        assertThat(wrongCode.getResponse().getStatus()).isEqualTo(400);
+        assertThat(unknownEmail.getResponse().getStatus()).isEqualTo(400);
+        String wrongBody = wrongCode.getResponse().getContentAsString();
+        String unknownBody = unknownEmail.getResponse().getContentAsString();
+        assertThat(JsonPath.<String>read(unknownBody, "$.code")).isEqualTo("VALIDATION_FAILED");
+        assertThat(JsonPath.<String>read(unknownBody, "$.code"))
+            .isEqualTo(JsonPath.<String>read(wrongBody, "$.code"));
+        assertThat(JsonPath.<String>read(unknownBody, "$.message"))
+            .isEqualTo(JsonPath.<String>read(wrongBody, "$.message"));
+    }
+
+    private MvcResult resetWith(String email, String otp) throws Exception {
+        return mockMvc.perform(post("/api/auth/reset-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    { "email": "%s", "otp": "%s", "newPassword": "NewSecurePass123" }
+                    """.formatted(email, otp)))
+            .andReturn();
     }
 
     private void registerCustomer(String email) throws Exception {

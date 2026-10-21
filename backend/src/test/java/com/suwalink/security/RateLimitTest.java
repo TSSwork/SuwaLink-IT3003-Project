@@ -145,7 +145,8 @@ class RateLimitTest {
         for (int i = 0; i < 20; i++) {
             String body = "{\"email\":\"reset.ip%d@example.com\",\"otp\":\"123456\",\"newPassword\":\"NewSecurePass123\"}"
                 .formatted(i);
-            postJson("/api/auth/reset-password", "10.8.0.1", body).andExpect(status().isNotFound());
+            // unknown emails answer like a wrong code (no account enumeration)
+            postJson("/api/auth/reset-password", "10.8.0.1", body).andExpect(status().isBadRequest());
         }
         postJson("/api/auth/reset-password", "10.8.0.1",
                 "{\"email\":\"reset.ip99@example.com\",\"otp\":\"123456\",\"newPassword\":\"NewSecurePass123\"}")
