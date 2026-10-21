@@ -149,6 +149,20 @@
     "unsupported": "This browser cannot share your location. Tap the map to place the pin instead.",
     "label": "Map. Tap to place the pin."
   },
+  "location": {
+    "setPrompt": "Set your location",
+    "nearMe": "Near me",
+    "pinned": "Pinned spot",
+    "title": "Where are you?",
+    "description": "Medicines and pharmacies are sorted by how close they are to this place.",
+    "denied": "Location access is blocked. Choose a district or a spot on the map instead.",
+    "unavailable": "We could not find your location. Choose a district or a spot on the map instead.",
+    "unsupported": "This browser cannot share your location. Choose a district or a spot on the map instead.",
+    "orDistrict": "Or pick your district",
+    "chooseOnMap": "Choose on map",
+    "clear": "Clear location",
+    "done": "Done"
+  },
   "theme": {
     "label": "Theme",
     "current": "Theme: {{name}}",

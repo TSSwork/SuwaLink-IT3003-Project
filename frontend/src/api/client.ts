@@ -24,6 +24,13 @@ export class ApiError extends Error {
   }
 }
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /** On 401, end the session but do not navigate to /login (startup check on public pages). */
+    skipLoginRedirect?: boolean
+  }
+}
+
 /** The slice of the TanStack router the client needs; see `registerRouter`. */
 interface NavigableRouter {
   state: { location: { href: string; pathname: string } }
@@ -62,6 +69,7 @@ function handleUnauthorized(config?: InternalAxiosRequestConfig): void {
   const { token, clear } = useSessionStore.getState()
   if (!token || sentAuth !== `Bearer ${token}`) return
   clear()
+  if (config?.skipLoginRedirect) return
 
   const here = router
     ? router.state.location

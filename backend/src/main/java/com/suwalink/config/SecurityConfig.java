@@ -75,6 +75,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/images/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/medicines/search", "/api/medicines/*",
                                 "/api/medicines/*/offers").permitAll()
                         .requestMatchers("/api/pharmacies/me").hasRole("PHARMACY_OWNER")

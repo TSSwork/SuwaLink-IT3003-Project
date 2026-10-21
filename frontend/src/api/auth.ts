@@ -30,7 +30,8 @@ export const forgotPassword = (email: string) =>
 export const resetPassword = (body: ResetPasswordRequest) =>
   data<void>(api.post("/auth/reset-password", body))
 
-export const getMe = () => data<UserProfile>(api.get("/users/me"))
+export const getMe = (options?: { skipLoginRedirect?: boolean }) =>
+  data<UserProfile>(api.get("/users/me", options))
 
 export const getPublicSettings = () =>
   data<PublicSettings>(api.get("/settings/public"))

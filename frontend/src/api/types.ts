@@ -126,3 +126,9 @@ export interface ResetPasswordRequest {
   otp: string
   newPassword: string
 }
+
+/** GET /api/categories (public): active categories only. */
+export interface CategoryOption {
+  id: string
+  name: string
+}
