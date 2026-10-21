@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
-import { IndexPage } from "@/routes/index"
+import { IndexPage } from "@/features/home/IndexPage"
 
 describe("index route", () => {
   it("renders the SuwaLink name", () => {

@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router"
+import { Link, useRouter, useRouterState } from "@tanstack/react-router"
 import { LogInIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { homeFor } from "@/lib/guards"
@@ -32,21 +32,38 @@ function initials(name: string): string {
     .toUpperCase()
 }
 
+/** Pages a visitor should not be sent back to after signing in. */
+const AUTH_PATHS = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+]
+
 /** Header account area: compact "Sign in" when signed out, avatar menu when in. */
 export function AccountMenu() {
   const { t } = useTranslation()
   const router = useRouter()
   const user = useSessionStore((state) => state.user)
   const clear = useSessionStore((state) => state.clear)
+  const location = useRouterState({ select: (state) => state.location })
 
   if (!user) {
+    const returnTo =
+      location.pathname === "/" ||
+      AUTH_PATHS.some((path) => location.pathname.startsWith(path))
+        ? undefined
+        : location.href
     return (
-      // Plain anchor until the /login route exists (Task 5).
       <Button asChild variant="default" className="h-11 min-w-11 px-3">
-        <a href="/login" aria-label={t("auth.signIn")}>
+        <Link
+          to="/login"
+          search={{ redirect: returnTo }}
+          aria-label={t("auth.signIn")}
+        >
           <LogInIcon className="size-5 sm:hidden" aria-hidden />
           <span className="hidden sm:inline">{t("auth.signIn")}</span>
-        </a>
+        </Link>
       </Button>
     )
   }

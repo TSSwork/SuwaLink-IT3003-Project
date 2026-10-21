@@ -104,19 +104,18 @@ export function AppShell({ nav, account, children }: AppShellProps) {
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-4 text-sm text-muted-foreground">
           <p>{t("common.footerTagline")}</p>
           <nav aria-label={t("common.legalNav")} className="flex gap-2">
-            {/* Plain anchors until the routes exist (Task 5). */}
-            <a
-              href="/privacy"
+            <Link
+              to="/privacy"
               className="inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               {t("legal.privacy")}
-            </a>
-            <a
-              href="/terms"
+            </Link>
+            <Link
+              to="/terms"
               className="inline-flex min-h-11 items-center rounded-lg px-2 underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               {t("legal.terms")}
-            </a>
+            </Link>
           </nav>
         </div>
       </footer>

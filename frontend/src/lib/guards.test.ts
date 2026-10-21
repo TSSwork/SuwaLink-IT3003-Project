@@ -9,12 +9,18 @@ function signInAs(role: Role) {
   useSessionStore.getState().setSession("t", { id: "1", name: "A", role })
 }
 
-/** The href of the redirect a guard throws, or undefined when it lets the visit through. */
-function redirectOf(fn: () => void): string | undefined {
+interface RedirectTarget {
+  to: string
+  search?: Record<string, unknown>
+}
+
+/** Where the redirect a guard throws points, or undefined when it lets the visit through. */
+function redirectOf(fn: () => void): RedirectTarget | undefined {
   try {
     fn()
   } catch (thrown) {
-    return (thrown as { options: { href: string } }).options.href
+    const { to, search } = (thrown as { options: RedirectTarget }).options
+    return search ? { to, search } : { to }
   }
   return undefined
 }
@@ -31,9 +37,10 @@ describe("homeFor", () => {
 
 describe("requireAuth", () => {
   it("sends signed-out visitors to /login with the return path", () => {
-    expect(redirectOf(() => requireAuth({ location }))).toBe(
-      "/login?redirect=%2Fpharmacy%3Fx%3D1"
-    )
+    expect(redirectOf(() => requireAuth({ location }))).toEqual({
+      to: "/login",
+      search: { redirect: "/pharmacy?x=1" },
+    })
   })
 
   it("lets a signed-in user through", () => {
@@ -46,14 +53,14 @@ describe("requireRole", () => {
   const guard = requireRole("PHARMACY_OWNER")
 
   it("sends signed-out visitors to /login", () => {
-    expect(redirectOf(() => guard({ location }))).toContain("/login?redirect=")
+    expect(redirectOf(() => guard({ location }))?.to).toBe("/login")
   })
 
   it("sends the wrong role to its own home", () => {
     signInAs("ADMIN")
-    expect(redirectOf(() => guard({ location }))).toBe("/admin")
+    expect(redirectOf(() => guard({ location }))).toEqual({ to: "/admin" })
     signInAs("CUSTOMER")
-    expect(redirectOf(() => guard({ location }))).toBe("/")
+    expect(redirectOf(() => guard({ location }))).toEqual({ to: "/" })
   })
 
   it("lets a permitted role through", () => {

@@ -3,7 +3,7 @@ import type { Role } from "@/api/types"
 import { useSessionStore } from "@/stores/sessionStore"
 
 /** Where each role lands after signing in. */
-export function homeFor(role: Role): string {
+export function homeFor(role: Role): "/" | "/pharmacy" | "/admin" {
   switch (role) {
     case "CUSTOMER":
       return "/"
@@ -22,9 +22,7 @@ interface GuardContext {
 /** `beforeLoad` helper: signed-out visitors go to /login and return afterwards. */
 export function requireAuth({ location }: GuardContext): void {
   if (!useSessionStore.getState().user) {
-    throw redirect({
-      href: `/login?redirect=${encodeURIComponent(location.href)}`,
-    })
+    throw redirect({ to: "/login", search: { redirect: location.href } })
   }
 }
 
@@ -34,7 +32,7 @@ export function requireRole(...roles: Array<Role>) {
     requireAuth(context)
     const user = useSessionStore.getState().user
     if (user && !roles.includes(user.role)) {
-      throw redirect({ href: homeFor(user.role) })
+      throw redirect({ to: homeFor(user.role) })
     }
   }
 }

@@ -47,7 +47,40 @@
     "noAccount": "New to SuwaLink?",
     "haveAccount": "Already have an account?",
     "accountMenu": "Account menu for {{name}}",
-    "sessionExpired": "Your session has expired. Please sign in again."
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "signInTitle": "Sign in",
+    "signInSubtitle": "Reserve medicines and follow your prescription requests.",
+    "signingIn": "Signing in…",
+    "ownPharmacy": "Run a pharmacy?",
+    "registerPharmacy": "Register your pharmacy",
+    "pendingTitle": "Your pharmacy is awaiting approval",
+    "pendingBody": "An admin is checking your registration. We will email you when it is approved, and then you can sign in.",
+    "signInFailed": "Could not sign in",
+    "demoTitle": "Try the demo",
+    "demoBody": "Sign in with a sample account to look around.",
+    "demoRoles": {
+      "CUSTOMER": "Demo customer",
+      "PHARMACY_OWNER": "Demo pharmacy",
+      "ADMIN": "Demo admin"
+    },
+    "forgotTitle": "Reset your password",
+    "forgotBody": "Enter the email you signed up with. We will send you a 6-digit code.",
+    "sendCode": "Send code",
+    "sendingCode": "Sending…",
+    "resetTitle": "Choose a new password",
+    "resetBody": "Enter the 6-digit code from your email and a new password.",
+    "codeSent": "If {{email}} belongs to an account, a code is on its way. Check your inbox and spam folder.",
+    "otp": "6-digit code",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordHint": "At least 8 characters.",
+    "resetSubmit": "Change password",
+    "resetting": "Changing…",
+    "resetSuccess": "Password changed. Sign in with your new password.",
+    "resetCodeInvalid": "That code is wrong or has expired. Request a new one.",
+    "requestNewCode": "Request a new code",
+    "backToSignIn": "Back to sign in",
+    "requestFailed": "That did not work"
   },
   "register": {
     "title": "Create your account",
@@ -56,8 +89,12 @@
     "confirmPassword": "Confirm password",
     "preferredLanguage": "Preferred language",
     "district": "District",
-    "acceptTerms": "I accept the Terms and the Privacy Policy",
-    "submit": "Create account"
+    "acceptTerms": "I accept the <terms>Terms</terms> and the <privacy>Privacy Policy</privacy>",
+    "submit": "Create account",
+    "subtitle": "Find medicines nearby and reserve them for pickup.",
+    "opensInNewTab": "(opens in a new tab)",
+    "submitting": "Creating account…",
+    "failed": "Could not create your account"
   },
   "pharmacyRegister": {
     "title": "Register your pharmacy",
@@ -79,7 +116,33 @@
   },
   "legal": {
     "privacy": "Privacy",
-    "terms": "Terms"
+    "terms": "Terms",
+    "draftBadge": "Draft — pending review",
+    "draftNote": "This text is a placeholder. It will be replaced once it has been reviewed.",
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Use",
+    "privacyDoc": {
+      "intro": "This policy explains what SuwaLink collects when you use it, why, and what you can do about it.",
+      "collectTitle": "What we collect",
+      "collectBody": "Your name, email, phone number, preferred language and district, and the reservations and prescription requests you make.",
+      "prescriptionsTitle": "Prescription images",
+      "prescriptionsBody": "A prescription image is shared only with the pharmacies you choose when you upload it. Images of closed or expired requests are deleted automatically after a set period.",
+      "useTitle": "How we use it",
+      "useBody": "To show pharmacies your reservations and requests, to send you notifications and emails about them, and to keep the service secure.",
+      "rightsTitle": "Your choices",
+      "rightsBody": "You can change your details in Settings at any time, and delete your account there. Deleting removes your personal details and prescription images."
+    },
+    "termsDoc": {
+      "intro": "These terms apply when you use SuwaLink to find, reserve or supply medicines.",
+      "serviceTitle": "The service",
+      "serviceBody": "SuwaLink shows medicine availability reported by pharmacies. Stock and prices can change; the pharmacy confirms them when you collect.",
+      "accountsTitle": "Your account",
+      "accountsBody": "Keep your password private and your details accurate. Pharmacies must hold a valid licence and are verified before they appear.",
+      "reservationsTitle": "Reservations",
+      "reservationsBody": "A reservation holds medicines for a limited time. Prescription medicines are handed over only against a valid prescription.",
+      "adviceTitle": "Not medical advice",
+      "adviceBody": "SuwaLink does not give medical advice. Ask a doctor or pharmacist about any medicine."
+    }
   },
   "validation": {
     "required": "This field is required.",
@@ -88,7 +151,14 @@
     "maxLength": "Use at most {{count}} characters.",
     "passwordMismatch": "The passwords do not match.",
     "coordinatesRange": "The location must be within Sri Lanka.",
-    "acceptTerms": "You must accept the Terms and the Privacy Policy."
+    "acceptTerms": "You must accept the Terms and the Privacy Policy.",
+    "passwordLength": "Use at least 8 characters.",
+    "otp": "Enter the 6-digit code from the email.",
+    "NotBlank": "This field is required.",
+    "NotNull": "This field is required.",
+    "Email": "Enter a valid email address.",
+    "Size": "This value is too short or too long.",
+    "AssertTrue": "You must accept the Terms and the Privacy Policy."
   },
   "districts": {
     "AMPARA": "Ampara",

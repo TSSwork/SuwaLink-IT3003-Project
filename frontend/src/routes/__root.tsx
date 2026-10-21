@@ -15,6 +15,7 @@ import appCss from "../styles.css?url"
 import { registerRouter } from "@/api/client"
 import { AccountMenu } from "@/components/layout/AccountMenu"
 import { AppShell } from "@/components/layout/AppShell"
+import { Toaster } from "@/components/ui/sonner"
 import { getCurrentLanguage, startLanguageSync } from "@/i18n"
 import { queryClient, startSessionCacheSync } from "@/lib/queryClient"
 import { startThemeSync, themeInitScript } from "@/lib/theme"
@@ -74,6 +75,7 @@ function RootLayout() {
       <AppShell account={<AccountMenu />}>
         <Outlet />
       </AppShell>
+      <Toaster />
     </QueryClientProvider>
   )
 }
