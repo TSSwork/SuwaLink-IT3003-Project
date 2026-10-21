@@ -1,3 +1,4 @@
+import { DISTRICTS } from "@/api/types"
 import type {
   LocationStepValues,
   OwnerStepValues,
@@ -35,17 +36,59 @@ interface StoredDraft {
   location: LocationStepValues
 }
 
+/** The string values of `source` under `keys`; anything else is dropped. */
+function pickStrings<T extends object>(
+  source: unknown,
+  keys: ReadonlyArray<keyof T>
+) {
+  const picked: Partial<Record<keyof T, string>> = {}
+  if (typeof source !== "object" || source === null) return picked
+  for (const key of keys) {
+    const value = (source as Record<string, unknown>)[key as string]
+    if (typeof value === "string") picked[key] = value
+  }
+  return picked
+}
+
 /** The saved draft merged over empty values, or undefined when there is none. */
 export function loadDraft(): WizardData | undefined {
   try {
     const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY)
     if (!raw) return undefined
-    const draft = JSON.parse(raw) as Partial<StoredDraft>
+    const draft: unknown = JSON.parse(raw)
+    const section = (name: string) =>
+      typeof draft === "object" && draft !== null
+        ? (draft as Record<string, unknown>)[name]
+        : undefined
+    const pharmacy = pickStrings<PharmacyStepInput>(section("pharmacy"), [
+      "pharmacyName",
+      "licenceNo",
+      "address",
+      "district",
+      "city",
+      "openingHours",
+    ])
+    if (!(DISTRICTS as readonly string[]).includes(pharmacy.district ?? "")) {
+      delete pharmacy.district
+    }
     return {
       ...EMPTY_WIZARD,
-      owner: { ...EMPTY_WIZARD.owner, ...draft.owner },
-      pharmacy: { ...EMPTY_WIZARD.pharmacy, ...draft.pharmacy },
-      location: { ...EMPTY_WIZARD.location, ...draft.location },
+      owner: {
+        ...EMPTY_WIZARD.owner,
+        ...pickStrings<OwnerStepValues>(section("owner"), [
+          "name",
+          "email",
+          "phone",
+        ]),
+      },
+      pharmacy: { ...EMPTY_WIZARD.pharmacy, ...pharmacy },
+      location: {
+        ...EMPTY_WIZARD.location,
+        ...pickStrings<LocationStepValues>(section("location"), [
+          "latitude",
+          "longitude",
+        ]),
+      },
     }
   } catch {
     return undefined

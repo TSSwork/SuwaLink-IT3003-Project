@@ -49,8 +49,10 @@ export function LocationPicker({
   const [centreRequest, setCentreRequest] = useState<CentreRequest>()
   useEffect(() => setMounted(true), [])
 
-  const pick = (lat: number, lng: number) =>
+  const pick = (lat: number, lng: number) => {
+    setStatus("idle")
     onChange(roundCoordinate(lat), roundCoordinate(lng))
+  }
 
   const locate = () => {
     // Missing on insecure origins and some embedded browsers, despite the DOM types.

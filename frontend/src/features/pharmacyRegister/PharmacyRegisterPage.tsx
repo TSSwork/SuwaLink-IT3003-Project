@@ -130,7 +130,22 @@ export function PharmacyRegisterPage() {
     if (!done) saveDraft(data)
   }, [data, done])
 
+  const submit = useMutation({
+    mutationFn: registerPharmacy,
+    onSuccess: () => {
+      clearDraft()
+      setDone(true)
+    },
+    onError: (error) => {
+      const routed = routeError(error, t)
+      if (!routed) return
+      setServerErrors(routed.errors)
+      goTo(routed.step)
+    },
+  })
+
   const goTo = (next: number) => {
+    submit.reset()
     setStep(next)
     setMoved(true)
   }
@@ -146,20 +161,6 @@ export function PharmacyRegisterPage() {
     setServerErrors((previous) => ({ ...previous, [step]: [] }))
     goTo(step + 1)
   }
-
-  const submit = useMutation({
-    mutationFn: registerPharmacy,
-    onSuccess: () => {
-      clearDraft()
-      setDone(true)
-    },
-    onError: (error) => {
-      const routed = routeError(error, t)
-      if (!routed) return
-      setServerErrors(routed.errors)
-      goTo(routed.step)
-    },
-  })
 
   if (done) return <SubmittedPanel />
 

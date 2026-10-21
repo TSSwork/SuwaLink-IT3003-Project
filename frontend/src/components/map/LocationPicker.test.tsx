@@ -91,6 +91,22 @@ describe("LocationPicker", () => {
     expect(onChange).toHaveBeenCalledWith(7.2906, 80.6337)
   })
 
+  it("clears the location hint once a point is picked on the map", async () => {
+    stubGeolocation(failingGeolocation(1))
+    render(<LocationPicker onChange={vi.fn()} />)
+    await userEvent.click(
+      screen.getByRole("button", { name: "Use my location" })
+    )
+    expect(screen.getByText(/Location access is blocked/)).toBeInTheDocument()
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "fake map" })
+    )
+    expect(
+      screen.queryByText(/Location access is blocked/)
+    ).not.toBeInTheDocument()
+  })
+
   it("explains a timeout", async () => {
     stubGeolocation(failingGeolocation(3))
     render(<LocationPicker onChange={vi.fn()} />)

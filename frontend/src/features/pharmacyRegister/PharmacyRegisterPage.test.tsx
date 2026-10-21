@@ -345,4 +345,42 @@ describe("PharmacyRegisterPage", () => {
       screen.getByRole("combobox", { name: "District" })
     ).toHaveTextContent("Kandy")
   })
+
+  it("does not bring a stale submit error back after Back and Review", async () => {
+    registerMock.mockRejectedValue(
+      new ApiError(0, "NETWORK_ERROR", "Network Error", [])
+    )
+    const user = userEvent.setup()
+    renderWizard()
+    await reachReview(user)
+    await user.click(screen.getByRole("checkbox"))
+    await user.click(
+      screen.getByRole("button", { name: "Submit for verification" })
+    )
+    const message =
+      "Cannot reach the server. Check your connection and try again."
+    expect(await screen.findByText(message)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Back" }))
+    await stepHeading("Location")
+    await user.click(screen.getByRole("button", { name: "Next" }))
+    await stepHeading("Review and submit")
+    expect(screen.queryByText(message)).not.toBeInTheDocument()
+  })
+
+  it("ignores malformed values in a stored draft", async () => {
+    sessionStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        owner: { name: 42, email: { a: 1 }, phone: "0771234567", extra: "x" },
+        pharmacy: { pharmacyName: "Nimal Pharmacy", district: "Atlantis" },
+        location: "nonsense",
+      })
+    )
+    renderWizard()
+    await stepHeading("Your account")
+    expect(screen.getByLabelText("Full name")).toHaveValue("")
+    expect(screen.getByLabelText("Email")).toHaveValue("")
+    expect(screen.getByLabelText("Phone number")).toHaveValue("0771234567")
+  })
 })
