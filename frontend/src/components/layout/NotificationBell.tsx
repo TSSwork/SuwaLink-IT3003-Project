@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useRouter } from "@tanstack/react-router"
 import { BellIcon, BellOffIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import {
   useMarkAllRead,
   useMarkRead,
@@ -22,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatRelative } from "@/lib/format"
+import { safeRedirect } from "@/lib/safeUrl"
 import { translateError } from "@/lib/translateError"
 import { cn } from "@/lib/utils"
 import { useLanguageStore } from "@/stores/languageStore"
@@ -43,9 +45,12 @@ function Bell() {
   const markRead = useMarkRead()
   const markAll = useMarkAllRead()
 
+  const notifyError = (error: Error) => toast.error(translateError(t, error))
+
   const openItem = (item: NotificationItem) => {
-    if (!item.read) markRead.mutate(item.id)
-    if (item.link) void router.navigate({ href: item.link })
+    if (!item.read) markRead.mutate(item.id, { onError: notifyError })
+    const target = safeRedirect(item.link ?? undefined)
+    if (target) void router.navigate({ href: target })
   }
 
   return (
@@ -88,7 +93,7 @@ function Bell() {
             // Keep the list open so the dots clear in front of the reader.
             onSelect={(event) => {
               event.preventDefault()
-              markAll.mutate()
+              markAll.mutate(undefined, { onError: notifyError })
             }}
           >
             {t("notifications.markAll")}

@@ -1,6 +1,7 @@
 import { act, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { toast } from "sonner"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios"
 import { api } from "@/api/client"
 import type { NotificationItem } from "@/api/types"
@@ -9,10 +10,13 @@ import { renderRoutes } from "@/test/renderRoutes"
 import { useLanguageStore } from "@/stores/languageStore"
 import { useSessionStore } from "@/stores/sessionStore"
 
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
+
 const originalAdapter = api.defaults.adapter
 let calls: Array<string>
 let count: number
 let items: Array<NotificationItem>
+let failWrites: boolean
 
 const note = (over: Partial<NotificationItem>): NotificationItem => ({
   id: "n1",
@@ -37,6 +41,8 @@ function reply(config: InternalAxiosRequestConfig, data: unknown) {
 
 beforeEach(() => {
   calls = []
+  failWrites = false
+  vi.mocked(toast.error).mockClear()
   count = 2
   items = [
     note({}),
@@ -57,6 +63,7 @@ beforeEach(() => {
     if (key === "GET /notifications/unread-count") return reply(config, count)
     if (key === "GET /notifications") return reply(config, items)
     if (key.startsWith("PUT /notifications/")) {
+      if (failWrites) return Promise.reject(new Error("boom"))
       count = Math.max(0, count - 1)
       return reply(config, null)
     }
@@ -93,7 +100,7 @@ describe("NotificationBell", () => {
     expect(within(button).getByText("2")).toBeInTheDocument()
   })
 
-  it("caps the badge at 99+ and hides it at zero", async () => {
+  it("caps the badge at 99+", async () => {
     count = 250
     renderBell()
     const button = await screen.findByRole("button", {
@@ -168,6 +175,34 @@ describe("NotificationBell", () => {
     )
     await waitFor(() => expect(calls).toContain("PUT /notifications/read-all"))
     expect(screen.getByText("Reservation confirmed")).toBeInTheDocument()
+  })
+
+  it.each(["https://evil.test/x", "//evil.test/x", "javascript:alert(1)"])(
+    "marks %s read but never navigates to it",
+    async (link) => {
+      items = [note({ link })]
+      const user = userEvent.setup()
+      const { router } = renderBell()
+      await user.click(
+        await screen.findByRole("button", { name: /^Notifications/ })
+      )
+      await user.click(await screen.findByText("Reservation confirmed"))
+      await waitFor(() => expect(calls).toContain("PUT /notifications/n1/read"))
+      expect(router.state.location.pathname).toBe("/")
+    }
+  )
+
+  it("shows a toast when marking fails", async () => {
+    failWrites = true
+    const user = userEvent.setup()
+    renderBell()
+    await user.click(
+      await screen.findByRole("button", { name: /^Notifications/ })
+    )
+    await user.click(
+      await screen.findByRole("menuitem", { name: "Mark all as read" })
+    )
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1))
   })
 
   it("shows an empty state", async () => {

@@ -21,7 +21,8 @@ import {
   applyFieldErrors,
   hasFieldErrorFor,
 } from "@/features/auth/applyFieldErrors"
-import { loginSchema, safeRedirect } from "@/features/auth/schemas"
+import { loginSchema } from "@/features/auth/schemas"
+import { safeRedirect } from "@/lib/safeUrl"
 import { homeFor } from "@/lib/guards"
 import { useSessionStore } from "@/stores/sessionStore"
 
