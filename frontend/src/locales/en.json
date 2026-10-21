@@ -278,5 +278,15 @@
     "PAYLOAD_TOO_LARGE": "The request is too large.",
     "NETWORK_ERROR": "Cannot reach the server. Check your connection and try again.",
     "UNKNOWN": "Something went wrong. Please try again."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "label": "Notifications",
+    "labelUnread": "Notifications, {{count}} unread",
+    "markAll": "Mark all as read",
+    "unread": "unread",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "We will tell you here when a pharmacy answers a request or a reservation changes.",
+    "loadError": "Notifications could not be loaded"
   }
 }

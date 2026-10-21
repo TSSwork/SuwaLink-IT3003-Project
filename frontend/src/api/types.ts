@@ -132,3 +132,15 @@ export interface CategoryOption {
   id: string
   name: string
 }
+
+/** GET /api/notifications item (NotificationResponse), rendered in the request language. */
+export interface NotificationItem {
+  id: string
+  type: string
+  title: string
+  message: string
+  /** Frontend route to open, or null. */
+  link: string | null
+  read: boolean
+  createdAt: string
+}

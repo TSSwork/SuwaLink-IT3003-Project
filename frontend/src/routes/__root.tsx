@@ -14,6 +14,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools"
 import appCss from "../styles.css?url"
 import { registerRouter } from "@/api/client"
 import { AccountMenu } from "@/components/layout/AccountMenu"
+import { NotificationBell } from "@/components/layout/NotificationBell"
 import { SessionBootstrap } from "@/components/layout/SessionBootstrap"
 import { AppShell } from "@/components/layout/AppShell"
 import { Toaster } from "@/components/ui/sonner"
@@ -74,7 +75,14 @@ function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionBootstrap />
-      <AppShell account={<AccountMenu />}>
+      <AppShell
+        account={
+          <>
+            <NotificationBell />
+            <AccountMenu />
+          </>
+        }
+      >
         <Outlet />
       </AppShell>
       <Toaster />
