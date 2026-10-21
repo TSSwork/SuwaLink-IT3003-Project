@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { LocationChooser } from "@/components/location/LocationChooser"
@@ -101,5 +101,17 @@ describe("LocationChooser", () => {
     await user.click(screen.getByRole("button", { name: /Galle/ }))
     await user.click(screen.getByRole("button", { name: "Clear location" }))
     expect(useLocationStore.getState().mode).toBe("none")
+  })
+})
+
+describe("LocationChooser label", () => {
+  it("stores a label kind and translates it when shown", async () => {
+    const { default: i18n } = await import("@/i18n")
+    useLocationStore.getState().setPoint(7, 80, "device")
+    render(<LocationChooser />)
+    expect(screen.getByRole("button", { name: /Near me/ })).toBeInTheDocument()
+    await act(() => i18n.changeLanguage("si"))
+    expect(screen.getByRole("button", { name: /මා අසල/ })).toBeInTheDocument()
+    await act(() => i18n.changeLanguage("en"))
   })
 })

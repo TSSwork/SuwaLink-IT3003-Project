@@ -5,6 +5,7 @@ import type { District } from "@/api/types"
 /** localStorage key for the customer's search location. */
 export const LOCATION_STORAGE_KEY = "suwalink.location"
 
+export type LocationLabel = "device" | "pinned"
 export type LocationMode = "none" | "point" | "district"
 
 interface LocationData {
@@ -12,12 +13,12 @@ interface LocationData {
   lat?: number
   lng?: number
   district?: District
-  /** Display label for a point, e.g. "Near me". */
-  label?: string
+  /** What a point is, translated when shown so a language switch updates it. */
+  label?: LocationLabel
 }
 
 interface LocationState extends LocationData {
-  setPoint: (lat: number, lng: number, label?: string) => void
+  setPoint: (lat: number, lng: number, label?: LocationLabel) => void
   setDistrict: (district: District) => void
   clear: () => void
   /** Sets the signed-in user's preferred district, only if nothing is chosen yet. */

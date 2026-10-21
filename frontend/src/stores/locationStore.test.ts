@@ -13,12 +13,12 @@ describe("locationStore", () => {
 
   it("setPoint keeps coordinates and drops any district", () => {
     useLocationStore.getState().setDistrict("KANDY")
-    useLocationStore.getState().setPoint(7.29, 80.63, "Near me")
+    useLocationStore.getState().setPoint(7.29, 80.63, "device")
     expect(useLocationStore.getState()).toMatchObject({
       mode: "point",
       lat: 7.29,
       lng: 80.63,
-      label: "Near me",
+      label: "device",
       district: undefined,
     })
   })

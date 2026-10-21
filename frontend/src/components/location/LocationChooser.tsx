@@ -34,7 +34,9 @@ export function LocationChooser() {
 
   const place =
     location.mode === "point"
-      ? (location.label ?? t("location.nearMe"))
+      ? location.label === "pinned"
+        ? t("location.pinned")
+        : t("location.nearMe")
       : location.mode === "district" && location.district
         ? t(`districts.${location.district}`)
         : null
@@ -50,11 +52,7 @@ export function LocationChooser() {
     geolocation.getCurrentPosition(
       ({ coords }) => {
         setStatus("idle")
-        location.setPoint(
-          coords.latitude,
-          coords.longitude,
-          t("location.nearMe")
-        )
+        location.setPoint(coords.latitude, coords.longitude, "device")
         setOpen(false)
       },
       (error) =>
@@ -139,9 +137,7 @@ export function LocationChooser() {
                   ? { lat: location.lat, lng: location.lng }
                   : undefined
               }
-              onChange={(lat, lng) =>
-                location.setPoint(lat, lng, t("location.pinned"))
-              }
+              onChange={(lat, lng) => location.setPoint(lat, lng, "pinned")}
               height={240}
             />
           )}

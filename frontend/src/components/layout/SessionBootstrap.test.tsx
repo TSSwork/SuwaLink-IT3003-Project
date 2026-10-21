@@ -1,9 +1,18 @@
 import { AxiosError } from "axios"
+import {
+  Outlet,
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from "@tanstack/react-router"
 import { render, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios"
 import { api, registerRouter } from "@/api/client"
 import { SessionBootstrap } from "@/components/layout/SessionBootstrap"
+import { requireRole } from "@/lib/guards"
 import { useLocationStore } from "@/stores/locationStore"
 import { useSessionStore } from "@/stores/sessionStore"
 
@@ -106,5 +115,67 @@ describe("SessionBootstrap", () => {
     render(<SessionBootstrap />)
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(calls).toEqual([])
+  })
+})
+
+describe("SessionBootstrap with route guards", () => {
+  function renderApp(initialPath: string) {
+    const root = createRootRoute({
+      component: () => (
+        <>
+          <SessionBootstrap />
+          <Outlet />
+        </>
+      ),
+    })
+    const routes = [
+      createRoute({
+        getParentRoute: () => root,
+        path: "/",
+        component: () => <p>public home</p>,
+      }),
+      createRoute({
+        getParentRoute: () => root,
+        path: "/reservations",
+        beforeLoad: requireRole("CUSTOMER"),
+        component: () => <p>my reservations</p>,
+      }),
+      createRoute({
+        getParentRoute: () => root,
+        path: "/login",
+        validateSearch: (s: Record<string, unknown>) => s,
+        component: () => <p>login page</p>,
+      }),
+    ]
+    const router = createRouter({
+      routeTree: root.addChildren(routes),
+      history: createMemoryHistory({ initialEntries: [initialPath] }),
+    })
+    render(<RouterProvider router={router} />)
+    return router
+  }
+
+  beforeEach(() => {
+    useSessionStore
+      .getState()
+      .setSession("expired", { id: "1", name: "Old", role: "CUSTOMER" })
+    respondWith(401, { success: false, code: "TOKEN_EXPIRED", message: "x" })
+  })
+
+  it("sends an expired visitor on a protected route to /login with reason=expired", async () => {
+    const router = renderApp("/reservations")
+    await waitFor(() => expect(router.state.location.pathname).toBe("/login"))
+    expect(router.state.location.search).toMatchObject({
+      redirect: "/reservations",
+      reason: "expired",
+    })
+    expect(useSessionStore.getState().token).toBeNull()
+  })
+
+  it("leaves an expired visitor on a public route", async () => {
+    const router = renderApp("/")
+    await waitFor(() => expect(useSessionStore.getState().token).toBeNull())
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(router.state.location.pathname).toBe("/")
   })
 })

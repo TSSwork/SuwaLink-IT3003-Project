@@ -19,10 +19,27 @@ interface GuardContext {
   location: { href: string }
 }
 
+let sessionJustExpired = false
+
+/** Wrap the re-run of route guards after a quiet session end, so /login explains why. */
+export async function withExpiredNotice(rerun: () => Promise<unknown>) {
+  sessionJustExpired = true
+  try {
+    await rerun()
+  } finally {
+    sessionJustExpired = false
+  }
+}
+
 /** `beforeLoad` helper: signed-out visitors go to /login and return afterwards. */
 export function requireAuth({ location }: GuardContext): void {
   if (!useSessionStore.getState().user) {
-    throw redirect({ to: "/login", search: { redirect: location.href } })
+    throw redirect({
+      to: "/login",
+      search: sessionJustExpired
+        ? { redirect: location.href, reason: "expired" }
+        : { redirect: location.href },
+    })
   }
 }
 

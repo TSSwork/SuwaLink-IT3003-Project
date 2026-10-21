@@ -61,12 +61,8 @@ describe("formatDateTime and formatRelative", () => {
     expect(formatRelative("2026-10-21T11:30:00Z", "en", now)).toBe(
       "30 minutes ago"
     )
-    expect(formatRelative("2026-10-21T14:00:00Z", "en", now)).toBe(
-      "in 2 hours"
-    )
-    expect(formatRelative("2026-10-19T12:00:00Z", "en", now)).toBe(
-      "2 days ago"
-    )
+    expect(formatRelative("2026-10-21T14:00:00Z", "en", now)).toBe("in 2 hours")
+    expect(formatRelative("2026-10-19T12:00:00Z", "en", now)).toBe("2 days ago")
     expect(formatRelative("2026-10-21T12:00:10Z", "en", now)).toBe("now")
   })
 })
