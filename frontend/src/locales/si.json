@@ -22,7 +22,9 @@
     "notFoundTitle": "404",
     "notFoundBody": "ඔබ ඉල්ලූ පිටුව සොයා ගැනීමට නොහැකි විය.",
     "language": "භාෂාව",
-    "languageCurrent": "භාෂාව: {{name}}"
+    "languageCurrent": "භාෂාව: {{name}}",
+    "comingSoonTitle": "ඉක්මනින් එනවා",
+    "comingSoonBody": "මෙම කොටස තවමත් සකස් කරමින් පවතී. කරුණාකර පසුව නැවත පරීක්ෂා කරන්න."
   },
   "nav": {
     "home": "මුල් පිටුව",
@@ -43,7 +45,9 @@
     "password": "මුරපදය",
     "forgotPassword": "මුරපදය අමතකද?",
     "noAccount": "SuwaLink වලට අලුතෙන්ද?",
-    "haveAccount": "දැනටමත් ගිණුමක් තිබේද?"
+    "haveAccount": "දැනටමත් ගිණුමක් තිබේද?",
+    "accountMenu": "{{name}} ගේ ගිණුම් මෙනුව",
+    "sessionExpired": "ඔබේ සැසිය කල් ඉකුත් වී ඇත. කරුණාකර නැවත පිවිසෙන්න."
   },
   "register": {
     "title": "ඔබේ ගිණුම සාදන්න",

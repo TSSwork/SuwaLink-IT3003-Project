@@ -22,7 +22,9 @@
     "notFoundTitle": "404",
     "notFoundBody": "The requested page could not be found.",
     "language": "Language",
-    "languageCurrent": "Language: {{name}}"
+    "languageCurrent": "Language: {{name}}",
+    "comingSoonTitle": "Coming soon",
+    "comingSoonBody": "This area is still being built. Please check back later."
   },
   "nav": {
     "home": "Home",
@@ -43,7 +45,9 @@
     "password": "Password",
     "forgotPassword": "Forgot your password?",
     "noAccount": "New to SuwaLink?",
-    "haveAccount": "Already have an account?"
+    "haveAccount": "Already have an account?",
+    "accountMenu": "Account menu for {{name}}",
+    "sessionExpired": "Your session has expired. Please sign in again."
   },
   "register": {
     "title": "Create your account",

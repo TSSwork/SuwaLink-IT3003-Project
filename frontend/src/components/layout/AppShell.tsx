@@ -18,7 +18,7 @@ import {
 interface AppShellProps {
   /** Primary navigation links; inline from 768 px, inside a Sheet below. */
   nav?: ReactNode
-  /** Sign-in button or user menu (Task 4/5). */
+  /** Sign-in button or user menu (AccountMenu). */
   account?: ReactNode
   children: ReactNode
 }

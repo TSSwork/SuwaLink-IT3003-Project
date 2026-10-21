@@ -22,7 +22,9 @@
     "notFoundTitle": "404",
     "notFoundBody": "நீங்கள் கேட்ட பக்கம் கிடைக்கவில்லை.",
     "language": "மொழி",
-    "languageCurrent": "மொழி: {{name}}"
+    "languageCurrent": "மொழி: {{name}}",
+    "comingSoonTitle": "விரைவில் வரும்",
+    "comingSoonBody": "இந்தப் பகுதி இன்னும் உருவாக்கப்பட்டு வருகிறது. பின்னர் மீண்டும் பார்க்கவும்."
   },
   "nav": {
     "home": "முகப்பு",
@@ -43,7 +45,9 @@
     "password": "கடவுச்சொல்",
     "forgotPassword": "கடவுச்சொல்லை மறந்துவிட்டீர்களா?",
     "noAccount": "SuwaLink-க்குப் புதியவரா?",
-    "haveAccount": "ஏற்கனவே கணக்கு உள்ளதா?"
+    "haveAccount": "ஏற்கனவே கணக்கு உள்ளதா?",
+    "accountMenu": "{{name}} கணக்கு மெனு",
+    "sessionExpired": "உங்கள் அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்."
   },
   "register": {
     "title": "உங்கள் கணக்கை உருவாக்குங்கள்",

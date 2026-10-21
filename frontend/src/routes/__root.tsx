@@ -1,17 +1,22 @@
 import { useEffect } from "react"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
   HeadContent,
   Outlet,
   Scripts,
   createRootRoute,
+  useRouter,
 } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
+import { registerRouter } from "@/api/client"
+import { AccountMenu } from "@/components/layout/AccountMenu"
 import { AppShell } from "@/components/layout/AppShell"
 import { getCurrentLanguage, startLanguageSync } from "@/i18n"
+import { queryClient, startSessionCacheSync } from "@/lib/queryClient"
 import { startThemeSync, themeInitScript } from "@/lib/theme"
 
 export const Route = createRootRoute({
@@ -58,10 +63,18 @@ function NotFound() {
 function RootLayout() {
   useEffect(() => startThemeSync(), [])
   useEffect(() => startLanguageSync(), [])
+  useEffect(() => startSessionCacheSync(), [])
+  const router = useRouter()
+  useEffect(() => {
+    registerRouter(router)
+    return () => registerRouter(null)
+  }, [router])
   return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <QueryClientProvider client={queryClient}>
+      <AppShell account={<AccountMenu />}>
+        <Outlet />
+      </AppShell>
+    </QueryClientProvider>
   )
 }
 
