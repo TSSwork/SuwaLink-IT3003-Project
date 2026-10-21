@@ -144,3 +144,111 @@ export interface NotificationItem {
   read: boolean
   createdAt: string
 }
+
+/** PageResponse<T>: `page` is 0-based. */
+export interface Page<T> {
+  content: Array<T>
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+/** PrescriptionStatus: anything but OTC needs a prescription. */
+export type LegalCategory = "OTC" | "PRESCRIPTION" | "CONTROLLED" | "SCHEDULE_III"
+
+/** GET /api/medicines/search item (MedicineSearchResult). */
+export interface MedicineSearchResult {
+  medicineId: string
+  brandName: string
+  genericName: string
+  dosageForm: string
+  strength: string
+  category: string
+  manufacturer: string
+  legalCategory: LegalCategory
+  requiresPrescription: boolean
+  imageUrl: string | null
+  /** Distinct pharmacies with stock; always at least 1. */
+  pharmacyCount: number
+  lowestPrice: number
+  currency: "LKR"
+  /** Null when no lat/lng was sent. */
+  nearestDistanceKm: number | null
+}
+
+/** GET /api/medicines/{id} (MedicineDetailResponse). */
+export interface MedicineDetail {
+  medicineId: string
+  brandName: string
+  genericName: string
+  dosageForm: string
+  strength: string
+  category: string
+  manufacturer: string
+  legalCategory: LegalCategory
+  requiresPrescription: boolean
+  imageUrl: string | null
+  description: string | null
+}
+
+/** GET /api/medicines/{id}/offers item (OfferResponse). */
+export interface Offer {
+  inventoryId: string
+  unitPrice: number
+  currency: "LKR"
+  stockQuantity: number
+  /** LocalDate, "YYYY-MM-DD". */
+  expireDate: string
+  distanceKm: number | null
+  pharmacy: {
+    id: string
+    name: string
+    phone: string | null
+    address: string
+    district: District
+    city: string
+    latitude: number
+    longitude: number
+    openingHours: string | null
+  }
+}
+
+export type OfferSort = "distance" | "price"
+
+export type ReservationStatus = "CONFIRMED" | "CANCELLED" | "COMPLETED" | "EXPIRED"
+
+/** ReservationResponse; dates are LocalDateTime strings without a zone. */
+export interface Reservation {
+  id: string
+  pickupCode: string
+  status: ReservationStatus
+  expiresAt: string
+  createdAt: string
+  cancelReason: string | null
+  cancelledBy: "PATIENT" | "PHARMACY" | null
+  prescriptionRequestId: string | null
+  /** True when any line needs a prescription at pickup. */
+  requiresPrescription: boolean
+  total: number
+  pharmacy: {
+    id: string
+    name: string
+    phone: string | null
+    address: string
+    city: string
+    district: District
+    latitude: number
+    longitude: number
+  }
+  customer: { id: string; name: string }
+  items: Array<{
+    id: string
+    inventoryItemId: string
+    medicineName: string
+    quantity: number
+    unitPrice: number
+    lineTotal: number
+    requiresPrescription: boolean
+  }>
+}

@@ -69,3 +69,20 @@ export const useLocationStore = create<LocationState>()(
     }
   )
 )
+
+/** The chosen location as search parameters: a point, a district, or nothing. */
+export function placeParams(
+  location: Pick<LocationData, "mode" | "lat" | "lng" | "district">
+): { lat?: number; lng?: number; district?: District } {
+  if (
+    location.mode === "point" &&
+    location.lat !== undefined &&
+    location.lng !== undefined
+  ) {
+    return { lat: location.lat, lng: location.lng }
+  }
+  if (location.mode === "district" && location.district) {
+    return { district: location.district }
+  }
+  return {}
+}

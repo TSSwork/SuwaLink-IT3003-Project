@@ -288,5 +288,77 @@
     "emptyTitle": "No notifications yet",
     "emptyBody": "We will tell you here when a pharmacy answers a request or a reservation changes.",
     "loadError": "Notifications could not be loaded"
+  },
+  "search": {
+    "label": "Medicine or generic name",
+    "placeholder": "e.g. Panadol or paracetamol",
+    "submit": "Search",
+    "locationPrompt": "Set your location to see the nearest pharmacies first.",
+    "title": "Find medicine",
+    "resultsFor": "Results for “{{q}}”",
+    "allMedicines": "All medicines",
+    "count_one": "{{count}} medicine",
+    "count_other": "{{count}} medicines",
+    "categories": "Categories",
+    "allCategories": "All",
+    "loading": "Searching medicines…",
+    "loadError": "Medicines could not be loaded",
+    "emptyTitle": "No medicines found",
+    "emptyBody": "Nothing in stock matches your search right now.",
+    "tipsLabel": "Try this",
+    "tipSpelling": "Check the spelling.",
+    "tipGeneric": "Try the generic name, such as paracetamol instead of a brand.",
+    "tipWider": "Clear the category or choose another district.",
+    "orUpload": "Or upload your prescription and let pharmacies reply.",
+    "pagination": "Pages",
+    "previous": "Previous page",
+    "next": "Next page",
+    "pageOf": "Page {{page}} of {{total}}"
+  },
+  "medicine": {
+    "rx": "Prescription needed",
+    "rxHint": "The pharmacy hands this over only against a valid prescription.",
+    "pharmacyCount_one": "{{count}} pharmacy",
+    "pharmacyCount_other": "{{count}} pharmacies",
+    "fromPrice": "from {{price}}",
+    "nearest": "nearest {{distance}}"
+  },
+  "home": {
+    "title": "Find your medicine at a pharmacy nearby.",
+    "subtitle": "See which pharmacies have it in stock, compare prices and reserve it for pickup.",
+    "rxTitle": "Have a prescription?",
+    "rxBody": "Send a photo of it. Pharmacies near you reply with what they have and the price, and you reserve the one that suits you.",
+    "uploadPrescription": "Upload a prescription",
+    "signInToUpload": "You will be asked to sign in first.",
+    "howTitle": "How SuwaLink works",
+    "steps": {
+      "search": {
+        "title": "Search or upload",
+        "body": "Look up a medicine by name, or send a photo of your prescription."
+      },
+      "reply": {
+        "title": "Pharmacies reply",
+        "body": "See who has it in stock, the price, and how far away they are."
+      },
+      "pickup": {
+        "title": "Reserve and pick up",
+        "body": "The pharmacy holds it for you. Show your pickup code at the counter."
+      }
+    },
+    "recentTitle": "Your recent reservations",
+    "seeAll": "See all reservations",
+    "recentEmpty": "No reservations yet. Search for a medicine and reserve it at a pharmacy near you.",
+    "recentError": "Your reservations could not be loaded",
+    "pickupCode": "Pickup code",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items"
+  },
+  "reservations": {
+    "status": {
+      "CONFIRMED": "Confirmed",
+      "COMPLETED": "Collected",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    }
   }
 }
