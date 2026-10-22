@@ -236,13 +236,18 @@ function CartLineRow({ line }: { line: CartLine }) {
     <li className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/medicines/$id"
-            params={{ id: line.medicineId }}
-            className="rounded-md font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/30"
-          >
-            {line.medicineName}
-          </Link>
+          {line.medicineId ? (
+            <Link
+              to="/medicines/$id"
+              params={{ id: line.medicineId }}
+              className="rounded-md font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/30"
+            >
+              {line.medicineName}
+            </Link>
+          ) : (
+            // A quoted line names the medicine but carries no catalogue id.
+            <span className="font-medium">{line.medicineName}</span>
+          )}
           {line.prescriptionResponseItemId && (
             <Badge variant="secondary" className="h-auto whitespace-normal">
               {t("cart.quoted")}

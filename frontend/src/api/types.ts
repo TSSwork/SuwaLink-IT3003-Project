@@ -313,3 +313,50 @@ export interface Bookmark {
   createdAt: string
   inventory: InventoryItem
 }
+
+export type PrescriptionStatus = "PENDING" | "RESPONDED" | "CLOSED" | "EXPIRED"
+
+/** TargetScope: which pharmacies receive a prescription request. */
+export type TargetScope = "RADIUS_10KM" | "DISTRICT" | "ALL"
+
+/** PrescriptionRequestResponse; dates are LocalDateTime strings without a zone. */
+export interface PrescriptionRequest {
+  id: string
+  patientId: string
+  patientName: string
+  patientAge: number
+  note: string | null
+  status: PrescriptionStatus
+  imageId: string
+  /** Authenticated: "/api/images/{id}/content"; fetch with the token, never as a plain <img src>. */
+  imageUrl: string
+  targetScope: TargetScope
+  /** Set for DISTRICT requests. */
+  district: District | null
+  /** How many pharmacies received it. */
+  targetCount: number
+  expiresAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** PrescriptionResponseResponse: one pharmacy's reply with quoted lines. */
+export interface PrescriptionReply {
+  id: string
+  prescriptionRequestId: string
+  pharmacyId: string
+  pharmacyName: string
+  /** False once the pharmacy was deactivated. */
+  pharmacyActive: boolean
+  message: string | null
+  items: Array<{
+    /** prescriptionResponseItemId when reserving. */
+    id: string
+    inventoryItemId: string
+    medicineBrandName: string
+    /** The quoted quantity (the reservable maximum). */
+    quantity: number
+    unitPrice: number
+  }>
+  createdAt: string
+}

@@ -9,6 +9,8 @@ export interface Call {
   params: Record<string, unknown>
   /** The request body: parsed JSON, a FormData, or undefined. */
   data: unknown
+  /** The Authorization header, when one was sent. */
+  authorization?: string
 }
 
 type Handler = (call: Call) => unknown
@@ -22,6 +24,9 @@ export function mockApi(handlers: Record<string, Handler>) {
       url: config.url ?? "",
       params: { ...(config.params as Record<string, unknown> | undefined) },
       data: parseBody(config.data),
+      ...(config.headers.get("Authorization") && {
+        authorization: String(config.headers.get("Authorization")),
+      }),
     }
     calls.push(call)
     const handler = handlers[call.url] as Handler | undefined
@@ -29,7 +34,10 @@ export function mockApi(handlers: Record<string, Handler>) {
     try {
       const data = handler(call)
       return Promise.resolve({
-        data: { success: true, message: "", data },
+        data:
+          data instanceof Raw
+            ? data.body
+            : { success: true, message: "", data },
         status: 200,
         statusText: "",
         headers: {},
@@ -66,6 +74,15 @@ function parseBody(data: unknown): unknown {
   } catch {
     return data
   }
+}
+
+class Raw {
+  constructor(readonly body: unknown) {}
+}
+
+/** Return from a handler to answer with this body as-is (e.g. a Blob), not in the envelope. */
+export function raw(body: unknown): Raw {
+  return new Raw(body)
 }
 
 class Failure extends Error {

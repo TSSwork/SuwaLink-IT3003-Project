@@ -33,7 +33,6 @@ export function UploadPrescriptionButton({
       )}
     >
       {signedIn ? (
-        // @ts-expect-error the upload route arrives in Task 6.
         <Link to={UPLOAD_PATH}>{label}</Link>
       ) : (
         <Link to="/login" search={{ redirect: UPLOAD_PATH }}>

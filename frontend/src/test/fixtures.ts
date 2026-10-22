@@ -4,6 +4,8 @@ import type {
   MedicineSearchResult,
   Offer,
   PublicPharmacy,
+  PrescriptionReply,
+  PrescriptionRequest,
   PublicPharmacyItem,
   Reservation,
 } from "@/api/types"
@@ -180,5 +182,58 @@ export function bookmark(
       pharmacy: { id: "p1", name: "City Pharmacy", address: "12 Galle Road" },
       ...over.inventory,
     },
+  }
+}
+
+export function prescriptionRequest(
+  over: Partial<PrescriptionRequest> = {}
+): PrescriptionRequest {
+  return {
+    id: "rx1",
+    patientId: "u1",
+    patientName: "Nimal",
+    patientAge: 34,
+    note: "Need the full course.",
+    status: "PENDING",
+    imageId: "img1",
+    imageUrl: "/api/images/img1/content",
+    targetScope: "DISTRICT",
+    district: "COLOMBO",
+    targetCount: 8,
+    expiresAt: "2026-10-24T09:30:00",
+    createdAt: "2026-10-21T09:30:00",
+    updatedAt: "2026-10-21T09:30:00",
+    ...over,
+  }
+}
+
+export function prescriptionReply(
+  over: Partial<PrescriptionReply> = {}
+): PrescriptionReply {
+  return {
+    id: "resp1",
+    prescriptionRequestId: "rx1",
+    pharmacyId: "p1",
+    pharmacyName: "City Pharmacy",
+    pharmacyActive: true,
+    message: "Ready in 15 minutes.",
+    items: [
+      {
+        id: "ri1",
+        inventoryItemId: "inv1",
+        medicineBrandName: "Amoxil 250 mg",
+        quantity: 21,
+        unitPrice: 45,
+      },
+      {
+        id: "ri2",
+        inventoryItemId: "inv2",
+        medicineBrandName: "Panadol 500 mg",
+        quantity: 10,
+        unitPrice: 12.5,
+      },
+    ],
+    createdAt: "2026-10-21T11:00:00",
+    ...over,
   }
 }
