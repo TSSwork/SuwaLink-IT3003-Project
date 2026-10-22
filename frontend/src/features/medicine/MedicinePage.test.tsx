@@ -45,7 +45,8 @@ function renderMedicine() {
   )
 }
 
-const offerCalls = () => api.callsTo("/medicines/m1/offers").map((c) => c.params)
+const offerCalls = () =>
+  api.callsTo("/medicines/m1/offers").map((c) => c.params)
 const card = (name: string) =>
   screen.getByRole("link", { name }).closest("li") as HTMLElement
 
@@ -100,7 +101,10 @@ describe("MedicinePage", () => {
     api.restore()
     api = mockApi({
       "/medicines/m1": () =>
-        medicineDetail({ requiresPrescription: true, legalCategory: "PRESCRIPTION" }),
+        medicineDetail({
+          requiresPrescription: true,
+          legalCategory: "PRESCRIPTION",
+        }),
       "/medicines/m1/offers": () => [],
     })
     renderMedicine()
@@ -132,7 +136,9 @@ describe("MedicinePage", () => {
     expect(within(card("Cheap Pharmacy")).getByText(/4\.3\s?km/)).toBeVisible()
 
     await userEvent.click(screen.getByRole("radio", { name: "Lowest price" }))
-    await waitFor(() => expect(names()).toEqual(["Cheap Pharmacy", "Near Pharmacy"]))
+    await waitFor(() =>
+      expect(names()).toEqual(["Cheap Pharmacy", "Near Pharmacy"])
+    )
     expect(offerCalls().at(-1)).toEqual({ lat: 6.9, lng: 79.85, sort: "price" })
   })
 
@@ -140,7 +146,9 @@ describe("MedicinePage", () => {
     renderMedicine()
     const link = await screen.findByRole("link", { name: "Near Pharmacy" })
     expect(link).toHaveAttribute("href", "/pharmacies/p-near")
-    expect(within(card("Near Pharmacy")).getByText("Colombo 03, Colombo")).toBeVisible()
+    expect(
+      within(card("Near Pharmacy")).getByText("Colombo 03, Colombo")
+    ).toBeVisible()
   })
 
   it("says how much stock is left", async () => {
@@ -194,9 +202,10 @@ describe("MedicinePage", () => {
 
     await userEvent.click(save)
     await waitFor(() => expect(save).toHaveAttribute("aria-pressed", "false"))
-    expect(
-      api.callsTo("/bookmarks/inv-near").map((c) => c.method)
-    ).toEqual(["post", "delete"])
+    expect(api.callsTo("/bookmarks/inv-near").map((c) => c.method)).toEqual([
+      "post",
+      "delete",
+    ])
   })
 
   it("shows a not-found state for an unknown medicine", async () => {
@@ -207,10 +216,9 @@ describe("MedicinePage", () => {
     })
     renderMedicine()
     expect(await screen.findByText("Medicine not found")).toBeVisible()
-    expect(screen.getByRole("link", { name: "Search medicines" })).toHaveAttribute(
-      "href",
-      "/search"
-    )
+    expect(
+      screen.getByRole("link", { name: "Search medicines" })
+    ).toHaveAttribute("href", "/search")
   })
 
   it("explains what to do when no pharmacy stocks it", async () => {
@@ -226,12 +234,17 @@ describe("MedicinePage", () => {
     api.restore()
     api = mockApi({
       "/medicines/m1": () => medicineDetail(),
-      "/medicines/m1/offers": () => (failing ? fail(500, "INTERNAL_ERROR") : [NEAR]),
+      "/medicines/m1/offers": () =>
+        failing ? fail(500, "INTERNAL_ERROR") : [NEAR],
     })
     renderMedicine()
-    expect(await screen.findByText("Pharmacies could not be loaded")).toBeVisible()
+    expect(
+      await screen.findByText("Pharmacies could not be loaded")
+    ).toBeVisible()
     failing = false
     await userEvent.click(screen.getByRole("button", { name: "Try again" }))
-    expect(await screen.findByRole("link", { name: "Near Pharmacy" })).toBeVisible()
+    expect(
+      await screen.findByRole("link", { name: "Near Pharmacy" })
+    ).toBeVisible()
   })
 })

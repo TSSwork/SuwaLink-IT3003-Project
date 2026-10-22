@@ -59,7 +59,6 @@ export function AddToCartButton({
     } else {
       toast.success(t("cart.added"))
     }
-    setQuantity(1)
   }
 
   return (
@@ -76,7 +75,10 @@ export function AddToCartButton({
           {t("cart.add")}
         </Button>
       </div>
-      <p aria-live="polite" className="text-xs text-muted-foreground empty:hidden">
+      <p
+        aria-live="polite"
+        className="text-xs text-muted-foreground empty:hidden"
+      >
         {inCart ? t("cart.inCart", { count: inCart }) : null}
       </p>
     </div>

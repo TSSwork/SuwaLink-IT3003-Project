@@ -36,8 +36,12 @@ beforeEach(() => {
 describe("AddToCartButton", () => {
   it("adds the chosen quantity at the shown price", async () => {
     renderButton(40)
-    await userEvent.click(screen.getByRole("button", { name: "Increase quantity" }))
-    await userEvent.click(screen.getByRole("button", { name: "Increase quantity" }))
+    await userEvent.click(
+      screen.getByRole("button", { name: "Increase quantity" })
+    )
+    await userEvent.click(
+      screen.getByRole("button", { name: "Increase quantity" })
+    )
     expect(screen.getByRole("spinbutton", { name: "Quantity" })).toHaveValue(3)
     await userEvent.click(screen.getByRole("button", { name: "Add to cart" }))
     expect(useCartStore.getState().lines).toEqual([

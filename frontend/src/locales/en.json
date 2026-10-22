@@ -36,7 +36,8 @@
     "notifications": "Notifications",
     "account": "Account",
     "dashboard": "Dashboard",
-    "admin": "Admin"
+    "admin": "Admin",
+    "saved": "Saved"
   },
   "auth": {
     "signIn": "Sign in",
@@ -313,7 +314,10 @@
     "pagination": "Pages",
     "previous": "Previous page",
     "next": "Next page",
-    "pageOf": "Page {{page}} of {{total}}"
+    "pageOf": "Page {{page}} of {{total}}",
+    "pageEmptyTitle": "This page has no results",
+    "pageEmptyBody": "The list is shorter than this page. Start again from the first page.",
+    "firstPage": "Go to first page"
   },
   "medicine": {
     "rx": "Prescription needed",
@@ -321,7 +325,36 @@
     "pharmacyCount_one": "{{count}} pharmacy",
     "pharmacyCount_other": "{{count}} pharmacies",
     "fromPrice": "from {{price}}",
-    "nearest": "nearest {{distance}}"
+    "nearest": "nearest {{distance}}",
+    "inStock": "In stock",
+    "onlyLeft_one": "Only {{count}} left",
+    "onlyLeft_other": "Only {{count}} left",
+    "outOfStock": "Out of stock",
+    "save": "Save",
+    "saved": "Saved",
+    "rxNotice": "Bring your prescription when you collect",
+    "rxNoticeBody": "The pharmacy checks it at the counter before handing this over.",
+    "manufacturer": "Manufacturer",
+    "category": "Category",
+    "loading": "Loading medicine…",
+    "loadError": "Medicine could not be loaded",
+    "notFound": "Medicine not found",
+    "notFoundBody": "It may have been removed from the catalogue. Search for it again.",
+    "searchMedicines": "Search medicines",
+    "offersTitle": "Where to get it",
+    "offersCount_one": "{{count}} pharmacy has it",
+    "offersCount_other": "{{count}} pharmacies have it",
+    "sortLabel": "Sort pharmacies",
+    "sortDistance": "Nearest",
+    "sortPrice": "Lowest price",
+    "sortedByPrice": "Sorted by price. Set your location to see the nearest first.",
+    "offersLoading": "Finding pharmacies…",
+    "offersError": "Pharmacies could not be loaded",
+    "noOffersTitle": "No pharmacy has this in stock right now",
+    "noOffersBody": "Check again later, try another district, or upload your prescription so pharmacies can reply.",
+    "place": "{{city}}, {{district}}",
+    "away": "{{distance}} away",
+    "unitPrice": "per unit"
   },
   "home": {
     "title": "Find your medicine at a pharmacy nearby.",
@@ -360,5 +393,51 @@
       "CANCELLED": "Cancelled",
       "EXPIRED": "Expired"
     }
+  },
+  "cart": {
+    "add": "Add to cart",
+    "added": "Added to cart",
+    "capped": "Only {{max}} can be reserved. Your cart now has {{max}}.",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "inCart_one": "{{count}} in your cart",
+    "inCart_other": "{{count}} in your cart",
+    "limit": "A reservation can hold at most {{limit}} different medicines from one pharmacy.",
+    "quantity": "Quantity"
+  },
+  "pharmacy": {
+    "loading": "Loading pharmacy…",
+    "loadError": "Pharmacy could not be loaded",
+    "notFound": "Pharmacy not found",
+    "notFoundBody": "It may not be open on SuwaLink any more. Search for your medicine to find another.",
+    "address": "Address",
+    "phone": "Phone",
+    "call": "Call {{phone}}",
+    "hours": "Opening hours",
+    "hoursNone": "Hours not listed",
+    "phoneNone": "No phone number listed",
+    "directions": "Directions",
+    "opensInNewTab": "(opens in a new tab)",
+    "map": "Map of {{name}}",
+    "itemsTitle": "Medicines in stock",
+    "filter": "Filter medicines",
+    "filterPlaceholder": "Brand or generic name",
+    "clearFilter": "Clear filter",
+    "noMatch": "No medicines match “{{q}}”",
+    "emptyTitle": "No medicines in stock right now",
+    "emptyBody": "Call the pharmacy, or search for your medicine at other pharmacies.",
+    "itemCount_one": "{{count}} medicine",
+    "itemCount_other": "{{count}} medicines"
+  },
+  "saved": {
+    "title": "Saved medicines",
+    "subtitle": "Offers you saved, with the pharmacy's current price and stock.",
+    "loading": "Loading saved medicines…",
+    "loadError": "Saved items could not be loaded",
+    "emptyTitle": "Nothing saved yet",
+    "emptyBody": "Tap Save on a pharmacy's offer to keep it here for next time.",
+    "unavailable": "No longer available",
+    "remove": "Remove {{name}} from saved",
+    "removed": "Removed from saved"
   }
 }

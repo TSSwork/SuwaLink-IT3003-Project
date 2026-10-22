@@ -14,3 +14,8 @@ export function translateError(t: Translate, error: TranslatableError): string {
   }
   return error.message || t("errors.UNKNOWN")
 }
+
+/** True for an API 404 (unknown, hidden or someone else's resource). */
+export function isNotFound(error: unknown): boolean {
+  return (error as { status?: number } | null)?.status === 404
+}

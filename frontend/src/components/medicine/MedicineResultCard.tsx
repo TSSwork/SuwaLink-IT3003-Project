@@ -25,9 +25,8 @@ export function MedicineResultCard({
           <h3 className="text-lg leading-snug font-semibold">
             {/* The link covers the whole card; the badge stays readable above it. */}
             <Link
-              // @ts-expect-error the medicine page route arrives in Task 4; then
-              // use to="/medicines/$id" with params.
-              to={`/medicines/${result.medicineId}`}
+              to="/medicines/$id"
+              params={{ id: result.medicineId }}
               className="outline-none after:absolute after:inset-0 after:rounded-3xl"
             >
               {result.brandName}
@@ -50,7 +49,9 @@ export function MedicineResultCard({
           })}
         </p>
         <ul className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          <li>{t("medicine.pharmacyCount", { count: result.pharmacyCount })}</li>
+          <li>
+            {t("medicine.pharmacyCount", { count: result.pharmacyCount })}
+          </li>
           {result.nearestDistanceKm !== null && (
             <li className="tabular-nums">
               {t("medicine.nearest", {

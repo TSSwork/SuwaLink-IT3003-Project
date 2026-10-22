@@ -80,12 +80,16 @@ describe("IndexPage", () => {
 
   it("explains how it works in three ordered steps", async () => {
     renderHome()
-    const steps = await screen.findByRole("list", { name: "How SuwaLink works" })
+    const steps = await screen.findByRole("list", {
+      name: "How SuwaLink works",
+    })
     expect(steps.tagName).toBe("OL")
     const items = within(steps).getAllByRole("listitem")
-    expect(items.map((item) => item.querySelector("h3")?.textContent)).toEqual(
-      ["Search or upload", "Pharmacies reply", "Reserve and pick up"]
-    )
+    expect(items.map((item) => item.querySelector("h3")?.textContent)).toEqual([
+      "Search or upload",
+      "Pharmacies reply",
+      "Reserve and pick up",
+    ])
   })
 
   it("shows a signed-in customer their three latest reservations", async () => {

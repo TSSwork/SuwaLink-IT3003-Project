@@ -187,7 +187,11 @@ describe("SearchPage", () => {
     pages = (params) =>
       params.page === 0
         ? page([searchResult()], { totalPages: 2, totalElements: 21 })
-        : page([], { page: params.page as number, totalPages: 2, totalElements: 21 })
+        : page([], {
+            page: params.page as number,
+            totalPages: 2,
+            totalElements: 21,
+          })
     const user = userEvent.setup()
     const { router } = renderSearch("/search?q=a&page=9")
     expect(
@@ -212,7 +216,9 @@ describe("SearchPage", () => {
       await screen.findByText("Medicines could not be loaded")
     ).toBeVisible()
     expect(
-      screen.getByText("Something went wrong on our side. Please try again later.")
+      screen.getByText(
+        "Something went wrong on our side. Please try again later."
+      )
     ).toBeVisible()
     await user.click(screen.getByRole("button", { name: "Try again" }))
     expect(await screen.findByRole("link", { name: /Panadol/ })).toBeVisible()

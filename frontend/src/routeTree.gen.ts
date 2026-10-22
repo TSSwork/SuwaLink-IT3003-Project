@@ -14,9 +14,12 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as MedicinesIdRouteImport } from './routes/medicines/$id'
+import { Route as PharmaciesIdRouteImport } from './routes/pharmacies/$id'
 import { Route as PharmacyIndexRouteImport } from './routes/pharmacy/index'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
 import { Route as RegisterPharmacyRouteImport } from './routes/register/pharmacy'
@@ -46,6 +49,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -59,6 +67,16 @@ const TermsRoute = TermsRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MedicinesIdRoute = MedicinesIdRouteImport.update({
+  id: '/medicines/$id',
+  path: '/medicines/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PharmaciesIdRoute = PharmaciesIdRouteImport.update({
+  id: '/pharmacies/$id',
+  path: '/pharmacies/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PharmacyIndexRoute = PharmacyIndexRouteImport.update({
@@ -83,8 +101,11 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/terms': typeof TermsRoute
+  '/medicines/$id': typeof MedicinesIdRoute
+  '/pharmacies/$id': typeof PharmaciesIdRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
@@ -96,8 +117,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/terms': typeof TermsRoute
+  '/medicines/$id': typeof MedicinesIdRoute
+  '/pharmacies/$id': typeof PharmaciesIdRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
   '/admin': typeof AdminIndexRoute
   '/pharmacy': typeof PharmacyIndexRoute
@@ -110,8 +134,11 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/terms': typeof TermsRoute
+  '/medicines/$id': typeof MedicinesIdRoute
+  '/pharmacies/$id': typeof PharmaciesIdRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
@@ -125,8 +152,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/reset-password'
+    | '/saved'
     | '/search'
     | '/terms'
+    | '/medicines/$id'
+    | '/pharmacies/$id'
     | '/register/pharmacy'
     | '/admin/'
     | '/pharmacy/'
@@ -138,8 +168,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/reset-password'
+    | '/saved'
     | '/search'
     | '/terms'
+    | '/medicines/$id'
+    | '/pharmacies/$id'
     | '/register/pharmacy'
     | '/admin'
     | '/pharmacy'
@@ -151,8 +184,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/reset-password'
+    | '/saved'
     | '/search'
     | '/terms'
+    | '/medicines/$id'
+    | '/pharmacies/$id'
     | '/register/pharmacy'
     | '/admin/'
     | '/pharmacy/'
@@ -165,8 +201,11 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SavedRoute: typeof SavedRoute
   SearchRoute: typeof SearchRoute
   TermsRoute: typeof TermsRoute
+  MedicinesIdRoute: typeof MedicinesIdRoute
+  PharmaciesIdRoute: typeof PharmaciesIdRoute
   RegisterPharmacyRoute: typeof RegisterPharmacyRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PharmacyIndexRoute: typeof PharmacyIndexRoute
@@ -210,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
@@ -229,6 +275,20 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/medicines/$id': {
+      id: '/medicines/$id'
+      path: '/medicines/$id'
+      fullPath: '/medicines/$id'
+      preLoaderRoute: typeof MedicinesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pharmacies/$id': {
+      id: '/pharmacies/$id'
+      path: '/pharmacies/$id'
+      fullPath: '/pharmacies/$id'
+      preLoaderRoute: typeof PharmaciesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pharmacy/': {
@@ -261,8 +321,11 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SavedRoute: SavedRoute,
   SearchRoute: SearchRoute,
   TermsRoute: TermsRoute,
+  MedicinesIdRoute: MedicinesIdRoute,
+  PharmaciesIdRoute: PharmaciesIdRoute,
   RegisterPharmacyRoute: RegisterPharmacyRoute,
   AdminIndexRoute: AdminIndexRoute,
   PharmacyIndexRoute: PharmacyIndexRoute,

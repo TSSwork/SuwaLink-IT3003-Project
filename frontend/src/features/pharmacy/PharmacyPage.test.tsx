@@ -89,7 +89,10 @@ describe("PharmacyPage", () => {
       "https://www.openstreetmap.org/directions?to=6.9271,79.8612"
     )
     expect(directions).toHaveAttribute("target", "_blank")
-    expect(directions).toHaveAttribute("rel", expect.stringContaining("noopener"))
+    expect(directions).toHaveAttribute(
+      "rel",
+      expect.stringContaining("noopener")
+    )
     const map = await screen.findByTestId("map")
     expect(map).toHaveTextContent("Map of City Pharmacy: 6.9271,79.8612")
     expect(map).toHaveAttribute("data-readonly", "true")
@@ -103,7 +106,9 @@ describe("PharmacyPage", () => {
       "/medicines/m2"
     )
     const amoxil = row("Amoxil")
-    expect(within(amoxil).getByText("Amoxicillin · 250 mg · Capsule")).toBeVisible()
+    expect(
+      within(amoxil).getByText("Amoxicillin · 250 mg · Capsule")
+    ).toBeVisible()
     expect(within(amoxil).getByText("Prescription needed")).toBeVisible()
     expect(within(amoxil).getByText("Only 2 left")).toBeVisible()
     expect(within(amoxil).getByText(/45\.00/)).toBeVisible()
@@ -168,20 +173,22 @@ describe("PharmacyPage", () => {
     api = mockApi({ "/pharmacies/p1": () => fail(404, "NOT_FOUND") })
     renderPharmacy()
     expect(await screen.findByText("Pharmacy not found")).toBeVisible()
-    expect(screen.getByRole("link", { name: "Search medicines" })).toHaveAttribute(
-      "href",
-      "/search"
-    )
+    expect(
+      screen.getByRole("link", { name: "Search medicines" })
+    ).toHaveAttribute("href", "/search")
   })
 
   it("offers a retry for other errors", async () => {
     let failing = true
     api.restore()
     api = mockApi({
-      "/pharmacies/p1": () => (failing ? fail(500, "INTERNAL_ERROR") : pharmacy),
+      "/pharmacies/p1": () =>
+        failing ? fail(500, "INTERNAL_ERROR") : pharmacy,
     })
     renderPharmacy()
-    expect(await screen.findByText("Pharmacy could not be loaded")).toBeVisible()
+    expect(
+      await screen.findByText("Pharmacy could not be loaded")
+    ).toBeVisible()
     failing = false
     await userEvent.click(screen.getByRole("button", { name: "Try again" }))
     expect(

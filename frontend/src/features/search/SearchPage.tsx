@@ -72,7 +72,7 @@ export function SearchPage() {
           role="group"
           aria-label={t("search.categories")}
           // Scrolls sideways on phones, wraps from tablet width up.
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+          className="-mx-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
         >
           <CategoryChip
             label={t("search.allCategories")}
@@ -116,7 +116,11 @@ export function SearchPage() {
             onRetry={() => void search.refetch()}
           />
         ) : search.data.content.length === 0 ? (
-          <NoResults />
+          page > 1 && search.data.totalElements > 0 ? (
+            <PastLastPage />
+          ) : (
+            <NoResults />
+          )
         ) : (
           <>
             <ul
@@ -216,7 +220,38 @@ function NoResults() {
   )
 }
 
-function Pagination({ page, totalPages }: { page: number; totalPages: number }) {
+/** A shared or stale link to a page beyond the last one. */
+function PastLastPage() {
+  const { t } = useTranslation()
+  return (
+    <EmptyState
+      icon={SearchXIcon}
+      title={t("search.pageEmptyTitle")}
+      description={t("search.pageEmptyBody")}
+      action={
+        <Button asChild variant="outline">
+          <Link
+            to="/search"
+            search={(prev: Record<string, unknown>) => ({
+              ...prev,
+              page: undefined,
+            })}
+          >
+            {t("search.firstPage")}
+          </Link>
+        </Button>
+      }
+    />
+  )
+}
+
+function Pagination({
+  page,
+  totalPages,
+}: {
+  page: number
+  totalPages: number
+}) {
   const { t } = useTranslation()
   if (totalPages <= 1) return null
   const to = (target: number) => ({

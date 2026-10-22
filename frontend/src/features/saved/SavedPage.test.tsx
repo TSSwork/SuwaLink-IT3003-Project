@@ -72,12 +72,13 @@ afterEach(() => api.restore())
 describe("SavedPage", () => {
   it("lists saved offers with their pharmacy and price", async () => {
     renderSaved()
-    expect(await screen.findByRole("link", { name: "Panadol" })).toHaveAttribute(
-      "href",
-      "/medicines/m1"
-    )
+    expect(
+      await screen.findByRole("link", { name: "Panadol" })
+    ).toHaveAttribute("href", "/medicines/m1")
     const panadol = row("Panadol")
-    expect(within(panadol).getByText("Paracetamol · 500 mg · Tablet")).toBeVisible()
+    expect(
+      within(panadol).getByText("Paracetamol · 500 mg · Tablet")
+    ).toBeVisible()
     expect(
       within(panadol).getByRole("link", { name: "City Pharmacy" })
     ).toHaveAttribute("href", "/pharmacies/p1")
@@ -112,7 +113,9 @@ describe("SavedPage", () => {
     await screen.findByRole("link", { name: "Amoxil" })
     const amoxil = row("Amoxil")
     expect(within(amoxil).getByText("No longer available")).toBeVisible()
-    expect(within(amoxil).queryByRole("button", { name: "Add to cart" })).toBeNull()
+    expect(
+      within(amoxil).queryByRole("button", { name: "Add to cart" })
+    ).toBeNull()
   })
 
   it("removes a saved offer", async () => {
@@ -168,7 +171,9 @@ describe("SavedPage", () => {
       "/bookmarks": () => (failing ? fail(500, "INTERNAL_ERROR") : saved),
     })
     renderSaved()
-    expect(await screen.findByText("Saved items could not be loaded")).toBeVisible()
+    expect(
+      await screen.findByText("Saved items could not be loaded")
+    ).toBeVisible()
     failing = false
     await userEvent.click(screen.getByRole("button", { name: "Try again" }))
     expect(await screen.findByRole("link", { name: "Panadol" })).toBeVisible()
