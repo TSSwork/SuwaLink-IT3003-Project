@@ -183,6 +183,22 @@ describe("SearchPage", () => {
     ).toHaveAttribute("href", "/login?redirect=%2Fprescriptions%2Fnew")
   })
 
+  it("offers the first page when the page is past the last one", async () => {
+    pages = (params) =>
+      params.page === 0
+        ? page([searchResult()], { totalPages: 2, totalElements: 21 })
+        : page([], { page: params.page as number, totalPages: 2, totalElements: 21 })
+    const user = userEvent.setup()
+    const { router } = renderSearch("/search?q=a&page=9")
+    expect(
+      await screen.findByRole("heading", { name: "This page has no results" })
+    ).toBeVisible()
+    expect(screen.queryByText("Try this")).toBeNull()
+    await user.click(screen.getByRole("link", { name: "Go to first page" }))
+    expect(await screen.findByRole("link", { name: /Panadol/ })).toBeVisible()
+    expect(router.state.location.search).toEqual({ q: "a" })
+  })
+
   it("shows the error with a retry that loads again", async () => {
     let attempts = 0
     pages = () => {

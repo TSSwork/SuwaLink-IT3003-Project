@@ -35,6 +35,7 @@ describe("medicine queries", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.calls).toEqual([
       {
+        method: "get",
         url: "/medicines/search",
         params: { q: "pan", district: "GALLE", page: 0, size: 20 },
       },

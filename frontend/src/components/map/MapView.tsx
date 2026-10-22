@@ -39,7 +39,8 @@ export interface CentreRequest extends LatLng {
 
 export interface MapViewProps {
   value?: LatLng
-  onPick: (lat: number, lng: number) => void
+  /** Leave out for a read-only map (no tap-to-place, fixed pin). */
+  onPick?: (lat: number, lng: number) => void
   centreRequest?: CentreRequest
   height: number
   label: string
@@ -48,7 +49,11 @@ export interface MapViewProps {
 const prefersReducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
-function PickOnClick({ onPick }: Pick<MapViewProps, "onPick">) {
+function PickOnClick({
+  onPick,
+}: {
+  onPick: (lat: number, lng: number) => void
+}) {
   useMapEvents({ click: (event) => onPick(event.latlng.lat, event.latlng.lng) })
   return null
 }
@@ -92,7 +97,7 @@ function FollowValue({
   return null
 }
 
-/** The Leaflet map behind LocationPicker. Browser-only: load it lazily. */
+/** The Leaflet map behind LocationPicker, or read-only without `onPick`. Browser-only: load it lazily. */
 export default function MapView({
   value,
   onPick,
@@ -106,21 +111,23 @@ export default function MapView({
       center={[centre.lat, centre.lng]}
       zoom={value ? FOCUS_ZOOM : DEFAULT_ZOOM}
       style={{ height }}
+      // A read-only map must not swallow page scrolling.
+      scrollWheelZoom={onPick !== undefined}
       className="z-0 w-full"
     >
       <LabelContainer label={label} />
       <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
-      <PickOnClick onPick={onPick} />
+      {onPick && <PickOnClick onPick={onPick} />}
       <FollowValue value={value} centreRequest={centreRequest} />
       {value && (
         <Marker
           position={[value.lat, value.lng]}
           icon={markerIcon}
-          draggable
+          draggable={onPick !== undefined}
           eventHandlers={{
             dragend: (event) => {
               const { lat, lng } = (event.target as L.Marker).getLatLng()
-              onPick(lat, lng)
+              onPick?.(lat, lng)
             },
           }}
         />

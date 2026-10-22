@@ -252,3 +252,62 @@ export interface Reservation {
     requiresPrescription: boolean
   }>
 }
+
+/** GET /api/pharmacies/{id} item (PharmacyPublicResponse.Item): in stock, available, not expired. */
+export interface PublicPharmacyItem {
+  inventoryId: string
+  medicineId: string
+  brandName: string
+  genericName: string
+  strength: string
+  dosageForm: string
+  requiresPrescription: boolean
+  unitPrice: number
+  currency: "LKR"
+  stockQuantity: number
+}
+
+/** GET /api/pharmacies/{id} (PharmacyPublicResponse); 404 unless publicly visible. */
+export interface PublicPharmacy {
+  id: string
+  name: string
+  phone: string | null
+  address: string
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+  items: Array<PublicPharmacyItem>
+}
+
+/** InventoryResponse, as nested in a bookmark. */
+export interface InventoryItem {
+  id: string
+  unitPrice: number
+  currency: "LKR"
+  stockQuantity: number
+  /** LocalDate, "YYYY-MM-DD". */
+  expireDate: string
+  available: boolean
+  imageUrl: string | null
+  medicine: {
+    id: string
+    brandName: string
+    genericName: string
+    dosageForm: string
+    strength: string
+    unitOfMeasure: string
+    legalCategory: LegalCategory
+    category: string | null
+    manufacturer: string | null
+  }
+  pharmacy: { id: string; name: string; address: string }
+}
+
+/** GET /api/bookmarks item (BookmarkResponse), newest first. */
+export interface Bookmark {
+  id: string
+  createdAt: string
+  inventory: InventoryItem
+}

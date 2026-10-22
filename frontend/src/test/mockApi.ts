@@ -3,6 +3,8 @@ import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios"
 import { api } from "@/api/client"
 
 export interface Call {
+  /** Lower case, e.g. "get", "post". */
+  method: string
   url: string
   params: Record<string, unknown>
 }
@@ -14,6 +16,7 @@ export function mockApi(handlers: Record<string, Handler>) {
   const calls: Array<Call> = []
   const adapter: AxiosAdapter = (config: InternalAxiosRequestConfig) => {
     const call = {
+      method: (config.method ?? "get").toLowerCase(),
       url: config.url ?? "",
       params: { ...(config.params as Record<string, unknown> | undefined) },
     }
