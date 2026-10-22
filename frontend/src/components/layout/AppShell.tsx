@@ -142,7 +142,11 @@ function Wordmark() {
         සු
         <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-highlight ring-2 ring-background" />
       </span>
-      <span aria-hidden className="text-xl font-extrabold tracking-tight">
+      {/* Phones under 420 px keep only the tile so every header control fits. */}
+      <span
+        aria-hidden
+        className="hidden text-xl font-extrabold tracking-tight min-[420px]:inline"
+      >
         Suwa<span className="text-primary">Link</span>
       </span>
     </Link>

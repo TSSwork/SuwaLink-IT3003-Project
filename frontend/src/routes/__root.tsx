@@ -13,6 +13,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
 import { registerRouter } from "@/api/client"
+import { CartButton } from "@/components/cart/CartButton"
 import { AccountMenu } from "@/components/layout/AccountMenu"
 import { NotificationBell } from "@/components/layout/NotificationBell"
 import { SessionBootstrap } from "@/components/layout/SessionBootstrap"
@@ -78,6 +79,7 @@ function RootLayout() {
       <AppShell
         account={
           <>
+            <CartButton />
             <NotificationBell />
             <AccountMenu />
           </>

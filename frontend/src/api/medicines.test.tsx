@@ -29,7 +29,8 @@ describe("medicine queries", () => {
       }),
     })
     const { result } = renderHook(
-      () => useMedicineSearch({ q: "pan", district: "GALLE", page: 0, size: 20 }),
+      () =>
+        useMedicineSearch({ q: "pan", district: "GALLE", page: 0, size: 20 }),
       { wrapper: wrapper() }
     )
     await waitFor(() => expect(result.current.isSuccess).toBe(true))

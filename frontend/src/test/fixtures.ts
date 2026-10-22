@@ -68,7 +68,9 @@ export function reservation(over: Partial<Reservation> = {}): Reservation {
   }
 }
 
-export function medicineDetail(over: Partial<MedicineDetail> = {}): MedicineDetail {
+export function medicineDetail(
+  over: Partial<MedicineDetail> = {}
+): MedicineDetail {
   return {
     medicineId: "m1",
     brandName: "Panadol",
@@ -86,7 +88,9 @@ export function medicineDetail(over: Partial<MedicineDetail> = {}): MedicineDeta
 }
 
 export function offer(
-  over: Partial<Omit<Offer, "pharmacy">> & { pharmacy?: Partial<Offer["pharmacy"]> } = {}
+  over: Partial<Omit<Offer, "pharmacy">> & {
+    pharmacy?: Partial<Offer["pharmacy"]>
+  } = {}
 ): Offer {
   const { pharmacy, ...rest } = over
   return {
@@ -112,7 +116,9 @@ export function offer(
   }
 }
 
-export function pharmacyItem(over: Partial<PublicPharmacyItem> = {}): PublicPharmacyItem {
+export function pharmacyItem(
+  over: Partial<PublicPharmacyItem> = {}
+): PublicPharmacyItem {
   return {
     inventoryId: "inv1",
     medicineId: "m1",
@@ -128,7 +134,9 @@ export function pharmacyItem(over: Partial<PublicPharmacyItem> = {}): PublicPhar
   }
 }
 
-export function publicPharmacy(over: Partial<PublicPharmacy> = {}): PublicPharmacy {
+export function publicPharmacy(
+  over: Partial<PublicPharmacy> = {}
+): PublicPharmacy {
   return {
     id: "p1",
     name: "City Pharmacy",

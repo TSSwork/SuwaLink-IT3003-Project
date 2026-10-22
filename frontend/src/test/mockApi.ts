@@ -7,6 +7,8 @@ export interface Call {
   method: string
   url: string
   params: Record<string, unknown>
+  /** The request body: parsed JSON, a FormData, or undefined. */
+  data: unknown
 }
 
 type Handler = (call: Call) => unknown
@@ -19,6 +21,7 @@ export function mockApi(handlers: Record<string, Handler>) {
       method: (config.method ?? "get").toLowerCase(),
       url: config.url ?? "",
       params: { ...(config.params as Record<string, unknown> | undefined) },
+      data: parseBody(config.data),
     }
     calls.push(call)
     const handler = handlers[call.url] as Handler | undefined
@@ -53,6 +56,15 @@ export function mockApi(handlers: Record<string, Handler>) {
     restore: () => {
       api.defaults.adapter = original
     },
+  }
+}
+
+function parseBody(data: unknown): unknown {
+  if (typeof data !== "string") return data
+  try {
+    return JSON.parse(data)
+  } catch {
+    return data
   }
 }
 

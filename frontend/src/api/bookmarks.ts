@@ -7,9 +7,7 @@ export const bookmarksKey = ["bookmarks"] as const
 
 /** The signed-in customer's saved offers, newest first; idle for everyone else. */
 export function useBookmarks() {
-  const isCustomer = useSessionStore(
-    (state) => state.user?.role === "CUSTOMER"
-  )
+  const isCustomer = useSessionStore((state) => state.user?.role === "CUSTOMER")
   return useQuery({
     queryKey: bookmarksKey,
     queryFn: async () =>

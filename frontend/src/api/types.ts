@@ -155,7 +155,8 @@ export interface Page<T> {
 }
 
 /** PrescriptionStatus: anything but OTC needs a prescription. */
-export type LegalCategory = "OTC" | "PRESCRIPTION" | "CONTROLLED" | "SCHEDULE_III"
+export type LegalCategory =
+  "OTC" | "PRESCRIPTION" | "CONTROLLED" | "SCHEDULE_III"
 
 /** GET /api/medicines/search item (MedicineSearchResult). */
 export interface MedicineSearchResult {
@@ -216,7 +217,8 @@ export interface Offer {
 
 export type OfferSort = "distance" | "price"
 
-export type ReservationStatus = "CONFIRMED" | "CANCELLED" | "COMPLETED" | "EXPIRED"
+export type ReservationStatus =
+  "CONFIRMED" | "CANCELLED" | "COMPLETED" | "EXPIRED"
 
 /** ReservationResponse; dates are LocalDateTime strings without a zone. */
 export interface Reservation {
