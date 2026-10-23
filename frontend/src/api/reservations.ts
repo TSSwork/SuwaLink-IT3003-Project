@@ -37,3 +37,67 @@ export function useCreateReservation() {
       queryClient.invalidateQueries({ queryKey: reservationsKey }),
   })
 }
+
+/** Visible to the customer who made it, the owning pharmacy and admins; 404 for anyone else. */
+export function useReservation(id: string) {
+  return useQuery({
+    queryKey: [...reservationsKey, id],
+    queryFn: async () =>
+      (await api.get<ApiResponse<Reservation>>(`/reservations/${id}`)).data
+        .data,
+  })
+}
+
+/** The QR / typed pickup code lookup; same visibility, never 403. */
+export function useReservationByCode(code: string) {
+  return useQuery({
+    queryKey: [...reservationsKey, "code", code.toUpperCase()],
+    queryFn: async () =>
+      (
+        await api.get<ApiResponse<Reservation>>(
+          `/reservations/by-code/${encodeURIComponent(code)}`
+        )
+      ).data.data,
+  })
+}
+
+function useReservationChange<TVariables>(
+  request: (variables: TVariables) => Promise<Reservation>
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: request,
+    onSuccess: (reservation) => {
+      queryClient.setQueryData(
+        [...reservationsKey, reservation.id],
+        reservation
+      )
+      return queryClient.invalidateQueries({ queryKey: reservationsKey })
+    },
+  })
+}
+
+/** Customer (own) or owning pharmacy; only while CONFIRMED. */
+export function useCancelReservation() {
+  return useReservationChange(
+    async ({ id, reason }: { id: string; reason?: string }) =>
+      (
+        await api.patch<ApiResponse<Reservation>>(
+          `/reservations/${id}/cancel`,
+          reason ? { reason } : {}
+        )
+      ).data.data
+  )
+}
+
+/** Owning pharmacy only: the customer collected it. */
+export function useCompleteReservation() {
+  return useReservationChange(
+    async (id: string) =>
+      (
+        await api.patch<ApiResponse<Reservation>>(
+          `/reservations/${id}/complete`
+        )
+      ).data.data
+  )
+}

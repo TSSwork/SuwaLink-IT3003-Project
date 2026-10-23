@@ -25,8 +25,11 @@ import { Route as PharmacyIndexRouteImport } from './routes/pharmacy/index'
 import { Route as PrescriptionsIndexRouteImport } from './routes/prescriptions/index'
 import { Route as PrescriptionsIdRouteImport } from './routes/prescriptions/$id'
 import { Route as PrescriptionsNewRouteImport } from './routes/prescriptions/new'
+import { Route as RCodeRouteImport } from './routes/r/$code'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
 import { Route as RegisterPharmacyRouteImport } from './routes/register/pharmacy'
+import { Route as ReservationsIndexRouteImport } from './routes/reservations/index'
+import { Route as ReservationsIdRouteImport } from './routes/reservations/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -108,6 +111,11 @@ const PrescriptionsNewRoute = PrescriptionsNewRouteImport.update({
   path: '/prescriptions/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterIndexRoute = RegisterIndexRouteImport.update({
   id: '/register/',
   path: '/register/',
@@ -116,6 +124,16 @@ const RegisterIndexRoute = RegisterIndexRouteImport.update({
 const RegisterPharmacyRoute = RegisterPharmacyRouteImport.update({
   id: '/register/pharmacy',
   path: '/register/pharmacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservationsIndexRoute = ReservationsIndexRouteImport.update({
+  id: '/reservations/',
+  path: '/reservations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservationsIdRoute = ReservationsIdRouteImport.update({
+  id: '/reservations/$id',
+  path: '/reservations/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -133,11 +151,14 @@ export interface FileRoutesByFullPath {
   '/pharmacies/$id': typeof PharmaciesIdRoute
   '/prescriptions/$id': typeof PrescriptionsIdRoute
   '/prescriptions/new': typeof PrescriptionsNewRoute
+  '/r/$code': typeof RCodeRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
+  '/reservations/$id': typeof ReservationsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
   '/prescriptions/': typeof PrescriptionsIndexRoute
   '/register/': typeof RegisterIndexRoute
+  '/reservations/': typeof ReservationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -153,11 +174,14 @@ export interface FileRoutesByTo {
   '/pharmacies/$id': typeof PharmaciesIdRoute
   '/prescriptions/$id': typeof PrescriptionsIdRoute
   '/prescriptions/new': typeof PrescriptionsNewRoute
+  '/r/$code': typeof RCodeRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
+  '/reservations/$id': typeof ReservationsIdRoute
   '/admin': typeof AdminIndexRoute
   '/pharmacy': typeof PharmacyIndexRoute
   '/prescriptions': typeof PrescriptionsIndexRoute
   '/register': typeof RegisterIndexRoute
+  '/reservations': typeof ReservationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -174,11 +198,14 @@ export interface FileRoutesById {
   '/pharmacies/$id': typeof PharmaciesIdRoute
   '/prescriptions/$id': typeof PrescriptionsIdRoute
   '/prescriptions/new': typeof PrescriptionsNewRoute
+  '/r/$code': typeof RCodeRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
+  '/reservations/$id': typeof ReservationsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
   '/prescriptions/': typeof PrescriptionsIndexRoute
   '/register/': typeof RegisterIndexRoute
+  '/reservations/': typeof ReservationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -196,11 +223,14 @@ export interface FileRouteTypes {
     | '/pharmacies/$id'
     | '/prescriptions/$id'
     | '/prescriptions/new'
+    | '/r/$code'
     | '/register/pharmacy'
+    | '/reservations/$id'
     | '/admin/'
     | '/pharmacy/'
     | '/prescriptions/'
     | '/register/'
+    | '/reservations/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -216,11 +246,14 @@ export interface FileRouteTypes {
     | '/pharmacies/$id'
     | '/prescriptions/$id'
     | '/prescriptions/new'
+    | '/r/$code'
     | '/register/pharmacy'
+    | '/reservations/$id'
     | '/admin'
     | '/pharmacy'
     | '/prescriptions'
     | '/register'
+    | '/reservations'
   id:
     | '__root__'
     | '/'
@@ -236,11 +269,14 @@ export interface FileRouteTypes {
     | '/pharmacies/$id'
     | '/prescriptions/$id'
     | '/prescriptions/new'
+    | '/r/$code'
     | '/register/pharmacy'
+    | '/reservations/$id'
     | '/admin/'
     | '/pharmacy/'
     | '/prescriptions/'
     | '/register/'
+    | '/reservations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -257,11 +293,14 @@ export interface RootRouteChildren {
   PharmaciesIdRoute: typeof PharmaciesIdRoute
   PrescriptionsIdRoute: typeof PrescriptionsIdRoute
   PrescriptionsNewRoute: typeof PrescriptionsNewRoute
+  RCodeRoute: typeof RCodeRoute
   RegisterPharmacyRoute: typeof RegisterPharmacyRoute
+  ReservationsIdRoute: typeof ReservationsIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PharmacyIndexRoute: typeof PharmacyIndexRoute
   PrescriptionsIndexRoute: typeof PrescriptionsIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
+  ReservationsIndexRoute: typeof ReservationsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -378,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrescriptionsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register/': {
       id: '/register/'
       path: '/register'
@@ -390,6 +436,20 @@ declare module '@tanstack/react-router' {
       path: '/register/pharmacy'
       fullPath: '/register/pharmacy'
       preLoaderRoute: typeof RegisterPharmacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservations/': {
+      id: '/reservations/'
+      path: '/reservations'
+      fullPath: '/reservations/'
+      preLoaderRoute: typeof ReservationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservations/$id': {
+      id: '/reservations/$id'
+      path: '/reservations/$id'
+      fullPath: '/reservations/$id'
+      preLoaderRoute: typeof ReservationsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -409,11 +469,14 @@ const rootRouteChildren: RootRouteChildren = {
   PharmaciesIdRoute: PharmaciesIdRoute,
   PrescriptionsIdRoute: PrescriptionsIdRoute,
   PrescriptionsNewRoute: PrescriptionsNewRoute,
+  RCodeRoute: RCodeRoute,
   RegisterPharmacyRoute: RegisterPharmacyRoute,
+  ReservationsIdRoute: ReservationsIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   PharmacyIndexRoute: PharmacyIndexRoute,
   PrescriptionsIndexRoute: PrescriptionsIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
+  ReservationsIndexRoute: ReservationsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

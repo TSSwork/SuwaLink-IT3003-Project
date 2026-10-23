@@ -70,8 +70,8 @@ export function CheckoutSummary({
               </p>
               <Button asChild variant="outline" size="sm" className="w-fit">
                 <Link
-                  // @ts-expect-error the reservation page route arrives in Task 7.
-                  to={`/reservations/${reservation.id}`}
+                  to="/reservations/$id"
+                  params={{ id: reservation.id }}
                   onClick={onClose}
                 >
                   {t("cart.viewReservation")}

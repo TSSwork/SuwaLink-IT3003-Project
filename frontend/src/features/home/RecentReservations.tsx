@@ -1,27 +1,17 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronRightIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import type { Reservation, ReservationStatus } from "@/api/types"
+import type { Reservation } from "@/api/types"
 import { useMyReservations } from "@/api/reservations"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
-import { Badge } from "@/components/ui/badge"
+import { ReservationStatusBadge } from "@/components/reservation/ReservationStatusBadge"
 import { Button } from "@/components/ui/button"
 import { formatPrice, formatRelative } from "@/lib/format"
 import { translateError } from "@/lib/translateError"
 import { useLanguageStore } from "@/stores/languageStore"
 
 const SHOWN = 3
-
-const STATUS_VARIANT: Record<
-  ReservationStatus,
-  "secondary" | "default" | "outline"
-> = {
-  CONFIRMED: "secondary",
-  COMPLETED: "default",
-  CANCELLED: "outline",
-  EXPIRED: "outline",
-}
 
 /** The signed-in customer's latest reservations (the API lists newest first). */
 export function RecentReservations() {
@@ -36,7 +26,6 @@ export function RecentReservations() {
         </h2>
         {reservations.data && reservations.data.length > 0 && (
           <Button asChild variant="ghost">
-            {/* @ts-expect-error the reservations route arrives in Task 7. */}
             <Link to="/reservations">
               {t("home.seeAll")}
               <ChevronRightIcon data-icon="inline-end" aria-hidden />
@@ -75,20 +64,14 @@ function ReservationRow({ reservation }: { reservation: Reservation }) {
   return (
     <li>
       <Link
-        // @ts-expect-error the reservation page route arrives in Task 7; then
-        // use to="/reservations/$id" with params.
-        to={`/reservations/${reservation.id}`}
+        to="/reservations/$id"
+        params={{ id: reservation.id }}
         className="flex items-center gap-3 px-4 py-3 outline-none hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:ring-inset sm:px-5"
       >
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium">{reservation.pharmacy.name}</span>
-            <Badge
-              variant={STATUS_VARIANT[reservation.status]}
-              className="h-auto whitespace-normal"
-            >
-              {t(`reservations.status.${reservation.status}`)}
-            </Badge>
+            <ReservationStatusBadge status={reservation.status} />
           </div>
           <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span>

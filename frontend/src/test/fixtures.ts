@@ -237,3 +237,10 @@ export function prescriptionReply(
     ...over,
   }
 }
+
+/** A LocalDateTime string (no zone), as the backend sends, `ms` from now. */
+export function localIso(msFromNow: number): string {
+  const d = new Date(Date.now() + msFromNow)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
