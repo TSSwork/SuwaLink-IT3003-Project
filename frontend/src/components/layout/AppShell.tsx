@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet"
 
 interface AppShellProps {
-  /** Primary navigation links; inline from 768 px, inside a Sheet below. */
+  /** Primary navigation links; inline from 1024 px, inside a Sheet below. */
   nav?: ReactNode
   /** Sign-in button or user menu (AccountMenu). */
   account?: ReactNode
@@ -43,7 +43,7 @@ export function AppShell({ nav, account, children }: AppShellProps) {
           {nav && (
             <nav
               aria-label={t("common.mainNav")}
-              className="ml-6 hidden items-center gap-1 md:flex"
+              className="ml-6 hidden items-center gap-1 lg:flex"
             >
               {nav}
             </nav>
@@ -51,7 +51,10 @@ export function AppShell({ nav, account, children }: AppShellProps) {
 
           <div className="ml-auto flex items-center gap-1">
             <LanguageSwitcher />
-            <ThemeToggle />
+            {/* Below 1024 px the theme choice moves into the menu sheet so the header fits (360 px, long ta labels). */}
+            <div className={nav ? "hidden lg:flex" : "flex"}>
+              <ThemeToggle />
+            </div>
             {account}
 
             {nav && (
@@ -60,7 +63,7 @@ export function AppShell({ nav, account, children }: AppShellProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-11 md:hidden"
+                    className="size-11 lg:hidden"
                     aria-label={t("common.openMenu")}
                   >
                     <MenuIcon className="size-5" aria-hidden />
@@ -85,6 +88,12 @@ export function AppShell({ nav, account, children }: AppShellProps) {
                   >
                     {nav}
                   </nav>
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t px-4 pt-4">
+                    <span className="text-sm font-medium">
+                      {t("theme.label")}
+                    </span>
+                    <ThemeToggle />
+                  </div>
                 </SheetContent>
               </Sheet>
             )}

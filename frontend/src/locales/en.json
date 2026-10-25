@@ -38,7 +38,8 @@
     "dashboard": "Dashboard",
     "admin": "Admin",
     "saved": "Saved",
-    "cart": "Cart"
+    "cart": "Cart",
+    "settings": "Settings"
   },
   "auth": {
     "signIn": "Sign in",
@@ -607,5 +608,22 @@
     "replyTotal": "Total",
     "addAll": "Add all to cart",
     "goToCart": "Go to cart"
+  },
+  "settings": {
+    "title": "Settings",
+    "loadError": "Your settings could not be loaded",
+    "profile": "Profile",
+    "profileHint": "To change these details, contact SuwaLink support.",
+    "preferences": "Preferences",
+    "language": "Language for the app and emails",
+    "district": "Default district",
+    "save": "Save preferences",
+    "saved": "Preferences saved",
+    "account": "Account",
+    "delete": "Delete account",
+    "deleteTitle": "Delete your account?",
+    "deleteBody": "Your details and prescription photos are removed. Past reservations stay with the pharmacies without your name. This cannot be undone. Enter your password to confirm.",
+    "deleteConfirm": "Delete my account",
+    "deleted": "Your account has been deleted."
   }
 }

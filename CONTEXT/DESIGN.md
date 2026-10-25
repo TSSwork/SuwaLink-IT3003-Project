@@ -36,6 +36,25 @@ Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foregr
 - Districts are chosen with `DistrictSelect` (`frontend/src/components/forms/`). It lists the 25 districts, labelled and sorted in the current language.
 - All are self-hosted via `@fontsource` packages imported in `styles.css`; no font CDNs.
 
+### Customer building blocks
+
+Reuse these instead of re-creating them:
+
+- `LocationChooser` (`components/location/`): the search location as a chip ("Near me", "Kandy"); a sheet offers device location, a district, or a point on the map. Location is never required.
+- `RxBadge` (`components/medicine/`): "Prescription needed" in words with an icon, never colour alone. Pages that sell such an item also show the "Bring your prescription when you collect" notice.
+- `StockIndicator`: "In stock", or "Only N left" at 5 or fewer, with a dot that is not the only cue.
+- `QuantityStepper` and `AddToCartButton` (`components/cart/`): quantity 1–min(stock, 100); typed values settle on blur; hidden from pharmacy owners and admins.
+- `PharmacyPlace`: "City, District" with the district translated.
+- `PrescriptionImage` (`components/prescription/`): the private photo fetched with the token as an object URL (revoked on unmount), never cropped, on a neutral surface, zoomable by pinch, wheel, buttons and the +, -, 0 keys.
+- `ReservationView` (`features/reservations/`): shared by `/reservations/$id` and the QR target `/r/$code`. The QR encodes `${origin}/r/<code>` and is always drawn black on a white tile (scanners need dark on light in both themes), with the code beside it in `font-mono`.
+- `ConfirmButton` (`components/feedback/`): an alert dialog before anything that cannot be undone (close or delete a request, cancel or complete a reservation). Deleting an account uses a dialog with a password field instead.
+
+Patterns:
+
+- **Status chips** (`PrescriptionStatusBadge`, `ReservationStatusBadge`): the status in words on a `Badge`; filters over a list are pill `Button`s with `aria-pressed`, scrolling sideways on phones.
+- **Cart groups**: the cart is grouped by pharmacy because each pharmacy is one reservation. Each group has its own subtotal, prescription notice and "Reserve here"; "Reserve all" sends one request per group in turn. A group that fails stays in the cart with its translated error; nothing is dropped silently.
+- **Prices** always go through `formatPrice` (LKR in the reader's locale) and **distances** through `formatDistance`.
+
 ### Dark mode rules
 
 - Dark is a designed palette, not an inversion: olive-tinted near-black surfaces (low chroma, hue ~127), lighter surfaces for higher elevation (background < card < popover), Cornsilk text dimmed slightly, brand colours raised in lightness until text on them and them on the background pass AA.
@@ -44,7 +63,7 @@ Measured contrast (WCAG 2.x): light foreground/background 12.2:1, primary-foregr
 
 ### Shell and states
 
-- Every page renders inside `AppShell` (top bar with wordmark, navigation, language, theme, account; footer with Privacy/Terms). Below 768 px navigation moves into a `Sheet`.
+- Every page renders inside `AppShell` (top bar with wordmark, navigation, language, theme, cart, notifications, account; footer with Privacy/Terms). Below 1024 px navigation and the theme choice move into a `Sheet` (Tamil and Sinhala labels do not fit inline at tablet width), and below 420 px the wordmark shows only its tile so every control fits at 360 px. `MainNav` picks the links by role: visitors get Find medicine; customers also get Prescriptions, Reservations and Saved; pharmacy owners and admins get their dashboard.
 - Use `LoadingState`, `EmptyState` and `ErrorState` from `components/feedback` instead of ad-hoc spinners or blank screens.
 - Touch targets are at least 44 px on touch devices. The generated `components/ui` files carry `pointer-coarse:h-11` / `pointer-coarse:size-11` / `pointer-coarse:min-h-11` on every interactive control (buttons, menu items), so phones and tablets get 44 px while mouse and trackpad keep the preset's density. Each edited generated file has a comment saying so; keep these edits when re-adding a component with the shadcn CLI, and apply the same rule to any new interactive component (inputs, select triggers, ...).
 - Shell controls that are always icon-only (theme, menu, sheet close) use `size-11` on every pointer type.

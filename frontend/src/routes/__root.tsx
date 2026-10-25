@@ -15,6 +15,7 @@ import appCss from "../styles.css?url"
 import { registerRouter } from "@/api/client"
 import { CartButton } from "@/components/cart/CartButton"
 import { AccountMenu } from "@/components/layout/AccountMenu"
+import { MainNav } from "@/components/layout/MainNav"
 import { NotificationBell } from "@/components/layout/NotificationBell"
 import { SessionBootstrap } from "@/components/layout/SessionBootstrap"
 import { AppShell } from "@/components/layout/AppShell"
@@ -77,6 +78,7 @@ function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SessionBootstrap />
       <AppShell
+        nav={<MainNav />}
         account={
           <>
             <CartButton />

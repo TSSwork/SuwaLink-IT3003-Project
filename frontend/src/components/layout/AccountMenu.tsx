@@ -87,6 +87,11 @@ export function AccountMenu() {
         <DropdownMenuItem asChild className="min-h-11">
           <Link to={homeFor(user.role)}>{t(HOME_LABEL[user.role])}</Link>
         </DropdownMenuItem>
+        {user.role === "CUSTOMER" && (
+          <DropdownMenuItem asChild className="min-h-11">
+            <Link to="/settings">{t("nav.settings")}</Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem
           className="min-h-11"
           onSelect={() => {

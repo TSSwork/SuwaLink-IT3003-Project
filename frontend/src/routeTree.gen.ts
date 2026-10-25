@@ -17,6 +17,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as MedicinesIdRouteImport } from './routes/medicines/$id'
@@ -69,6 +70,11 @@ const SavedRoute = SavedRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
   '/medicines/$id': typeof MedicinesIdRoute
   '/pharmacies/$id': typeof PharmaciesIdRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
   '/medicines/$id': typeof MedicinesIdRoute
   '/pharmacies/$id': typeof PharmaciesIdRoute
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
   '/medicines/$id': typeof MedicinesIdRoute
   '/pharmacies/$id': typeof PharmaciesIdRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/saved'
     | '/search'
+    | '/settings'
     | '/terms'
     | '/medicines/$id'
     | '/pharmacies/$id'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/saved'
     | '/search'
+    | '/settings'
     | '/terms'
     | '/medicines/$id'
     | '/pharmacies/$id'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/saved'
     | '/search'
+    | '/settings'
     | '/terms'
     | '/medicines/$id'
     | '/pharmacies/$id'
@@ -288,6 +300,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SavedRoute: typeof SavedRoute
   SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
   TermsRoute: typeof TermsRoute
   MedicinesIdRoute: typeof MedicinesIdRoute
   PharmaciesIdRoute: typeof PharmaciesIdRoute
@@ -359,6 +372,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -464,6 +484,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SavedRoute: SavedRoute,
   SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
   TermsRoute: TermsRoute,
   MedicinesIdRoute: MedicinesIdRoute,
   PharmaciesIdRoute: PharmaciesIdRoute,
