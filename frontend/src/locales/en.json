@@ -634,5 +634,64 @@
     "deleteBody": "Your details and prescription photos are removed. Past reservations stay with the pharmacies without your name. This cannot be undone. Enter your password to confirm.",
     "deleteConfirm": "Delete my account",
     "deleted": "Your account has been deleted."
+  },
+  "pharmacyOwner": {
+    "sectionLabel": "Your pharmacy",
+    "nav": {
+      "label": "Pharmacy sections",
+      "overview": "Overview",
+      "requests": "Requests",
+      "reservations": "Reservations",
+      "scan": "Scan",
+      "inventory": "Inventory",
+      "suggest": "Suggest medicine",
+      "settings": "Settings"
+    },
+    "status": {
+      "PENDING": "Waiting for approval",
+      "VERIFIED": "Verified",
+      "REJECTED": "Rejected",
+      "DEACTIVATED": "Deactivated"
+    },
+    "overview": {
+      "title": "Overview",
+      "atAGlance": "At a glance",
+      "stats": {
+        "waiting": "Requests waiting for a reply",
+        "confirmed": "Reservations to collect",
+        "lowStock": "Items low on stock",
+        "expiring": "Items expiring within 30 days"
+      },
+      "stockError": "Stock figures could not be loaded",
+      "seeAll": "See all",
+      "seeAllLabel": "See all: {{section}}",
+      "waitingTitle": "Requests waiting for you",
+      "waitingError": "Requests could not be loaded",
+      "waitingEmptyTitle": "No requests are waiting",
+      "waitingEmptyBody": "New prescription requests appear here and in your notifications.",
+      "patientAge_one": "Patient aged {{count}}",
+      "patientAge_other": "Patient aged {{count}}",
+      "noNote": "No note from the patient",
+      "pickupsTitle": "Today's pickups",
+      "pickupsError": "Reservations could not be loaded",
+      "pickupsEmptyTitle": "No pickups are due",
+      "pickupsEmptyBody": "When a customer reserves medicine here, it shows until they collect it."
+    },
+    "settings": {
+      "title": "Pharmacy settings",
+      "loadError": "Your pharmacy could not be loaded",
+      "profile": "Pharmacy profile",
+      "phoneHint": "Customers see this number and call it about their reservations.",
+      "location": "Location",
+      "locationHint": "Use your location, then tap the map or drag the pin to put it exactly on your pharmacy.",
+      "registration": "Registration details",
+      "registrationHint": "These are checked by SuwaLink and cannot be changed here.",
+      "status": "Status",
+      "ownerEmail": "Owner email",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saved": "Pharmacy details saved.",
+      "saveFailed": "Could not save your changes"
+    }
   }
 }

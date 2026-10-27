@@ -1,6 +1,7 @@
 import { AxiosError } from "axios"
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios"
 import { api } from "@/api/client"
+import type { ApiFieldError } from "@/api/types"
 
 export interface Call {
   /** Lower case, e.g. "get", "post". */
@@ -48,7 +49,12 @@ export function mockApi(handlers: Record<string, Handler>) {
       if (!(error instanceof Failure)) return Promise.reject(error)
       return Promise.reject(
         new AxiosError("failed", "ERR_BAD_RESPONSE", config, null, {
-          data: { success: false, code: error.code, message: "English" },
+          data: {
+            success: false,
+            code: error.code,
+            message: "English",
+            errors: error.errors,
+          },
           status: error.status,
           statusText: "",
           headers: {},
@@ -89,13 +95,18 @@ export function raw(body: unknown): Raw {
 class Failure extends Error {
   constructor(
     readonly status: number,
-    readonly code: string
+    readonly code: string,
+    readonly errors: Array<ApiFieldError>
   ) {
     super(code)
   }
 }
 
-/** Throw from a handler to answer with an API error. */
-export function fail(status: number, code: string): never {
-  throw new Failure(status, code)
+/** Throw from a handler to answer with an API error (and field errors, e.g. for VALIDATION_FAILED). */
+export function fail(
+  status: number,
+  code: string,
+  errors: Array<ApiFieldError> = []
+): never {
+  throw new Failure(status, code, errors)
 }

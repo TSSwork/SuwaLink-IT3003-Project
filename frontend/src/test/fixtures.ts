@@ -1,8 +1,10 @@
 import type {
   Bookmark,
+  InventoryItem,
   MedicineDetail,
   MedicineSearchResult,
   Offer,
+  PharmacyProfile,
   PublicPharmacy,
   PrescriptionReply,
   PrescriptionRequest,
@@ -155,6 +157,55 @@ export function publicPharmacy(
   }
 }
 
+export function inventoryItem(
+  over: Partial<InventoryItem> = {}
+): InventoryItem {
+  return {
+    id: "inv1",
+    unitPrice: 12.5,
+    currency: "LKR",
+    stockQuantity: 40,
+    expireDate: "2027-12-31",
+    available: true,
+    imageUrl: null,
+    medicine: {
+      id: "m1",
+      brandName: "Panadol",
+      genericName: "Paracetamol",
+      dosageForm: "Tablet",
+      strength: "500 mg",
+      unitOfMeasure: "TABLET",
+      legalCategory: "OTC",
+      category: "Pain relief",
+      manufacturer: "GSK",
+    },
+    pharmacy: { id: "p1", name: "City Pharmacy", address: "12 Galle Road" },
+    ...over,
+  }
+}
+
+/** GET /api/pharmacies/me for the signed-in owner. */
+export function pharmacyProfile(
+  over: Partial<PharmacyProfile> = {}
+): PharmacyProfile {
+  return {
+    id: "p1",
+    name: "City Pharmacy",
+    phone: "0112345678",
+    address: "12 Galle Road",
+    district: "COLOMBO",
+    city: "Colombo 03",
+    latitude: 6.9271,
+    longitude: 79.8612,
+    openingHours: "8am - 10pm",
+    licenceNo: "PH-2024-0012",
+    status: "VERIFIED",
+    ownerName: "Kamal Silva",
+    ownerEmail: "kamal@example.lk",
+    ...over,
+  }
+}
+
 export function bookmark(
   over: { id?: string; inventory?: Partial<Bookmark["inventory"]> } = {}
 ): Bookmark {
@@ -245,4 +296,12 @@ export function localIso(msFromNow: number): string {
   const d = new Date(Date.now() + msFromNow)
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+/** A LocalDate string ("YYYY-MM-DD"), `days` from today in local time. */
+export function localDate(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }

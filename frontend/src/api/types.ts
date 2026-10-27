@@ -363,3 +363,35 @@ export interface PrescriptionReply {
   }>
   createdAt: string
 }
+
+export type PharmacyStatus = "PENDING" | "VERIFIED" | "REJECTED" | "DEACTIVATED"
+
+/** GET /api/pharmacies/me (PharmacyProfileResponse): the signed-in owner's pharmacy. */
+export interface PharmacyProfile {
+  id: string
+  name: string
+  /** Null until the owner adds one (registration has no pharmacy phone). */
+  phone: string | null
+  address: string
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+  licenceNo: string
+  status: PharmacyStatus
+  ownerName: string
+  ownerEmail: string
+}
+
+/** PUT /api/pharmacies/me body (UpdatePharmacyProfileRequest): replaces every field. */
+export interface UpdatePharmacyProfileRequest {
+  name: string
+  phone: string
+  address: string
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+}
