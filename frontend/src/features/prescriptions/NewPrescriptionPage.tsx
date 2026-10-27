@@ -87,6 +87,7 @@ export function NewPrescriptionPage() {
     if (checkPhoto(file) === "prescriptions.photoType") {
       setPhotoError("prescriptions.photoType")
       setPhoto(null)
+      setPreparing(false)
       return
     }
     setPreparing(true)
