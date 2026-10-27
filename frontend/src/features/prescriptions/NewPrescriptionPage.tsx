@@ -81,6 +81,18 @@ export function NewPrescriptionPage() {
 
   const send = (values: PrescriptionValues, targetScope: TargetScope) => {
     if (!photo) return
+    // The location can be cleared after the scope was chosen (e.g. from the
+    // header); never send a 10 km request without its point.
+    if (
+      targetScope === "RADIUS_10KM" &&
+      (lat === undefined || lng === undefined)
+    ) {
+      form.setError("targetScope", {
+        type: "manual",
+        message: "prescriptions.radiusNeedsPoint",
+      })
+      return
+    }
     setProgress(0)
     create.mutate(
       {
@@ -181,12 +193,15 @@ export function NewPrescriptionPage() {
         <Controller
           control={form.control}
           name="targetScope"
-          render={({ field }) => (
-            <FieldSet>
+          render={({ field, fieldState }) => (
+            <FieldSet data-invalid={fieldState.invalid}>
               <FieldLegend>{t("prescriptions.scope")}</FieldLegend>
               <RadioGroup
                 value={field.value}
-                onValueChange={(value) => field.onChange(value)}
+                onValueChange={(value) => {
+                  form.clearErrors("targetScope")
+                  field.onChange(value)
+                }}
                 className="gap-3"
               >
                 {SCOPES.map((option) => {
@@ -208,11 +223,18 @@ export function NewPrescriptionPage() {
                         <FieldLabel htmlFor={`scope-${option}`}>
                           {t(`prescriptions.scopes.${option}.title`)}
                         </FieldLabel>
-                        <FieldDescription id={`scope-${option}-hint`}>
-                          {disabled
-                            ? t("prescriptions.radiusNeedsPoint")
-                            : t(`prescriptions.scopes.${option}.body`)}
-                        </FieldDescription>
+                        {disabled && fieldState.error?.message ? (
+                          // A blocked send: the same hint, as an error.
+                          <FieldError id={`scope-${option}-hint`}>
+                            {t(fieldState.error.message)}
+                          </FieldError>
+                        ) : (
+                          <FieldDescription id={`scope-${option}-hint`}>
+                            {disabled
+                              ? t("prescriptions.radiusNeedsPoint")
+                              : t(`prescriptions.scopes.${option}.body`)}
+                          </FieldDescription>
+                        )}
                         {disabled && (
                           <div className="pt-1">
                             <LocationChooser />

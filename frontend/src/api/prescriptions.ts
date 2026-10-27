@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { api } from "@/api/client"
+import { ApiError, api } from "@/api/client"
 import type {
   ApiResponse,
   District,
@@ -143,9 +143,12 @@ export function useDeletePrescription() {
   })
 }
 
-/** The client's baseURL already ends in /api. */
-function apiPath(url: string): string {
-  return url.replace(/^\/api(?=\/)/, "")
+/**
+ * The path under the client's baseURL (/api), or null when the URL is not one
+ * of our own API paths: the token is never sent anywhere else.
+ */
+function apiPath(url: string): string | null {
+  return url.startsWith("/api/") ? url.slice("/api".length) : null
 }
 
 /**
@@ -156,12 +159,11 @@ function apiPath(url: string): string {
 export function usePrescriptionImage(imageUrl: string | undefined) {
   const image = useQuery({
     queryKey: [...prescriptionImageKey, imageUrl],
-    queryFn: async () =>
-      (
-        await api.get<Blob>(apiPath(imageUrl ?? ""), {
-          responseType: "blob",
-        })
-      ).data,
+    queryFn: async () => {
+      const path = apiPath(imageUrl ?? "")
+      if (path === null) throw new ApiError(0, "UNKNOWN", "")
+      return (await api.get<Blob>(path, { responseType: "blob" })).data
+    },
     enabled: imageUrl !== undefined,
     // Sensitive: keep it in memory only while shown.
     gcTime: 0,

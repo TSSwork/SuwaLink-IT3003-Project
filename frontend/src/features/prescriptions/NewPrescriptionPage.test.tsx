@@ -217,6 +217,20 @@ describe("NewPrescriptionPage", () => {
     expect(form.has("district")).toBe(false)
   })
 
+  it("does not send a 10 km request once the location is gone", async () => {
+    useLocationStore.getState().setPoint(6.9, 79.86, "device")
+    const user = userEvent.setup()
+    await renderNew()
+    expect(screen.getByRole("radio", { name: /Within 10 km/ })).toBeChecked()
+    await fillValid(user)
+    act(() => useLocationStore.getState().clear())
+    await user.click(screen.getByRole("button", { name: "Send prescription" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Set your location to send it to pharmacies within 10 km."
+    )
+    expect(sent()).toEqual([])
+  })
+
   it("offers a wider area when no pharmacy is in scope", async () => {
     useLocationStore.getState().setDistrict("MANNAR")
     api.restore()
