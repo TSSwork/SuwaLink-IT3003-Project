@@ -42,7 +42,8 @@ export interface MapViewProps {
   /** Leave out for a read-only map (no tap-to-place, fixed pin). */
   onPick?: (lat: number, lng: number) => void
   centreRequest?: CentreRequest
-  height: number
+  /** Pixels, or a CSS length such as "100%" to fill a sized parent. */
+  height: number | string
   label: string
 }
 
@@ -111,8 +112,10 @@ export default function MapView({
       center={[centre.lat, centre.lng]}
       zoom={value ? FOCUS_ZOOM : DEFAULT_ZOOM}
       style={{ height }}
-      // A read-only map must not swallow page scrolling.
+      // A read-only map must not swallow page scrolling: no wheel zoom, and no
+      // dragging so a one-finger swipe scrolls the page on touch.
       scrollWheelZoom={onPick !== undefined}
+      dragging={onPick !== undefined}
       className="z-0 w-full"
     >
       <LabelContainer label={label} />

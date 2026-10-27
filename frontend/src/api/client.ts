@@ -83,9 +83,22 @@ function handleUnauthorized(config?: InternalAxiosRequestConfig): void {
   else window.location.assign(href)
 }
 
+/** The error body; a blob request (e.g. a private image) gets it as a Blob, so read it as JSON. */
+async function errorBody(data: unknown): Promise<Partial<ApiErrorBody>> {
+  if (data instanceof Blob) {
+    try {
+      const parsed: unknown = JSON.parse(await data.text())
+      return typeof parsed === "object" && parsed !== null ? parsed : {}
+    } catch {
+      return {}
+    }
+  }
+  return data ?? {}
+}
+
 api.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
+  async (error: unknown) => {
     if (!axios.isAxiosError(error) || axios.isCancel(error)) {
       return Promise.reject(error instanceof Error ? error : new Error("?"))
     }
@@ -96,7 +109,7 @@ api.interceptors.response.use(
     if (status === 401 && !isLoginRequest(error.config)) {
       handleUnauthorized(error.config)
     }
-    const body = (data ?? {}) as Partial<ApiErrorBody>
+    const body = await errorBody(data)
     return Promise.reject(
       new ApiError(
         status,

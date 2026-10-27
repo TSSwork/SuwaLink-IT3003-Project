@@ -163,6 +163,48 @@ describe("PrescriptionDetailPage", () => {
     ).toHaveAttribute("href", "/cart")
   })
 
+  it("says how many were added when the cart limit is hit partway", async () => {
+    useCartStore.setState({
+      lines: Array.from({ length: 19 }, (_, i) => ({
+        inventoryItemId: `x${i}`,
+        pharmacyId: "p1",
+        pharmacyName: "City Pharmacy",
+        medicineId: "m1",
+        medicineName: `Medicine ${i}`,
+        strength: "",
+        unitPrice: 1,
+        quantity: 1,
+        maxQuantity: 5,
+        requiresPrescription: false,
+      })),
+    })
+    await renderDetail()
+    await screen.findByRole("region", { name: "City Pharmacy" })
+    await userEvent.click(
+      within(reply("City Pharmacy")).getByRole("button", {
+        name: "Add all to cart",
+      })
+    )
+    expect(useCartStore.getState().lines).toHaveLength(20)
+    expect(toast.error).toHaveBeenCalledWith(
+      "Added 1 of 2 items. A reservation can hold at most 20 different medicines from one pharmacy."
+    )
+  })
+
+  it("keeps the downloaded image when the request is closed", async () => {
+    await renderDetail()
+    await screen.findByRole("img", { name: "Your prescription" })
+    await userEvent.click(screen.getByRole("button", { name: "Close request" }))
+    const confirm = await screen.findByRole("alertdialog")
+    await userEvent.click(
+      within(confirm).getByRole("button", { name: "Close request" })
+    )
+    expect(await screen.findByText("Closed")).toBeVisible()
+    // Let any refetch the close triggered run.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(api.callsTo("/images/img1/content")).toHaveLength(1)
+  })
+
   it("adds one quoted item, capped at the quoted quantity", async () => {
     await renderDetail()
     const lanka = await screen.findByRole("region", { name: "Lanka Medicals" })

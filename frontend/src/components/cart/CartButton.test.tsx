@@ -18,9 +18,19 @@ const line = (id: string) => ({
   requiresPrescription: false,
 })
 
+/** The header slot: a landmark that renders with the route, then the button. */
+function Header() {
+  return (
+    <header>
+      <p>header ready</p>
+      <CartButton />
+    </header>
+  )
+}
+
 function renderButton() {
   return renderRoutes(
-    [{ path: "/", component: CartButton }, { path: "/cart" }],
+    [{ path: "/", component: Header }, { path: "/cart" }],
     "/"
   )
 }
@@ -50,12 +60,25 @@ describe("CartButton", () => {
     expect(await screen.findByText("99+")).toBeVisible()
   })
 
-  it("is hidden from pharmacy owners and admins", async () => {
+  it("is shown to signed-in customers", async () => {
     useSessionStore
       .getState()
-      .setSession("t", { id: "o1", name: "Owner", role: "PHARMACY_OWNER" })
+      .setSession("t", { id: "c1", name: "Nimal", role: "CUSTOMER" })
     renderButton()
-    await screen.findByText((_, el) => el?.tagName === "BODY")
-    expect(screen.queryByRole("link", { name: /Cart/ })).toBeNull()
+    await screen.findByText("header ready")
+    expect(screen.getByRole("link", { name: /Cart/ })).toBeVisible()
   })
+
+  it.each(["PHARMACY_OWNER", "ADMIN"] as const)(
+    "is hidden from %s",
+    async (role) => {
+      useSessionStore
+        .getState()
+        .setSession("t", { id: "o1", name: "Owner", role })
+      renderButton()
+      // Wait for the route to render before asserting absence.
+      await screen.findByText("header ready")
+      expect(screen.queryByRole("link", { name: /Cart/ })).toBeNull()
+    }
+  )
 })

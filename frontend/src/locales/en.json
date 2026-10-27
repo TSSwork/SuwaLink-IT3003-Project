@@ -440,7 +440,9 @@
     "completeTitle": "Mark as collected?",
     "completeBody": "Do this once the customer has paid and taken the medicines. Check the prescription first if one is needed.",
     "completed": "Marked as collected",
-    "cancelledByYou": "Cancelled by you"
+    "cancelledByYou": "Cancelled by you",
+    "all": "All",
+    "loadError": "Your reservations could not be loaded"
   },
   "cart": {
     "add": "Add to cart",
@@ -607,7 +609,13 @@
     "quoteLine": "{{quantity}} × {{price}}",
     "replyTotal": "Total",
     "addAll": "Add all to cart",
-    "goToCart": "Go to cart"
+    "goToCart": "Go to cart",
+    "replyCount_one": "{{count}} reply",
+    "replyCount_other": "{{count}} replies",
+    "choosePhoto": "Choose a photo",
+    "noPhoto": "No photo chosen",
+    "addedSome_one": "Added {{added}} of {{count}} item. A reservation can hold at most {{limit}} different medicines from one pharmacy.",
+    "addedSome_other": "Added {{added}} of {{count}} items. A reservation can hold at most {{limit}} different medicines from one pharmacy."
   },
   "settings": {
     "title": "Settings",

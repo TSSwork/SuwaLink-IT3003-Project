@@ -53,6 +53,7 @@ export function reservation(over: Partial<Reservation> = {}): Reservation {
       district: "COLOMBO",
       latitude: 6.9,
       longitude: 79.85,
+      openingHours: "8am - 10pm",
     },
     customer: { id: "u1", name: "Nimal" },
     items: [
@@ -200,6 +201,7 @@ export function prescriptionRequest(
     targetScope: "DISTRICT",
     district: "COLOMBO",
     targetCount: 8,
+    responseCount: null,
     expiresAt: "2026-10-24T09:30:00",
     createdAt: "2026-10-21T09:30:00",
     updatedAt: "2026-10-21T09:30:00",

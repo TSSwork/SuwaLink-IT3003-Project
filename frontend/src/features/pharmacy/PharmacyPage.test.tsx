@@ -19,12 +19,18 @@ vi.mock("@/components/map/MapView", () => ({
     value,
     label,
     onPick,
+    height,
   }: {
     value: { lat: number; lng: number }
     label: string
     onPick?: unknown
+    height: number | string
   }) => (
-    <p data-testid="map" data-readonly={String(onPick === undefined)}>
+    <p
+      data-testid="map"
+      data-readonly={String(onPick === undefined)}
+      data-height={String(height)}
+    >
       {label}: {value.lat},{value.lng}
     </p>
   ),
@@ -96,6 +102,8 @@ describe("PharmacyPage", () => {
     const map = await screen.findByTestId("map")
     expect(map).toHaveTextContent("Map of City Pharmacy: 6.9271,79.8612")
     expect(map).toHaveAttribute("data-readonly", "true")
+    // Fills its responsive box (h-56 / sm:h-72) so the attribution stays visible.
+    expect(map).toHaveAttribute("data-height", "100%")
   })
 
   it("lists its medicines with price, stock and the prescription badge", async () => {

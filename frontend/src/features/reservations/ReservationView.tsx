@@ -1,6 +1,7 @@
 import { useId, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import {
+  ClockIcon,
   ExternalLinkIcon,
   FileTextIcon,
   NavigationIcon,
@@ -20,7 +21,10 @@ import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
 import { PharmacyPlace } from "@/components/pharmacy/PharmacyPlace"
-import { HoldCountdown } from "@/components/reservation/HoldCountdown"
+import {
+  HoldCountdown,
+  useHasPassed,
+} from "@/components/reservation/HoldCountdown"
 import { ReservationStatusBadge } from "@/components/reservation/ReservationStatusBadge"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -83,6 +87,9 @@ export function ReservationView({ reservation }: { reservation: Reservation }) {
   const role = useSessionStore((state) => state.user?.role)
   const isOwner = role === "PHARMACY_OWNER"
   const active = reservation.status === "CONFIRMED"
+  // The server expires holds on its own schedule; once the time is up a
+  // cancel or collect would only be refused, so the buttons go.
+  const holdEnded = useHasPassed(reservation.expiresAt)
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -139,7 +146,7 @@ export function ReservationView({ reservation }: { reservation: Reservation }) {
       <Items reservation={reservation} />
       <PharmacyCard reservation={reservation} showCustomer={isOwner} />
 
-      {active && (role === "CUSTOMER" || isOwner) && (
+      {active && !holdEnded && (role === "CUSTOMER" || isOwner) && (
         <Actions reservation={reservation} isOwner={isOwner} />
       )}
     </div>
@@ -159,6 +166,8 @@ function PickupCard({ reservation }: { reservation: Reservation }) {
           size={200}
           level="M"
           marginSize={2}
+          // Fixed black on white, not theme tokens: scanners need dark
+          // modules on a light background, in dark mode too.
           bgColor="#FFFFFF"
           fgColor="#000000"
           title={label}
@@ -275,6 +284,20 @@ function PharmacyCard({
           className="text-muted-foreground"
         />
       </div>
+      <p className="flex items-start gap-2 text-sm">
+        <ClockIcon
+          aria-hidden
+          className="mt-0.5 size-4 shrink-0 text-primary"
+        />
+        <span className="sr-only">{t("pharmacy.hours")}</span>
+        {pharmacy.openingHours ? (
+          <span>{pharmacy.openingHours}</span>
+        ) : (
+          <span className="text-muted-foreground">
+            {t("pharmacy.hoursNone")}
+          </span>
+        )}
+      </p>
       {showCustomer && (
         <dl className="flex gap-3 text-sm">
           <dt className="text-muted-foreground">

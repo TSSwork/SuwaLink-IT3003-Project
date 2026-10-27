@@ -35,7 +35,7 @@ export function CartPage() {
   const language = useLanguageStore((state) => state.language)
   const lines = useCartStore((state) => state.lines)
   const groups = useMemo(() => groupLines(lines), [lines])
-  const { checkout, errors, busy } = useCheckout()
+  const { checkout, errorFor, busy } = useCheckout()
   const [outcome, setOutcome] = useState<CheckoutOutcome | null>(null)
 
   const reserve = async (targets: Array<CartGroup>) => {
@@ -68,7 +68,7 @@ export function CartPage() {
               <PharmacyGroup
                 key={group.pharmacyId}
                 group={group}
-                error={errors[group.pharmacyId]}
+                error={errorFor(group)}
                 busy={busy}
                 onReserve={() => void reserve([group])}
               />

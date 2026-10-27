@@ -85,8 +85,18 @@ function PrescriptionCard({ request }: { request: PrescriptionRequest }) {
           request={request}
           className="text-sm text-muted-foreground"
         />
-        <p className="text-xs text-muted-foreground">
-          {formatRelative(request.createdAt, language)}
+        <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {/* Only the list endpoint fills it (null elsewhere; absent on an older backend). */}
+          {typeof request.responseCount === "number" && (
+            <span className="font-medium text-foreground">
+              {request.responseCount === 0
+                ? t("prescriptions.noRepliesTitle")
+                : t("prescriptions.replyCount", {
+                    count: request.responseCount,
+                  })}
+            </span>
+          )}
+          <span>{formatRelative(request.createdAt, language)}</span>
         </p>
       </div>
       <ChevronRightIcon

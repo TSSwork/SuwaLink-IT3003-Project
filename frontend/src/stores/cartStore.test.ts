@@ -40,9 +40,9 @@ describe("cartStore", () => {
 
   it("merges the same item and quote, keeping the newest price and limit", () => {
     cart().add(line({ quantity: 2 }))
-    expect(cart().add(line({ quantity: 3, unitPrice: 13, maxQuantity: 8 }))).toBe(
-      "merged"
-    )
+    expect(
+      cart().add(line({ quantity: 3, unitPrice: 13, maxQuantity: 8 }))
+    ).toBe("merged")
     expect(cart().lines).toEqual([
       line({ quantity: 5, unitPrice: 13, maxQuantity: 8 }),
     ])
@@ -86,9 +86,13 @@ describe("cartStore", () => {
   })
 
   it("caps a quoted line at the quoted quantity", () => {
-    cart().add(line({ quantity: 1, maxQuantity: 3, prescriptionResponseItemId: "q1" }))
+    cart().add(
+      line({ quantity: 1, maxQuantity: 3, prescriptionResponseItemId: "q1" })
+    )
     expect(
-      cart().add(line({ quantity: 5, maxQuantity: 3, prescriptionResponseItemId: "q1" }))
+      cart().add(
+        line({ quantity: 5, maxQuantity: 3, prescriptionResponseItemId: "q1" })
+      )
     ).toBe("capped")
     expect(cart().lines[0].quantity).toBe(3)
   })
@@ -112,12 +116,22 @@ describe("cartStore", () => {
   })
 
   it("groups lines by pharmacy in the order pharmacies were added", () => {
-    cart().add(line({ inventoryItemId: "a", pharmacyId: "p2", pharmacyName: "Two" }))
-    cart().add(line({ inventoryItemId: "b", pharmacyId: "p1", pharmacyName: "One" }))
-    cart().add(line({ inventoryItemId: "c", pharmacyId: "p2", pharmacyName: "Two" }))
+    cart().add(
+      line({ inventoryItemId: "a", pharmacyId: "p2", pharmacyName: "Two" })
+    )
+    cart().add(
+      line({ inventoryItemId: "b", pharmacyId: "p1", pharmacyName: "One" })
+    )
+    cart().add(
+      line({ inventoryItemId: "c", pharmacyId: "p2", pharmacyName: "Two" })
+    )
     const groups = cart().groups()
     expect(
-      groups.map((g) => [g.pharmacyId, g.pharmacyName, g.lines.map((l) => l.inventoryItemId)])
+      groups.map((g) => [
+        g.pharmacyId,
+        g.pharmacyName,
+        g.lines.map((l) => l.inventoryItemId),
+      ])
     ).toEqual([
       ["p2", "Two", ["a", "c"]],
       ["p1", "One", ["b"]],
@@ -132,41 +146,87 @@ describe("cartStore", () => {
     expect(cart().add(line({ inventoryItemId: "extra" }))).toBe("limit")
     expect(cart().lines).toHaveLength(CART_LINE_LIMIT)
     // Another pharmacy and merges into existing lines still work.
-    expect(cart().add(line({ inventoryItemId: "other", pharmacyId: "p2" }))).toBe(
-      "added"
-    )
+    expect(
+      cart().add(line({ inventoryItemId: "other", pharmacyId: "p2" }))
+    ).toBe("added")
     expect(cart().add(line({ inventoryItemId: "inv0" }))).toBe("merged")
   })
 
   it("persists under suwalink.cart", () => {
     cart().add(line())
-    const stored = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) ?? "{}") as {
+    const stored = JSON.parse(
+      localStorage.getItem(CART_STORAGE_KEY) ?? "{}"
+    ) as {
       state: { lines: Array<CartLine> }
     }
     expect(CART_STORAGE_KEY).toBe("suwalink.cart")
     expect(stored.state.lines).toEqual([line()])
   })
 
-  it("keeps a visitor's cart when they sign in, and clears it for a different user", () => {
+  it("keeps a visitor's cart when they sign in", () => {
     cart().add(line())
-    useSessionStore.getState().setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+    useSessionStore
+      .getState()
+      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
     expect(cart().lines).toHaveLength(1)
+    expect(cart().ownerId).toBe("u1")
+  })
 
+  it("clears the signed-in user's cart on sign-out, so the next visitor never sees it", () => {
+    useSessionStore
+      .getState()
+      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+    cart().add(line())
     useSessionStore.getState().clear()
-    expect(cart().lines).toHaveLength(1)
-    useSessionStore.getState().setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
-    expect(cart().lines).toHaveLength(1)
-
-    useSessionStore.getState().clear()
-    useSessionStore.getState().setSession("t2", { id: "u2", name: "B", role: "CUSTOMER" })
     expect(cart().lines).toEqual([])
+    expect(cart().ownerId).toBeNull()
+  })
+
+  it("keeps a visitor's cart built after a sign-out when someone else signs in", () => {
+    useSessionStore
+      .getState()
+      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+    cart().add(line())
+    useSessionStore.getState().clear()
+
+    cart().add(line({ inventoryItemId: "visitor" }))
+    useSessionStore
+      .getState()
+      .setSession("t2", { id: "u2", name: "B", role: "CUSTOMER" })
+    expect(cart().lines.map((l) => l.inventoryItemId)).toEqual(["visitor"])
+    expect(cart().ownerId).toBe("u2")
+  })
+
+  it("drops a stored cart whose owner is no longer signed in", async () => {
+    localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify({ state: { lines: [line()], ownerId: "u1" }, version: 0 })
+    )
+    await useCartStore.persist.rehydrate()
+    expect(cart().lines).toEqual([])
+    expect(cart().ownerId).toBeNull()
+  })
+
+  it("keeps a stored cart for its signed-in owner", async () => {
+    useSessionStore
+      .getState()
+      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+    localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify({ state: { lines: [line()], ownerId: "u1" }, version: 0 })
+    )
+    await useCartStore.persist.rehydrate()
+    expect(cart().lines).toEqual([line()])
   })
 
   it("drops malformed lines from storage", async () => {
     localStorage.setItem(
       CART_STORAGE_KEY,
       JSON.stringify({
-        state: { lines: [line(), { inventoryItemId: "x" }, "junk"], ownerId: null },
+        state: {
+          lines: [line(), { inventoryItemId: "x" }, "junk"],
+          ownerId: null,
+        },
         version: 0,
       })
     )

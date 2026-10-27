@@ -7,7 +7,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { render, waitFor } from "@testing-library/react"
+import { act, render, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios"
 import { api, registerRouter } from "@/api/client"
@@ -107,6 +107,30 @@ describe("SessionBootstrap", () => {
     render(<SessionBootstrap />)
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(useSessionStore.getState().token).toBe("tok")
+  })
+
+  it("defaults the location to the district after an in-app sign-in", async () => {
+    const calls: Array<string> = []
+    respondWith(200, { success: true, message: "", data: me }, calls)
+    render(<SessionBootstrap />)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(calls).toEqual([])
+
+    // What LoginPage / RegisterPage do on success.
+    act(() =>
+      useSessionStore.getState().setSession("fresh", {
+        id: "1",
+        name: "Nimal Perera",
+        role: "CUSTOMER",
+      })
+    )
+    await waitFor(() =>
+      expect(useLocationStore.getState()).toMatchObject({
+        mode: "district",
+        district: "KANDY",
+      })
+    )
+    expect(calls).toEqual(["get /users/me"])
   })
 
   it("makes no request without a token", async () => {

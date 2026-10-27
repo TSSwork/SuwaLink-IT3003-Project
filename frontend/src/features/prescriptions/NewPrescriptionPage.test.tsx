@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react"
+import { act, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NewPrescriptionPage } from "@/features/prescriptions/NewPrescriptionPage"
@@ -101,6 +101,33 @@ describe("NewPrescriptionPage", () => {
     expect(
       screen.getByRole("img", { name: "Preview of rx.jpg" })
     ).toHaveAttribute("src", "blob:preview")
+  })
+
+  it("picks the photo with a translated button, not the browser's file control", async () => {
+    const user = userEvent.setup()
+    await renderNew()
+    const input = screen.getByLabelText("Photo of the prescription")
+    expect(input).toHaveClass("sr-only")
+    expect(input).toHaveAttribute("tabindex", "-1")
+    expect(screen.getByText("No photo chosen")).toBeVisible()
+    const click = vi.spyOn(input, "click")
+    await user.click(screen.getByRole("button", { name: "Choose a photo" }))
+    expect(click).toHaveBeenCalled()
+    await user.upload(input, photo())
+    expect(screen.getByText("rx.jpg")).toBeVisible()
+  })
+
+  it("defaults the district to the one chosen for searches, even when it arrives later", async () => {
+    await renderNew()
+    expect(screen.getByRole("radio", { name: /My district/ })).toBeChecked()
+    expect(
+      screen.getByRole("combobox", { name: "District" })
+    ).toHaveTextContent("Choose a district")
+    // SessionBootstrap seeds the district after GET /users/me answers.
+    act(() => useLocationStore.getState().defaultToDistrict("COLOMBO"))
+    expect(
+      screen.getByRole("combobox", { name: "District" })
+    ).toHaveTextContent("Colombo")
   })
 
   it("keeps Within 10 km off until a location is set", async () => {

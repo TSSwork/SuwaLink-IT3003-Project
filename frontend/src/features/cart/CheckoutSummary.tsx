@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router"
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { CheckoutOutcome } from "@/features/cart/useCheckout"
+import { OverLimitError } from "@/features/cart/useCheckout"
+import { CART_LINE_LIMIT } from "@/stores/cartStore"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -91,7 +93,10 @@ export function CheckoutSummary({
               <span>
                 {t("cart.stillInCart", {
                   name: group.pharmacyName,
-                  reason: translateError(t, error as Error),
+                  reason:
+                    error instanceof OverLimitError
+                      ? t("cart.limit", { limit: CART_LINE_LIMIT })
+                      : translateError(t, error as Error),
                   interpolation: { escapeValue: false },
                 })}
               </span>

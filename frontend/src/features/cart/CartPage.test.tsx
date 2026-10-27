@@ -236,6 +236,48 @@ describe("CartPage", () => {
       )
     ).toBeVisible()
     expect(screen.queryByRole("region", { name: "City Pharmacy" })).toBeNull()
+
+    // Changing the failed group's lines clears its stale error.
+    await userEvent.click(
+      within(group("Lanka Medicals")).getByRole("button", {
+        name: "Increase quantity",
+      })
+    )
+    expect(
+      within(group("Lanka Medicals")).queryByText(
+        "There is not enough stock for this."
+      )
+    ).toBeNull()
+  })
+
+  it("reports a pharmacy over the line limit as not reserved in Reserve all", async () => {
+    signIn()
+    fill(
+      ...Array.from({ length: 21 }, (_, i) =>
+        line({ inventoryItemId: `x${i}`, medicineName: `Medicine ${i}` })
+      ),
+      AMOXIL
+    )
+    api.restore()
+    api = mockApi({
+      "/reservations": () =>
+        reservation({ id: "r9", pickupCode: "K7Q2MXH4PA" }),
+    })
+    await renderCart()
+    await userEvent.click(screen.getByRole("button", { name: "Reserve all" }))
+
+    const summary = await screen.findByRole("dialog", {
+      name: "1 of 2 reservations made",
+    })
+    expect(within(summary).getByText("K7Q2MXH4PA")).toBeVisible()
+    expect(
+      within(summary).getByText(
+        /City Pharmacy.*A reservation can hold at most 20 different medicines from one pharmacy\./
+      )
+    ).toBeVisible()
+    // Only the valid group was sent.
+    expect(api.callsTo("/reservations")).toHaveLength(1)
+    expect(useCartStore.getState().lines).toHaveLength(21)
   })
 
   it("reserves one pharmacy on its own", async () => {

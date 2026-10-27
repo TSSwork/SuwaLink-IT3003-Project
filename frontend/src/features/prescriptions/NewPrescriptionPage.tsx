@@ -24,7 +24,6 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
@@ -42,8 +41,11 @@ const SCOPES: Array<TargetScope> = ["RADIUS_10KM", "DISTRICT", "ALL"]
 export function NewPrescriptionPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const location = useLocationStore()
-  const hasPoint = location.mode === "point"
+  const mode = useLocationStore((state) => state.mode)
+  const lat = useLocationStore((state) => state.lat)
+  const lng = useLocationStore((state) => state.lng)
+  const storeDistrict = useLocationStore((state) => state.district)
+  const hasPoint = mode === "point"
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -55,12 +57,20 @@ export function NewPrescriptionPage() {
       patientAge: "",
       note: "",
       targetScope: hasPoint ? "RADIUS_10KM" : "DISTRICT",
-      district: location.district,
+      district: storeDistrict,
       consent: false,
     },
   })
   const scope = form.watch("targetScope")
   const district = form.watch("district")
+
+  // The search district can arrive after the form (SessionBootstrap seeds it
+  // once GET /users/me answers); fill the field then, unless already chosen.
+  useEffect(() => {
+    if (mode === "district" && storeDistrict && !form.getValues("district")) {
+      form.setValue("district", storeDistrict)
+    }
+  }, [form, mode, storeDistrict])
 
   const choosePhoto = (file: File | undefined) => {
     if (!file) return
@@ -78,8 +88,8 @@ export function NewPrescriptionPage() {
         patientAge: Number(values.patientAge),
         note: values.note.trim() || undefined,
         targetScope,
-        latitude: location.lat,
-        longitude: location.lng,
+        latitude: lat,
+        longitude: lng,
         district: values.district,
         consent: values.consent,
       },
@@ -338,6 +348,7 @@ function PhotoPicker({
 }) {
   const { t } = useTranslation()
   const id = useId()
+  const pickerRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string>()
 
@@ -356,14 +367,28 @@ function PhotoPicker({
       <FieldLabel htmlFor={id}>{t("prescriptions.photo")}</FieldLabel>
       <FieldDescription>{t("prescriptions.photoHint")}</FieldDescription>
       <div className="flex flex-wrap items-center gap-3">
-        <Input
+        {/* The native control's text ("Choose File / No file chosen") follows
+            the browser's language and can't be styled; a translated button
+            opens it instead. The label still names the input. */}
+        <input
+          ref={pickerRef}
           id={id}
           type="file"
           accept={ACCEPT}
+          tabIndex={-1}
           aria-invalid={error !== null}
           onChange={(event) => onChoose(event.target.files?.[0])}
-          className="max-w-sm"
+          className="sr-only"
         />
+        <Button
+          type="button"
+          variant="outline"
+          aria-invalid={error !== null}
+          onClick={() => pickerRef.current?.click()}
+        >
+          <ImageIcon data-icon="inline-start" aria-hidden />
+          {t("prescriptions.choosePhoto")}
+        </Button>
         {/* Phones open the camera straight away; desktops use the picker. */}
         <Button
           type="button"
@@ -384,6 +409,9 @@ function PhotoPicker({
           className="hidden"
           onChange={(event) => onChoose(event.target.files?.[0])}
         />
+        <span className="min-w-0 basis-full text-sm break-all text-muted-foreground sm:basis-auto">
+          {photo ? photo.name : t("prescriptions.noPhoto")}
+        </span>
       </div>
       {error && <FieldError>{t(error)}</FieldError>}
       {photo && preview ? (

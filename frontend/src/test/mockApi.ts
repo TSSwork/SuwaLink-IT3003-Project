@@ -18,7 +18,7 @@ type Handler = (call: Call) => unknown
 /** Answers with `{ success, data }`; a handler that throws `fail(...)` answers with an error. */
 export function mockApi(handlers: Record<string, Handler>) {
   const calls: Array<Call> = []
-  const adapter: AxiosAdapter = (config: InternalAxiosRequestConfig) => {
+  const adapter: AxiosAdapter = async (config: InternalAxiosRequestConfig) => {
     const call = {
       method: (config.method ?? "get").toLowerCase(),
       url: config.url ?? "",
@@ -32,7 +32,8 @@ export function mockApi(handlers: Record<string, Handler>) {
     const handler = handlers[call.url] as Handler | undefined
     if (!handler) return Promise.reject(new Error(`unexpected ${call.url}`))
     try {
-      const data = handler(call)
+      // A handler may return a promise, e.g. to keep a request pending.
+      const data = await handler(call)
       return Promise.resolve({
         data:
           data instanceof Raw
@@ -44,7 +45,7 @@ export function mockApi(handlers: Record<string, Handler>) {
         config,
       })
     } catch (error) {
-      if (!(error instanceof Failure)) throw error
+      if (!(error instanceof Failure)) return Promise.reject(error)
       return Promise.reject(
         new AxiosError("failed", "ERR_BAD_RESPONSE", config, null, {
           data: { success: false, code: error.code, message: "English" },

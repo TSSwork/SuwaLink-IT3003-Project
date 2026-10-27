@@ -41,7 +41,7 @@ export function ReservationsPage() {
         <LoadingState label={t("reservations.loading")} rows={4} />
       ) : reservations.isError ? (
         <ErrorState
-          title={t("home.recentError")}
+          title={t("reservations.loadError")}
           description={translateError(t, reservations.error)}
           onRetry={() => void reservations.refetch()}
         />
@@ -64,7 +64,7 @@ export function ReservationsPage() {
             className="-mx-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0"
           >
             <FilterChip
-              label={t("search.allCategories")}
+              label={t("reservations.all")}
               pressed={filter === null}
               onClick={() => setFilter(null)}
             />

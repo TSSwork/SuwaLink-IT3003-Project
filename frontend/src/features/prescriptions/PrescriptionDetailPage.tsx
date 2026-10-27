@@ -29,7 +29,7 @@ import { ScopeSummary } from "@/components/prescription/ScopeSummary"
 import { Button } from "@/components/ui/button"
 import { formatDateTime, formatPrice } from "@/lib/format"
 import { translateError } from "@/lib/translateError"
-import { useCartStore } from "@/stores/cartStore"
+import { CART_LINE_LIMIT, useCartStore } from "@/stores/cartStore"
 import { useLanguageStore } from "@/stores/languageStore"
 
 const route = getRouteApi("/prescriptions/$id")
@@ -270,8 +270,18 @@ function ReplyCard({
         maxQuantity: item.quantity,
       })
     )
-    if (results.includes("limit")) toast.error(t("cart.limit", { limit: 20 }))
-    else toast.success(t("cart.added"))
+    const added = results.filter((result) => result !== "limit").length
+    if (added === results.length) toast.success(t("cart.added"))
+    else if (added === 0)
+      toast.error(t("cart.limit", { limit: CART_LINE_LIMIT }))
+    else
+      toast.error(
+        t("prescriptions.addedSome", {
+          added,
+          count: results.length,
+          limit: CART_LINE_LIMIT,
+        })
+      )
   }
 
   return (

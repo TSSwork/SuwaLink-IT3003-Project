@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { PickupCodePage } from "@/features/reservations/PickupCodePage"
 import { Route } from "@/routes/r/$code"
 import { useSessionStore } from "@/stores/sessionStore"
-import { reservation } from "@/test/fixtures"
+import { localIso, reservation } from "@/test/fixtures"
 import { fail, mockApi } from "@/test/mockApi"
 import { renderRoutes } from "@/test/renderRoutes"
 
@@ -32,7 +32,8 @@ beforeEach(() => {
     .setSession("t", { id: "o1", name: "Owner", role: "PHARMACY_OWNER" })
   api = mockApi({
     "/reservations/by-code/K7Q2MXH4PA": () =>
-      reservation({ pickupCode: "K7Q2MXH4PA" }),
+      // A live hold: the actions go once it runs out.
+      reservation({ pickupCode: "K7Q2MXH4PA", expiresAt: localIso(3_600_000) }),
     "/reservations/by-code/NOPE": () => fail(404, "NOT_FOUND"),
   })
 })

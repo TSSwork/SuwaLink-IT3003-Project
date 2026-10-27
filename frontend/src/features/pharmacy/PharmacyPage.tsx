@@ -143,7 +143,7 @@ function PharmacyDetails({ pharmacy }: { pharmacy: PublicPharmacy }) {
         <Suspense fallback={<Skeleton className="size-full rounded-none" />}>
           <MapView
             value={{ lat: pharmacy.latitude, lng: pharmacy.longitude }}
-            height={288}
+            height="100%"
             label={t("pharmacy.map", {
               name: pharmacy.name,
               interpolation: { escapeValue: false },

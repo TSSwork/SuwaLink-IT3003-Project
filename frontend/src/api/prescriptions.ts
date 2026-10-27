@@ -12,6 +12,12 @@ import { useSessionStore } from "@/stores/sessionStore"
 
 export const prescriptionsKey = ["prescriptions"] as const
 
+/**
+ * Its own root, so invalidating prescriptionsKey (close, upload, delete)
+ * never re-downloads the private image.
+ */
+const prescriptionImageKey = ["prescription-image"] as const
+
 /** Backend limit (spring.servlet.multipart.max-file-size). */
 export const PRESCRIPTION_MAX_BYTES = 5 * 1024 * 1024
 export const PRESCRIPTION_TYPES = ["image/jpeg", "image/png", "image/webp"]
@@ -149,7 +155,7 @@ function apiPath(url: string): string {
  */
 export function usePrescriptionImage(imageUrl: string | undefined) {
   const image = useQuery({
-    queryKey: [...prescriptionsKey, "image", imageUrl],
+    queryKey: [...prescriptionImageKey, imageUrl],
     queryFn: async () =>
       (
         await api.get<Blob>(apiPath(imageUrl ?? ""), {

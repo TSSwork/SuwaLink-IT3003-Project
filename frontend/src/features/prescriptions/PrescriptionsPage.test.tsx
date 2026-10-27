@@ -33,14 +33,16 @@ beforeEach(() => {
       targetScope: "RADIUS_10KM",
       district: null,
       targetCount: 3,
+      responseCount: 0,
     }),
-    prescriptionRequest({ id: "rx1", status: "RESPONDED" }),
+    prescriptionRequest({ id: "rx1", status: "RESPONDED", responseCount: 1 }),
     prescriptionRequest({
       id: "rx3",
       status: "CLOSED",
       targetScope: "ALL",
       district: null,
       targetCount: 42,
+      responseCount: 5,
     }),
   ]
   api = mockApi({ "/prescriptions/me": () => list })
@@ -67,6 +69,9 @@ describe("PrescriptionsPage", () => {
     ).toBeVisible()
     expect(within(card(2)).getByText("Closed")).toBeVisible()
     expect(within(card(2)).getByText("Sent to all 42 pharmacies")).toBeVisible()
+    expect(within(card(0)).getByText("No replies yet")).toBeVisible()
+    expect(within(card(1)).getByText("1 reply")).toBeVisible()
+    expect(within(card(2)).getByText("5 replies")).toBeVisible()
     // No prescription image is downloaded for the list.
     expect(api.calls.map((c) => c.url)).toEqual(["/prescriptions/me"])
   })

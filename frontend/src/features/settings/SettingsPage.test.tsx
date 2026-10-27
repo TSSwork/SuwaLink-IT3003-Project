@@ -71,22 +71,48 @@ describe("SettingsPage", () => {
     expect(screen.queryByRole("textbox", { name: /Email/ })).toBeNull()
   })
 
+  async function chooseDistrict(name: string) {
+    await userEvent.click(
+      screen.getByRole("combobox", { name: "Default district" })
+    )
+    await userEvent.click(await screen.findByRole("option", { name }))
+  }
+
   it("saves the language and district and applies them", async () => {
     await renderSettings()
     await userEvent.click(screen.getByRole("radio", { name: "සිංහල" }))
+    await chooseDistrict("Kandy")
     await userEvent.click(
       screen.getByRole("button", { name: "Save preferences" })
     )
     await waitFor(() =>
       expect(api.callsTo("/users/me/preferences")[0]).toMatchObject({
         method: "put",
-        data: { preferredLanguage: "si", district: "COLOMBO" },
+        data: { preferredLanguage: "si", district: "KANDY" },
       })
     )
     await waitFor(() => expect(useLanguageStore.getState().language).toBe("si"))
     expect(useLocationStore.getState()).toMatchObject({
       mode: "district",
-      district: "COLOMBO",
+      district: "KANDY",
+    })
+  })
+
+  it("keeps a chosen map point when saving a new district", async () => {
+    useLocationStore.getState().setPoint(6.9, 79.86, "pinned")
+    await renderSettings()
+    await chooseDistrict("Kandy")
+    await userEvent.click(
+      screen.getByRole("button", { name: "Save preferences" })
+    )
+    await waitFor(() => expect(toast.success).toHaveBeenCalled())
+    expect(api.callsTo("/users/me/preferences")[0].data).toMatchObject({
+      district: "KANDY",
+    })
+    expect(useLocationStore.getState()).toMatchObject({
+      mode: "point",
+      lat: 6.9,
+      lng: 79.86,
     })
   })
 
@@ -94,6 +120,8 @@ describe("SettingsPage", () => {
     await renderSettings()
     await userEvent.click(screen.getByRole("radio", { name: "Dark" }))
     expect(useThemeStore.getState().theme).toBe("dark")
+    await userEvent.click(screen.getByRole("radio", { name: "Light" }))
+    expect(useThemeStore.getState().theme).toBe("light")
   })
 
   it("asks for the password before deleting the account", async () => {
@@ -114,6 +142,46 @@ describe("SettingsPage", () => {
       await within(dialog).findByText("The password is incorrect.")
     ).toBeVisible()
     expect(useSessionStore.getState().token).toBe("t")
+
+    // Editing the password clears the stale error.
+    await userEvent.type(within(dialog).getByLabelText("Password"), "x")
+    expect(within(dialog).queryByText("The password is incorrect.")).toBeNull()
+    expect(within(dialog).getByLabelText("Password")).not.toHaveAttribute(
+      "aria-invalid",
+      "true"
+    )
+  })
+
+  it("cannot be dismissed while the delete is in flight", async () => {
+    let answer: (value: null) => void = () => {}
+    api.restore()
+    api = mockApi({
+      "/users/me": ({ method }) =>
+        method === "delete"
+          ? new Promise<null>((resolve) => (answer = resolve))
+          : me,
+    })
+    const { router } = await renderSettings()
+    await userEvent.click(
+      screen.getByRole("button", { name: "Delete account" })
+    )
+    const dialog = await screen.findByRole("dialog")
+    await userEvent.type(within(dialog).getByLabelText("Password"), "secret123")
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Delete my account" })
+    )
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole("button", { name: "Cancel" })
+      ).toBeDisabled()
+    )
+    await userEvent.keyboard("{Escape}")
+    expect(screen.getByRole("dialog")).toBeVisible()
+
+    answer(null)
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"))
+    expect(useSessionStore.getState().token).toBeNull()
+    expect(toast.success).toHaveBeenCalledWith("Your account has been deleted.")
   })
 
   it("deletes the account and clears everything kept in the browser", async () => {

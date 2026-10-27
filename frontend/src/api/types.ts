@@ -242,6 +242,7 @@ export interface Reservation {
     district: District
     latitude: number
     longitude: number
+    openingHours: string | null
   }
   customer: { id: string; name: string }
   items: Array<{
@@ -335,6 +336,8 @@ export interface PrescriptionRequest {
   district: District | null
   /** How many pharmacies received it. */
   targetCount: number
+  /** Pharmacy replies; only on the customer's own list (GET /prescriptions/me), else null. */
+  responseCount: number | null
   expiresAt: string | null
   createdAt: string
   updatedAt: string

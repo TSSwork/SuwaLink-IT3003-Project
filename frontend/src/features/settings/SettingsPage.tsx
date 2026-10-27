@@ -36,6 +36,10 @@ import { useThemeStore } from "@/stores/themeStore"
 
 const THEMES: Array<Theme> = ["light", "dark", "system"]
 
+function isTheme(value: string): value is Theme {
+  return THEMES.some((theme) => theme === value)
+}
+
 export function SettingsPage() {
   const { t } = useTranslation()
   const me = useMe()
@@ -102,7 +106,6 @@ function Profile({ me }: { me: UserProfile }) {
 function Preferences({ me }: { me: UserProfile }) {
   const { t } = useTranslation()
   const setLanguage = useLanguageStore((state) => state.setLanguage)
-  const location = useLocationStore()
   const update = useUpdatePreferences()
   const [language, setChoice] = useState(me.preferredLanguage)
   const [district, setDistrict] = useState<District | null>(me.district)
@@ -115,6 +118,7 @@ function Preferences({ me }: { me: UserProfile }) {
         onSuccess: () => {
           setLanguage(language)
           // A chosen point stays; otherwise searches start from the new district.
+          const location = useLocationStore.getState()
           if (district && location.mode !== "point") {
             location.setDistrict(district)
           }
@@ -173,7 +177,9 @@ function Appearance() {
       <RadioGroup
         aria-label={t("theme.label")}
         value={theme}
-        onValueChange={(value) => setTheme(value as Theme)}
+        onValueChange={(value) => {
+          if (isTheme(value)) setTheme(value)
+        }}
         className="flex flex-wrap gap-x-6 gap-y-1"
       >
         {THEMES.map((option) => (
@@ -216,6 +222,8 @@ function DeleteAccount() {
   const passwordId = useId()
 
   const close = (next: boolean) => {
+    // Escape, outside clicks and Cancel wait while the delete is in flight.
+    if (!next && remove.isPending) return
     setOpen(next)
     if (!next) {
       setPassword("")
@@ -223,16 +231,20 @@ function DeleteAccount() {
     }
   }
 
+  // The promise settles even if this dialog unmounts (clearing the session
+  // re-renders the page), so the cleanup always runs after a delete.
   const confirm = () =>
-    remove.mutate(password, {
-      onSuccess: () => {
+    remove.mutateAsync(password).then(
+      () => {
         useSessionStore.getState().clear()
         useCartStore.getState().clear()
         useLocationStore.getState().clear()
         toast.success(t("settings.deleted"))
         void navigate({ to: "/" })
       },
-    })
+      // The error shows under the password field (remove.error).
+      () => {}
+    )
 
   return (
     <>
@@ -264,7 +276,11 @@ function DeleteAccount() {
                 autoComplete="current-password"
                 value={password}
                 aria-invalid={remove.isError}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => {
+                  setPassword(event.target.value)
+                  // A new attempt: the old INVALID_PASSWORD no longer applies.
+                  if (remove.isError) remove.reset()
+                }}
               />
               {remove.error && (
                 <FieldError>{translateError(t, remove.error)}</FieldError>
@@ -272,7 +288,11 @@ function DeleteAccount() {
             </Field>
           </form>
           <DialogFooter>
-            <Button variant="outline" onClick={() => close(false)}>
+            <Button
+              variant="outline"
+              disabled={remove.isPending}
+              onClick={() => close(false)}
+            >
               {t("common.cancel")}
             </Button>
             <Button

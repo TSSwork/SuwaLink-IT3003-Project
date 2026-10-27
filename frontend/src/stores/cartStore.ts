@@ -122,7 +122,9 @@ export const useCartStore = create<CartState>()(
         const quantity = clampQuantity(line.quantity, line.maxQuantity)
         if (existing) {
           set({
-            lines: lines.map((l) => (l === existing ? { ...line, quantity } : l)),
+            lines: lines.map((l) =>
+              l === existing ? { ...line, quantity } : l
+            ),
           })
           return "added"
         }
@@ -143,28 +145,40 @@ export const useCartStore = create<CartState>()(
         }),
       remove: (inventoryItemId) =>
         set({
-          lines: get().lines.filter((l) => l.inventoryItemId !== inventoryItemId),
+          lines: get().lines.filter(
+            (l) => l.inventoryItemId !== inventoryItemId
+          ),
         }),
       clearPharmacy: (pharmacyId) =>
         set({ lines: get().lines.filter((l) => l.pharmacyId !== pharmacyId) }),
       clear: () =>
-        set({ lines: [], ownerId: useSessionStore.getState().user?.id ?? null }),
+        set({
+          lines: [],
+          ownerId: useSessionStore.getState().user?.id ?? null,
+        }),
       groups: () => groupLines(get().lines),
     }),
     {
       name: CART_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ lines, ownerId }) => ({ lines, ownerId }),
-      // A tampered entry keeps only well-formed lines.
+      // A tampered entry keeps only well-formed lines; a cart whose owner is
+      // not the one signed in now is dropped (see syncOwner).
       merge: (persisted, current) => {
         const stored = persisted as
           Partial<Pick<CartState, "lines" | "ownerId">> | undefined
+        const ownerId =
+          typeof stored?.ownerId === "string" ? stored.ownerId : null
+        const userId = useSessionStore.getState().user?.id ?? null
+        if (ownerId !== null && ownerId !== userId) {
+          return { ...current, lines: [], ownerId: userId }
+        }
         return {
           ...current,
           lines: Array.isArray(stored?.lines)
             ? stored.lines.filter(isCartLine)
             : [],
-          ownerId: typeof stored?.ownerId === "string" ? stored.ownerId : null,
+          ownerId,
         }
       },
     }
@@ -172,12 +186,17 @@ export const useCartStore = create<CartState>()(
 )
 
 /**
- * A visitor's cart passes to whoever signs in; a cart left by one user is
- * cleared when a different user signs in, so it never reaches them.
+ * A visitor's cart passes to whoever signs in. Signing out clears the
+ * signed-in user's cart and makes the cart a visitor's again, so the next
+ * person on this browser never sees it and their own cart is not wiped by a
+ * stale owner. A cart owned by someone else is cleared on sign-in.
  */
 function syncOwner(userId: string | undefined): void {
-  if (!userId) return
   const { ownerId } = useCartStore.getState()
+  if (!userId) {
+    if (ownerId !== null) useCartStore.setState({ lines: [], ownerId: null })
+    return
+  }
   if (ownerId === userId) return
   useCartStore.setState(
     ownerId === null ? { ownerId: userId } : { lines: [], ownerId: userId }

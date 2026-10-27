@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react"
+import { act, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { toast } from "sonner"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -24,7 +24,12 @@ let api: ReturnType<typeof mockApi>
 let current: Reservation
 
 function signIn(role: "CUSTOMER" | "PHARMACY_OWNER" = "CUSTOMER") {
-  useSessionStore.getState().setSession("t", { id: "u1", name: "Nimal", role })
+  // The owner is someone else, so seeing "Nimal" proves the customer is shown.
+  const user =
+    role === "CUSTOMER"
+      ? { id: "u1", name: "Nimal", role }
+      : { id: "o1", name: "Sunil Pharmacist", role }
+  useSessionStore.getState().setSession("t", user)
 }
 
 async function renderDetail() {
@@ -93,6 +98,7 @@ describe("ReservationDetailPage", () => {
       "/pharmacies/p1"
     )
     expect(screen.getByText("12 Galle Road")).toBeVisible()
+    expect(screen.getByText("8am - 10pm")).toBeVisible()
     expect(screen.getByRole("link", { name: /Directions/ })).toHaveAttribute(
       "href",
       "https://www.openstreetmap.org/directions?to=6.9,79.85"
@@ -100,6 +106,40 @@ describe("ReservationDetailPage", () => {
     expect(
       screen.queryByText("Bring your prescription when you collect")
     ).toBeNull()
+  })
+
+  it("says when the pharmacy has not listed its hours", async () => {
+    current = {
+      ...current,
+      pharmacy: { ...current.pharmacy, openingHours: null },
+    }
+    await renderDetail()
+    expect(screen.getByText("Hours not listed")).toBeVisible()
+  })
+
+  it("hides the actions once the hold has run out", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      current = { ...current, expiresAt: localIso(60_000) }
+      signIn("PHARMACY_OWNER")
+      await renderDetail()
+      expect(
+        screen.getByRole("button", { name: "Cancel reservation" })
+      ).toBeVisible()
+      expect(
+        screen.getByRole("button", { name: "Mark as collected" })
+      ).toBeVisible()
+      await act(() => vi.advanceTimersByTimeAsync(61_000))
+      expect(screen.getByText("The hold has ended")).toBeVisible()
+      expect(
+        screen.queryByRole("button", { name: "Cancel reservation" })
+      ).toBeNull()
+      expect(
+        screen.queryByRole("button", { name: "Mark as collected" })
+      ).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("reminds the customer to bring a prescription", async () => {
