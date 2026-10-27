@@ -472,6 +472,7 @@ public class ReservationServiceImpl implements ReservationService {
                         .district(pharmacy.getDistrict())
                         .latitude(pharmacy.getLatitude())
                         .longitude(pharmacy.getLongitude())
+                        .openingHours(pharmacy.getOpeningHours())
                         .build())
                 .customer(ReservationResponse.CustomerSummary.builder()
                         .id(patient.getId())

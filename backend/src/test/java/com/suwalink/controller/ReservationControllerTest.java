@@ -141,6 +141,23 @@ class ReservationControllerTest {
     }
 
     @Test
+    void pharmacySummaryIncludesOpeningHours() throws Exception {
+        String patientToken = registerCustomerAndLogin("resv.hours.patient@example.com");
+        registerVerifiedPharmacyAndLogin("resv.hours.pharmacy@example.com", "LIC-RH-1");
+        Pharmacy pharmacy = pharmacyRepository.findAll().stream()
+                .filter(p -> p.getUser().getEmail().equals("resv.hours.pharmacy@example.com"))
+                .findFirst()
+                .orElseThrow();
+        pharmacy.setOpeningHours("Mon-Sat 8.00 am - 9.00 pm");
+        pharmacyRepository.save(pharmacy);
+        UUID item = createInventoryItem("resv.hours.pharmacy@example.com", new BigDecimal("10.00"), 5);
+
+        reserve(patientToken, line(item, 1))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.pharmacy.openingHours").value("Mon-Sat 8.00 am - 9.00 pm"));
+    }
+
+    @Test
     void rejectsItemsFromTwoPharmacies() throws Exception {
         String patientToken = registerCustomerAndLogin("resv.two.patient@example.com");
         registerVerifiedPharmacyAndLogin("resv.two.pharmacyA@example.com", "LIC-RT-1");
