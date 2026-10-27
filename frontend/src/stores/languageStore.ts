@@ -30,24 +30,30 @@ interface LanguageState {
   setLanguage: (language: Language) => void
 }
 
+/**
+ * Starts in English, like the prerendered shell, so hydration matches; the
+ * stored (or browser) language is applied after mount by `startLanguageSync`.
+ */
 export const useLanguageStore = create<LanguageState>()(
   persist(
     (set) => ({
-      language: detectLanguage(),
+      language: "en",
       setLanguage: (language) => set({ language }),
     }),
     {
       name: LANGUAGE_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ language }) => ({ language }),
-      // A stale or tampered stored value must never leave the app on a
+      skipHydration: true,
+      // Nothing stored: the browser's language (not saved until chosen). A
+      // stale or tampered stored value must never leave the app on a
       // language it has no strings for.
       merge: (persisted, current) => {
         const stored = (persisted as Partial<LanguageState> | undefined)
           ?.language
         return {
           ...current,
-          language: isLanguage(stored) ? stored : current.language,
+          language: isLanguage(stored) ? stored : detectLanguage(),
         }
       },
     }

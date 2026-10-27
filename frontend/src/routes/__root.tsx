@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useLayoutEffect } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
@@ -13,7 +13,11 @@ import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?url"
 import { registerRouter } from "@/api/client"
+import { CartButton } from "@/components/cart/CartButton"
 import { AccountMenu } from "@/components/layout/AccountMenu"
+import { MainNav } from "@/components/layout/MainNav"
+import { NotificationBell } from "@/components/layout/NotificationBell"
+import { SessionBootstrap } from "@/components/layout/SessionBootstrap"
 import { AppShell } from "@/components/layout/AppShell"
 import { Toaster } from "@/components/ui/sonner"
 import { getCurrentLanguage, startLanguageSync } from "@/i18n"
@@ -63,7 +67,8 @@ function NotFound() {
 
 function RootLayout() {
   useEffect(() => startThemeSync(), [])
-  useEffect(() => startLanguageSync(), [])
+  // Before paint: the shell hydrates in English, then switches with no flash.
+  useLayoutEffect(() => startLanguageSync(), [])
   useEffect(() => startSessionCacheSync(), [])
   const router = useRouter()
   useEffect(() => {
@@ -72,7 +77,17 @@ function RootLayout() {
   }, [router])
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell account={<AccountMenu />}>
+      <SessionBootstrap />
+      <AppShell
+        nav={<MainNav />}
+        account={
+          <>
+            <CartButton />
+            <NotificationBell />
+            <AccountMenu />
+          </>
+        }
+      >
         <Outlet />
       </AppShell>
       <Toaster />

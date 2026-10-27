@@ -26,6 +26,8 @@ public class PrescriptionRequestResponse {
     private final TargetScope targetScope;
     private final District district;
     private final int targetCount;
+    /** Number of pharmacy responses; filled only on the patient's own list ({@code GET /api/prescriptions/me}). */
+    private final Integer responseCount;
     private final LocalDateTime expiresAt;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;

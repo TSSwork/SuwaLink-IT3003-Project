@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { safeRedirect } from "@/features/auth/schemas"
+import { safeRedirect } from "@/lib/safeUrl"
 
 describe("safeRedirect", () => {
   it.each([

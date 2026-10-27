@@ -11,6 +11,9 @@ public interface CategoryService {
 
     List<CategoryResponse> list();
 
+    /** Active categories only, sorted by name (public catalogue). */
+    List<CategoryResponse> listActive();
+
     CategoryResponse get(UUID id);
 
     CategoryResponse update(UUID id, CategoryRequest request);

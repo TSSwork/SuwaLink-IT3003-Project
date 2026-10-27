@@ -8,6 +8,8 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it } from "vitest"
 import { AccountMenu } from "@/components/layout/AccountMenu"
+import { useCartStore } from "@/stores/cartStore"
+import { useLocationStore } from "@/stores/locationStore"
 import { useSessionStore } from "@/stores/sessionStore"
 
 function renderMenu() {
@@ -45,7 +47,22 @@ describe("AccountMenu", () => {
       "href",
       "/pharmacy"
     )
+    useCartStore.getState().add({
+      inventoryItemId: "inv1",
+      pharmacyId: "p1",
+      pharmacyName: "City Pharmacy",
+      medicineId: "m1",
+      medicineName: "Panadol",
+      strength: "500 mg",
+      unitPrice: 12.5,
+      quantity: 1,
+      maxQuantity: 10,
+      requiresPrescription: false,
+    })
+    useLocationStore.getState().setPoint(6.9, 79.86, "device")
     await user.click(screen.getByRole("menuitem", { name: "Sign out" }))
     expect(useSessionStore.getState().user).toBeNull()
+    expect(useCartStore.getState().lines).toEqual([])
+    expect(useLocationStore.getState().mode).toBe("none")
   })
 })

@@ -43,6 +43,7 @@ public class ReservationResponse {
         private final District district;
         private final BigDecimal latitude;
         private final BigDecimal longitude;
+        private final String openingHours;
     }
 
     @Getter

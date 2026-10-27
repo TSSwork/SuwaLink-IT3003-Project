@@ -175,6 +175,26 @@ class PrescriptionResponseControllerTest {
     }
 
     @Test
+    void myRequests_includeResponseCountPerRequest() throws Exception {
+        String patientToken = registerCustomerAndLogin("presp.count.patient@example.com");
+        String pharmacyAToken = registerVerifiedPharmacyAndLogin("presp.count.pharmacyA@example.com", "LIC-RC-1");
+        String pharmacyBToken = registerVerifiedPharmacyAndLogin("presp.count.pharmacyB@example.com", "LIC-RC-2");
+
+        String answered = createPrescription(patientToken, 41, "Answered twice");
+        String unanswered = createPrescription(patientToken, 42, "Nobody yet");
+        UUID inventoryA = createInventoryItem("presp.count.pharmacyA@example.com", new BigDecimal("30.00"), 15);
+        UUID inventoryB = createInventoryItem("presp.count.pharmacyB@example.com", new BigDecimal("35.00"), 15);
+        submitResponse(pharmacyAToken, answered, inventoryA, 1);
+        submitResponse(pharmacyBToken, answered, inventoryB, 1);
+
+        mockMvc.perform(get("/api/prescriptions/me").header("Authorization", "Bearer " + patientToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[?(@.id == '%s')].responseCount".formatted(answered)).value(2))
+                .andExpect(jsonPath("$.data[?(@.id == '%s')].responseCount".formatted(unanswered)).value(0));
+    }
+
+    @Test
     void listMyResponses_asPharmacy_returnsSubmittedResponses() throws Exception {
         String patientToken = registerCustomerAndLogin("presp.patient5@example.com");
         String pharmacyToken = registerVerifiedPharmacyAndLogin("presp.pharmacy5@example.com", "LIC-R-7");

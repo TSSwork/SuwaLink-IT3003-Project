@@ -23,6 +23,7 @@ import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.ImageRepository;
 import com.suwalink.repository.PharmacyRepository;
 import com.suwalink.repository.PrescriptionRequestRepository;
+import com.suwalink.repository.PrescriptionResponseRepository;
 import com.suwalink.repository.ReservationRepository;
 import com.suwalink.security.CurrentUserProvider;
 import com.suwalink.service.ImageService;
@@ -36,8 +37,10 @@ import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +63,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class PrescriptionRequestServiceImpl implements PrescriptionRequestService {
 
     private final PrescriptionRequestRepository prescriptionRequestRepository;
+    private final PrescriptionResponseRepository prescriptionResponseRepository;
     private final ReservationRepository reservationRepository;
     private final ImageRepository imageRepository;
     private final ImageService imageService;
@@ -124,8 +128,12 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     @Transactional(readOnly = true)
     public List<PrescriptionRequestResponse> getMyRequests() {
         User patient = currentUserProvider.getCurrentUser();
+        // One grouped count query for the whole list instead of one per request.
+        Map<UUID, Long> responseCounts = prescriptionResponseRepository.countByRequestForPatient(patient.getId())
+            .stream()
+            .collect(Collectors.toMap(row -> (UUID) row[0], row -> (Long) row[1]));
         return prescriptionRequestRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()
-            .map(this::toResponse)
+            .map(request -> toResponse(request, responseCounts.getOrDefault(request.getId(), 0L).intValue()))
             .toList();
     }
 
@@ -279,6 +287,10 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
     }
 
     private PrescriptionRequestResponse toResponse(PrescriptionRequest prescriptionRequest) {
+        return toResponse(prescriptionRequest, null);
+    }
+
+    private PrescriptionRequestResponse toResponse(PrescriptionRequest prescriptionRequest, Integer responseCount) {
         return PrescriptionRequestResponse.builder()
             .id(prescriptionRequest.getId())
             .patientId(prescriptionRequest.getPatient().getId())
@@ -291,6 +303,7 @@ public class PrescriptionRequestServiceImpl implements PrescriptionRequestServic
             .targetScope(prescriptionRequest.getTargetScope())
             .district(prescriptionRequest.getDistrict())
             .targetCount(prescriptionRequest.getTargetPharmacies().size())
+            .responseCount(responseCount)
             .expiresAt(prescriptionRequest.getExpiresAt())
             .createdAt(prescriptionRequest.getCreatedAt())
             .updatedAt(prescriptionRequest.getUpdatedAt())

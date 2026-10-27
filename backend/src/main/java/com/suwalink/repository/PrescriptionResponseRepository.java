@@ -20,6 +20,11 @@ public interface PrescriptionResponseRepository extends JpaRepository<Prescripti
 
     boolean existsByPrescriptionRequestId(UUID prescriptionRequestId);
 
+    /** Number of responses per request, for all requests of one patient: rows of {requestId, count}. */
+    @Query("SELECT r.prescriptionRequest.id, COUNT(r) FROM PrescriptionResponse r "
+            + "WHERE r.prescriptionRequest.patient.id = :patientId GROUP BY r.prescriptionRequest.id")
+    List<Object[]> countByRequestForPatient(@Param("patientId") UUID patientId);
+
     /** Responses given by any of the pharmacies or made to a request of any of the customers (demo cleanup). */
     @Query("SELECT r FROM PrescriptionResponse r "
             + "WHERE r.pharmacy.id IN :pharmacyIds OR r.prescriptionRequest.patient.id IN :patientIds")

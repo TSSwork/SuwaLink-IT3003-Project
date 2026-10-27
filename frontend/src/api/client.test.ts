@@ -75,6 +75,39 @@ describe("error mapping", () => {
     expect(error).toMatchObject({ status: 0, code: "NETWORK_ERROR" })
   })
 
+  it("reads the code from a blob request's error body", async () => {
+    mock.onGet("/images/i1/content").reply(
+      403,
+      new Blob(
+        [
+          JSON.stringify({
+            success: false,
+            code: "ACCESS_DENIED",
+            message: "no",
+          }),
+        ],
+        { type: "application/json" }
+      )
+    )
+    const error = await api
+      .get("/images/i1/content", { responseType: "blob" })
+      .catch((e) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 403,
+      code: "ACCESS_DENIED",
+      message: "no",
+    })
+  })
+
+  it("falls back to UNKNOWN for a blob error body that is not JSON", async () => {
+    mock.onGet("/images/i1/content").reply(500, new Blob(["<html>"]))
+    const error = await api
+      .get("/images/i1/content", { responseType: "blob" })
+      .catch((e) => e)
+    expect(error).toMatchObject({ status: 500, code: "UNKNOWN" })
+  })
+
   it("falls back to UNKNOWN for a body without a code", async () => {
     mock.onGet("/x").reply(500, "oops")
     const error = await api.get("/x").catch((e) => e)

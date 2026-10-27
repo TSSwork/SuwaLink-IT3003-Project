@@ -10,19 +10,36 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as MedicinesIdRouteImport } from './routes/medicines/$id'
+import { Route as PharmaciesIdRouteImport } from './routes/pharmacies/$id'
 import { Route as PharmacyIndexRouteImport } from './routes/pharmacy/index'
+import { Route as PrescriptionsIndexRouteImport } from './routes/prescriptions/index'
+import { Route as PrescriptionsIdRouteImport } from './routes/prescriptions/$id'
+import { Route as PrescriptionsNewRouteImport } from './routes/prescriptions/new'
+import { Route as RCodeRouteImport } from './routes/r/$code'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
 import { Route as RegisterPharmacyRouteImport } from './routes/register/pharmacy'
+import { Route as ReservationsIndexRouteImport } from './routes/reservations/index'
+import { Route as ReservationsIdRouteImport } from './routes/reservations/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -45,6 +62,21 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -55,9 +87,39 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MedicinesIdRoute = MedicinesIdRouteImport.update({
+  id: '/medicines/$id',
+  path: '/medicines/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PharmaciesIdRoute = PharmaciesIdRouteImport.update({
+  id: '/pharmacies/$id',
+  path: '/pharmacies/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PharmacyIndexRoute = PharmacyIndexRouteImport.update({
   id: '/pharmacy/',
   path: '/pharmacy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrescriptionsIndexRoute = PrescriptionsIndexRouteImport.update({
+  id: '/prescriptions/',
+  path: '/prescriptions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrescriptionsIdRoute = PrescriptionsIdRouteImport.update({
+  id: '/prescriptions/$id',
+  path: '/prescriptions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrescriptionsNewRoute = PrescriptionsNewRouteImport.update({
+  id: '/prescriptions/new',
+  path: '/prescriptions/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterIndexRoute = RegisterIndexRouteImport.update({
@@ -70,94 +132,188 @@ const RegisterPharmacyRoute = RegisterPharmacyRouteImport.update({
   path: '/register/pharmacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReservationsIndexRoute = ReservationsIndexRouteImport.update({
+  id: '/reservations/',
+  path: '/reservations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservationsIdRoute = ReservationsIdRouteImport.update({
+  id: '/reservations/$id',
+  path: '/reservations/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/saved': typeof SavedRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
+  '/medicines/$id': typeof MedicinesIdRoute
+  '/pharmacies/$id': typeof PharmaciesIdRoute
+  '/prescriptions/$id': typeof PrescriptionsIdRoute
+  '/prescriptions/new': typeof PrescriptionsNewRoute
+  '/r/$code': typeof RCodeRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
+  '/reservations/$id': typeof ReservationsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
+  '/prescriptions/': typeof PrescriptionsIndexRoute
   '/register/': typeof RegisterIndexRoute
+  '/reservations/': typeof ReservationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/saved': typeof SavedRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
+  '/medicines/$id': typeof MedicinesIdRoute
+  '/pharmacies/$id': typeof PharmaciesIdRoute
+  '/prescriptions/$id': typeof PrescriptionsIdRoute
+  '/prescriptions/new': typeof PrescriptionsNewRoute
+  '/r/$code': typeof RCodeRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
+  '/reservations/$id': typeof ReservationsIdRoute
   '/admin': typeof AdminIndexRoute
   '/pharmacy': typeof PharmacyIndexRoute
+  '/prescriptions': typeof PrescriptionsIndexRoute
   '/register': typeof RegisterIndexRoute
+  '/reservations': typeof ReservationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/saved': typeof SavedRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
+  '/medicines/$id': typeof MedicinesIdRoute
+  '/pharmacies/$id': typeof PharmaciesIdRoute
+  '/prescriptions/$id': typeof PrescriptionsIdRoute
+  '/prescriptions/new': typeof PrescriptionsNewRoute
+  '/r/$code': typeof RCodeRoute
   '/register/pharmacy': typeof RegisterPharmacyRoute
+  '/reservations/$id': typeof ReservationsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/pharmacy/': typeof PharmacyIndexRoute
+  '/prescriptions/': typeof PrescriptionsIndexRoute
   '/register/': typeof RegisterIndexRoute
+  '/reservations/': typeof ReservationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/cart'
     | '/forgot-password'
     | '/login'
     | '/privacy'
     | '/reset-password'
+    | '/saved'
+    | '/search'
+    | '/settings'
     | '/terms'
+    | '/medicines/$id'
+    | '/pharmacies/$id'
+    | '/prescriptions/$id'
+    | '/prescriptions/new'
+    | '/r/$code'
     | '/register/pharmacy'
+    | '/reservations/$id'
     | '/admin/'
     | '/pharmacy/'
+    | '/prescriptions/'
     | '/register/'
+    | '/reservations/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/cart'
     | '/forgot-password'
     | '/login'
     | '/privacy'
     | '/reset-password'
+    | '/saved'
+    | '/search'
+    | '/settings'
     | '/terms'
+    | '/medicines/$id'
+    | '/pharmacies/$id'
+    | '/prescriptions/$id'
+    | '/prescriptions/new'
+    | '/r/$code'
     | '/register/pharmacy'
+    | '/reservations/$id'
     | '/admin'
     | '/pharmacy'
+    | '/prescriptions'
     | '/register'
+    | '/reservations'
   id:
     | '__root__'
     | '/'
+    | '/cart'
     | '/forgot-password'
     | '/login'
     | '/privacy'
     | '/reset-password'
+    | '/saved'
+    | '/search'
+    | '/settings'
     | '/terms'
+    | '/medicines/$id'
+    | '/pharmacies/$id'
+    | '/prescriptions/$id'
+    | '/prescriptions/new'
+    | '/r/$code'
     | '/register/pharmacy'
+    | '/reservations/$id'
     | '/admin/'
     | '/pharmacy/'
+    | '/prescriptions/'
     | '/register/'
+    | '/reservations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CartRoute: typeof CartRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SavedRoute: typeof SavedRoute
+  SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
   TermsRoute: typeof TermsRoute
+  MedicinesIdRoute: typeof MedicinesIdRoute
+  PharmaciesIdRoute: typeof PharmaciesIdRoute
+  PrescriptionsIdRoute: typeof PrescriptionsIdRoute
+  PrescriptionsNewRoute: typeof PrescriptionsNewRoute
+  RCodeRoute: typeof RCodeRoute
   RegisterPharmacyRoute: typeof RegisterPharmacyRoute
+  ReservationsIdRoute: typeof ReservationsIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PharmacyIndexRoute: typeof PharmacyIndexRoute
+  PrescriptionsIndexRoute: typeof PrescriptionsIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
+  ReservationsIndexRoute: typeof ReservationsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -167,6 +323,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -197,6 +360,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -211,11 +395,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/medicines/$id': {
+      id: '/medicines/$id'
+      path: '/medicines/$id'
+      fullPath: '/medicines/$id'
+      preLoaderRoute: typeof MedicinesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pharmacies/$id': {
+      id: '/pharmacies/$id'
+      path: '/pharmacies/$id'
+      fullPath: '/pharmacies/$id'
+      preLoaderRoute: typeof PharmaciesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pharmacy/': {
       id: '/pharmacy/'
       path: '/pharmacy'
       fullPath: '/pharmacy/'
       preLoaderRoute: typeof PharmacyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prescriptions/': {
+      id: '/prescriptions/'
+      path: '/prescriptions'
+      fullPath: '/prescriptions/'
+      preLoaderRoute: typeof PrescriptionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prescriptions/$id': {
+      id: '/prescriptions/$id'
+      path: '/prescriptions/$id'
+      fullPath: '/prescriptions/$id'
+      preLoaderRoute: typeof PrescriptionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prescriptions/new': {
+      id: '/prescriptions/new'
+      path: '/prescriptions/new'
+      fullPath: '/prescriptions/new'
+      preLoaderRoute: typeof PrescriptionsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register/': {
@@ -232,20 +458,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterPharmacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reservations/': {
+      id: '/reservations/'
+      path: '/reservations'
+      fullPath: '/reservations/'
+      preLoaderRoute: typeof ReservationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservations/$id': {
+      id: '/reservations/$id'
+      path: '/reservations/$id'
+      fullPath: '/reservations/$id'
+      preLoaderRoute: typeof ReservationsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CartRoute: CartRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SavedRoute: SavedRoute,
+  SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
   TermsRoute: TermsRoute,
+  MedicinesIdRoute: MedicinesIdRoute,
+  PharmaciesIdRoute: PharmaciesIdRoute,
+  PrescriptionsIdRoute: PrescriptionsIdRoute,
+  PrescriptionsNewRoute: PrescriptionsNewRoute,
+  RCodeRoute: RCodeRoute,
   RegisterPharmacyRoute: RegisterPharmacyRoute,
+  ReservationsIdRoute: ReservationsIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   PharmacyIndexRoute: PharmacyIndexRoute,
+  PrescriptionsIndexRoute: PrescriptionsIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
+  ReservationsIndexRoute: ReservationsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
