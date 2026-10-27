@@ -2,11 +2,15 @@ import { act, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NewPrescriptionPage } from "@/features/prescriptions/NewPrescriptionPage"
+import { downscaleImage } from "@/lib/downscaleImage"
 import { useLocationStore } from "@/stores/locationStore"
 import { useSessionStore } from "@/stores/sessionStore"
 import { prescriptionRequest } from "@/test/fixtures"
 import { fail, mockApi } from "@/test/mockApi"
 import { renderRoutes } from "@/test/renderRoutes"
+
+// jsdom has no canvas: the downscaling is stubbed (see lib/downscaleImage.test.ts).
+vi.mock("@/lib/downscaleImage", () => ({ downscaleImage: vi.fn() }))
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), info: vi.fn(), error: vi.fn() },
@@ -49,6 +53,8 @@ async function fillValid(user: ReturnType<typeof userEvent.setup>) {
 }
 
 beforeEach(() => {
+  vi.mocked(downscaleImage).mockReset()
+  vi.mocked(downscaleImage).mockImplementation((file) => Promise.resolve(file))
   useLocationStore.getState().clear()
   useSessionStore
     .getState()
@@ -74,7 +80,44 @@ describe("NewPrescriptionPage", () => {
     expect(sent()).toEqual([])
   })
 
-  it("rejects a photo over 5 MB before uploading", async () => {
+  it("sends a downscaled copy of a photo over 5 MB", async () => {
+    const small = photo("big.jpg", "image/jpeg", 1024 * 1024)
+    vi.mocked(downscaleImage).mockResolvedValue(small)
+    useLocationStore.getState().setDistrict("KANDY")
+    const user = userEvent.setup()
+    await renderNew()
+    const big = photo("big.jpg", "image/jpeg", 8 * 1024 * 1024)
+    await user.upload(screen.getByLabelText("Photo of the prescription"), big)
+    expect(downscaleImage).toHaveBeenCalledWith(big, {
+      maxBytes: 5 * 1024 * 1024,
+    })
+    expect(
+      await screen.findByRole("img", { name: "Preview of big.jpg" })
+    ).toBeVisible()
+    expect(
+      screen.queryByText(
+        "This photo is larger than 5 MB. Take it again or choose a smaller one."
+      )
+    ).toBeNull()
+    await user.type(screen.getByLabelText("Patient's age"), "34")
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "Share my prescription only with the pharmacies I chose",
+      })
+    )
+    await user.click(screen.getByRole("button", { name: "Send prescription" }))
+    await waitFor(() => expect(sent()).toHaveLength(1))
+    expect(sent()[0].get("image")).toBe(small)
+  })
+
+  it.each([
+    ["cannot be downscaled", () => Promise.reject(new Error("no canvas"))],
+    [
+      "is still over 5 MB after downscaling",
+      () => Promise.resolve(photo("big.jpg", "image/jpeg", 6 * 1024 * 1024)),
+    ],
+  ])("rejects a photo over 5 MB that %s", async (_, result) => {
+    vi.mocked(downscaleImage).mockImplementation(result)
     const user = userEvent.setup()
     await renderNew()
     await user.upload(
@@ -99,7 +142,7 @@ describe("NewPrescriptionPage", () => {
       photo()
     )
     expect(
-      screen.getByRole("img", { name: "Preview of rx.jpg" })
+      await screen.findByRole("img", { name: "Preview of rx.jpg" })
     ).toHaveAttribute("src", "blob:preview")
   })
 
@@ -114,7 +157,7 @@ describe("NewPrescriptionPage", () => {
     await user.click(screen.getByRole("button", { name: "Choose a photo" }))
     expect(click).toHaveBeenCalled()
     await user.upload(input, photo())
-    expect(screen.getByText("rx.jpg")).toBeVisible()
+    expect(await screen.findByText("rx.jpg")).toBeVisible()
   })
 
   it("defaults the district to the one chosen for searches, even when it arrives later", async () => {

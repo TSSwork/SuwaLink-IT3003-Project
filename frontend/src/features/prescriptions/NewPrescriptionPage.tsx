@@ -8,7 +8,11 @@ import { toast } from "sonner"
 import type { TargetScope } from "@/api/types"
 import type { PrescriptionValues } from "@/features/prescriptions/schema"
 import { ApiError } from "@/api/client"
-import { PRESCRIPTION_TYPES, useCreatePrescription } from "@/api/prescriptions"
+import {
+  PRESCRIPTION_MAX_BYTES,
+  PRESCRIPTION_TYPES,
+  useCreatePrescription,
+} from "@/api/prescriptions"
 import { DistrictSelect } from "@/components/forms/DistrictSelect"
 import { TextField } from "@/components/forms/TextField"
 import { LocationChooser } from "@/components/location/LocationChooser"
@@ -32,6 +36,7 @@ import {
   checkPhoto,
   prescriptionSchema,
 } from "@/features/prescriptions/schema"
+import { downscaleImage } from "@/lib/downscaleImage"
 import { translateError } from "@/lib/translateError"
 import { useLocationStore } from "@/stores/locationStore"
 
@@ -72,11 +77,28 @@ export function NewPrescriptionPage() {
     }
   }, [form, mode, storeDistrict])
 
-  const choosePhoto = (file: File | undefined) => {
+  // Only the latest choice counts when a slow downscale finishes late.
+  const choice = useRef(0)
+  const [preparing, setPreparing] = useState(false)
+
+  const choosePhoto = async (file: File | undefined) => {
     if (!file) return
-    const problem = checkPhoto(file)
+    const current = ++choice.current
+    if (checkPhoto(file) === "prescriptions.photoType") {
+      setPhotoError("prescriptions.photoType")
+      setPhoto(null)
+      return
+    }
+    setPreparing(true)
+    // A large phone photo is shrunk first; if that fails, the original's size decides.
+    const ready = await downscaleImage(file, {
+      maxBytes: PRESCRIPTION_MAX_BYTES,
+    }).catch(() => file)
+    if (current !== choice.current) return
+    setPreparing(false)
+    const problem = checkPhoto(ready)
     setPhotoError(problem)
-    setPhoto(problem ? null : file)
+    setPhoto(problem ? null : ready)
   }
 
   const send = (values: PrescriptionValues, targetScope: TargetScope) => {
@@ -152,7 +174,11 @@ export function NewPrescriptionPage() {
       </div>
 
       <form noValidate onSubmit={submit} className="flex flex-col gap-6">
-        <PhotoPicker photo={photo} error={photoError} onChoose={choosePhoto} />
+        <PhotoPicker
+          photo={photo}
+          error={photoError}
+          onChoose={(file) => void choosePhoto(file)}
+        />
 
         <TextField
           control={form.control}
@@ -346,7 +372,7 @@ export function NewPrescriptionPage() {
         <Button
           type="submit"
           size="lg"
-          disabled={create.isPending}
+          disabled={create.isPending || preparing}
           className="self-start"
         >
           {create.isPending
