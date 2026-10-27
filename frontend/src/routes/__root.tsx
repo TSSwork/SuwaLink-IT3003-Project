@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useLayoutEffect } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
@@ -67,7 +67,8 @@ function NotFound() {
 
 function RootLayout() {
   useEffect(() => startThemeSync(), [])
-  useEffect(() => startLanguageSync(), [])
+  // Before paint: the shell hydrates in English, then switches with no flash.
+  useLayoutEffect(() => startLanguageSync(), [])
   useEffect(() => startSessionCacheSync(), [])
   const router = useRouter()
   useEffect(() => {

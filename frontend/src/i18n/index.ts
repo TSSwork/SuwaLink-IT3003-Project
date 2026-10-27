@@ -12,7 +12,9 @@ void i18n.use(initReactI18next).init({
     si: { translation: si },
     ta: { translation: ta },
   },
-  lng: useLanguageStore.getState().language,
+  // The prerendered shell is English; the stored language follows after
+  // mount (startLanguageSync) so hydration matches.
+  lng: "en",
   fallbackLng: "en",
   interpolation: { escapeValue: true },
   react: { useSuspense: false },
@@ -29,10 +31,14 @@ function apply(language: Language): void {
 }
 
 /**
- * Applies the stored language now and keeps i18next and <html lang> in step
- * with later choices. Returns a cleanup.
+ * Reads the stored language (or the browser's), applies it, and keeps
+ * i18next and <html lang> in step with later choices. Called from a layout
+ * effect in the root, so it lands before paint and before any request.
+ * Returns a cleanup.
  */
 export function startLanguageSync(): () => void {
+  // localStorage is synchronous, so this has hydrated when it returns.
+  void useLanguageStore.persist.rehydrate()
   apply(getCurrentLanguage())
   return useLanguageStore.subscribe((state, previous) => {
     if (state.language !== previous.language) apply(state.language)
