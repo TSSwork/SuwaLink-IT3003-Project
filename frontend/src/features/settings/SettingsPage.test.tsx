@@ -222,10 +222,25 @@ describe("SettingsPage", () => {
     expect(toast.success).toHaveBeenCalledWith("Your account has been deleted.")
   })
 
-  it("signs out", async () => {
+  it("signs out, forgetting the cart and the location", async () => {
     const { router } = await renderSettings()
+    useCartStore.getState().add({
+      inventoryItemId: "inv1",
+      pharmacyId: "p1",
+      pharmacyName: "City Pharmacy",
+      medicineId: "m1",
+      medicineName: "Panadol",
+      strength: "500 mg",
+      unitPrice: 12.5,
+      quantity: 1,
+      maxQuantity: 10,
+      requiresPrescription: false,
+    })
+    useLocationStore.getState().setPoint(6.9, 79.86, "pinned")
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }))
     expect(useSessionStore.getState().token).toBeNull()
+    expect(useCartStore.getState().lines).toEqual([])
+    expect(useLocationStore.getState().mode).toBe("none")
     await waitFor(() => expect(router.state.location.pathname).toBe("/"))
   })
 })

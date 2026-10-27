@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { translateError } from "@/lib/translateError"
-import { useCartStore } from "@/stores/cartStore"
+import { signOut } from "@/lib/signOut"
 import {
   LANGUAGES,
   LANGUAGE_NAMES,
@@ -31,7 +31,6 @@ import {
   useLanguageStore,
 } from "@/stores/languageStore"
 import { useLocationStore } from "@/stores/locationStore"
-import { useSessionStore } from "@/stores/sessionStore"
 import { useThemeStore } from "@/stores/themeStore"
 
 const THEMES: Array<Theme> = ["light", "dark", "system"]
@@ -196,14 +195,14 @@ function Appearance() {
 function Account() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const signOut = () => {
-    useSessionStore.getState().clear()
+  const leave = () => {
+    signOut()
     void navigate({ to: "/" })
   }
   return (
     <Section title={t("settings.account")}>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={signOut}>
+        <Button variant="outline" onClick={leave}>
           {t("auth.signOut")}
         </Button>
         <DeleteAccount />
@@ -236,9 +235,7 @@ function DeleteAccount() {
   const confirm = () =>
     remove.mutateAsync(password).then(
       () => {
-        useSessionStore.getState().clear()
-        useCartStore.getState().clear()
-        useLocationStore.getState().clear()
+        signOut()
         toast.success(t("settings.deleted"))
         void navigate({ to: "/" })
       },

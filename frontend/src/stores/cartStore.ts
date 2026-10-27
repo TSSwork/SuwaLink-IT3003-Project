@@ -35,13 +35,28 @@ export interface CartGroup {
   lines: Array<CartLine>
 }
 
-/** What `add` did: a new line, more of an existing one, more but cut to the limit, or refused (20 lines). */
-export type AddResult = "added" | "merged" | "capped" | "limit"
+/**
+ * What `add` did: a new line, more of an existing one, more but cut to the
+ * limit, a line for the same item at another price (offer vs quote) replaced,
+ * or refused (20 lines).
+ */
+export type AddResult = "added" | "merged" | "capped" | "replaced" | "limit"
+
+/** The cart of a session that expired, kept aside until its owner returns. */
+export interface HeldCart {
+  ownerId: string
+  lines: Array<CartLine>
+}
 
 interface CartState {
   lines: Array<CartLine>
   /** The signed-in user the cart belongs to; null while built by a visitor. */
   ownerId: string | null
+  /**
+   * An expired session's cart: never shown or used while nobody is signed
+   * in, given back if its owner signs in again, dropped for anyone else.
+   */
+  held: HeldCart | null
   /**
    * Adds a line. The same item with the same quote merges (newest price and
    * limit win); the same item with a different quote replaces it, so an
@@ -52,6 +67,8 @@ interface CartState {
   remove: (inventoryItemId: string) => void
   clearPharmacy: (pharmacyId: string) => void
   clear: () => void
+  /** Forgets everything, held cart included (explicit sign-out, account deleted). */
+  reset: () => void
   /** Lines grouped by pharmacy; a new array on every call, so memoise in components. */
   groups: () => Array<CartGroup>
 }
@@ -96,11 +113,25 @@ function isCartLine(value: unknown): value is CartLine {
   )
 }
 
+type StoredCart = Pick<CartState, "lines" | "ownerId" | "held">
+
+function validLines(value: unknown): Array<CartLine> {
+  return Array.isArray(value) ? value.filter(isCartLine) : []
+}
+
+function validHeld(value: unknown): HeldCart | null {
+  const held = value as Partial<HeldCart> | null | undefined
+  return typeof held?.ownerId === "string"
+    ? { ownerId: held.ownerId, lines: validLines(held.lines) }
+    : null
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       lines: [],
       ownerId: null,
+      held: null,
       add: (line) => {
         const { lines } = get()
         const existing = lines.find(
@@ -126,7 +157,7 @@ export const useCartStore = create<CartState>()(
               l === existing ? { ...line, quantity } : l
             ),
           })
-          return "added"
+          return "replaced"
         }
         const inPharmacy = lines.filter(
           (l) => l.pharmacyId === line.pharmacyId
@@ -156,29 +187,28 @@ export const useCartStore = create<CartState>()(
           lines: [],
           ownerId: useSessionStore.getState().user?.id ?? null,
         }),
+      reset: () => set({ lines: [], ownerId: null, held: null }),
       groups: () => groupLines(get().lines),
     }),
     {
       name: CART_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ lines, ownerId }) => ({ lines, ownerId }),
-      // A tampered entry keeps only well-formed lines; a cart whose owner is
-      // not the one signed in now is dropped (see syncOwner).
+      partialize: ({ lines, ownerId, held }) => ({ lines, ownerId, held }),
+      // A tampered entry keeps only well-formed lines; then the same owner
+      // rule as a sign-in or expiry applies (see reconcile).
       merge: (persisted, current) => {
-        const stored = persisted as
-          Partial<Pick<CartState, "lines" | "ownerId">> | undefined
-        const ownerId =
-          typeof stored?.ownerId === "string" ? stored.ownerId : null
-        const userId = useSessionStore.getState().user?.id ?? null
-        if (ownerId !== null && ownerId !== userId) {
-          return { ...current, lines: [], ownerId: userId }
-        }
+        const stored = persisted as Partial<StoredCart> | undefined
         return {
           ...current,
-          lines: Array.isArray(stored?.lines)
-            ? stored.lines.filter(isCartLine)
-            : [],
-          ownerId,
+          ...reconcile(
+            {
+              lines: validLines(stored?.lines),
+              ownerId:
+                typeof stored?.ownerId === "string" ? stored.ownerId : null,
+              held: validHeld(stored?.held),
+            },
+            useSessionStore.getState().user?.id ?? null
+          ),
         }
       },
     }
@@ -186,22 +216,69 @@ export const useCartStore = create<CartState>()(
 )
 
 /**
- * A visitor's cart passes to whoever signs in. Signing out clears the
- * signed-in user's cart and makes the cart a visitor's again, so the next
- * person on this browser never sees it and their own cart is not wiped by a
- * stale owner. A cart owned by someone else is cleared on sign-in.
+ * Who may see the cart, for the user signed in now (null: nobody).
+ *
+ * - A visitor's cart passes to whoever signs in.
+ * - When a session ends without an explicit sign-out (it expired), its cart
+ *   is held aside: the visitor never sees or changes it, its owner gets it
+ *   back on signing in again (with anything added meanwhile), and anyone
+ *   else signing in drops it.
+ * - A cart owned by someone other than the user signed in is dropped.
+ *
+ * An explicit sign-out resets the cart first (see lib/signOut), so nothing
+ * is held then.
  */
-function syncOwner(userId: string | undefined): void {
-  const { ownerId } = useCartStore.getState()
-  if (!userId) {
-    if (ownerId !== null) useCartStore.setState({ lines: [], ownerId: null })
-    return
+function reconcile(cart: StoredCart, userId: string | null): StoredCart {
+  const { lines, ownerId, held } = cart
+  if (userId === null) {
+    if (ownerId === null) return cart
+    return { lines: [], ownerId: null, held: { ownerId, lines } }
   }
-  if (ownerId === userId) return
-  useCartStore.setState(
-    ownerId === null ? { ownerId: userId } : { lines: [], ownerId: userId }
+  if (ownerId === userId) return { lines, ownerId, held: null }
+  if (ownerId !== null) return { lines: [], ownerId: userId, held: null }
+  const restored = held?.ownerId === userId ? combine(held.lines, lines) : lines
+  return { lines: restored, ownerId: userId, held: null }
+}
+
+/** The owner's lines, then the visitor's for other items while the pharmacy has room. */
+function combine(
+  own: Array<CartLine>,
+  added: Array<CartLine>
+): Array<CartLine> {
+  const lines = [...own]
+  for (const line of added) {
+    if (lines.some((l) => l.inventoryItemId === line.inventoryItemId)) continue
+    const inPharmacy = lines.filter(
+      (l) => l.pharmacyId === line.pharmacyId
+    ).length
+    if (inPharmacy < CART_LINE_LIMIT) lines.push(line)
+  }
+  return lines
+}
+
+function syncOwner(userId: string | undefined): void {
+  const state = useCartStore.getState()
+  const next = reconcile(
+    { lines: state.lines, ownerId: state.ownerId, held: state.held },
+    userId ?? null
   )
+  if (
+    next.lines !== state.lines ||
+    next.ownerId !== state.ownerId ||
+    next.held !== state.held
+  ) {
+    useCartStore.setState(next)
+  }
 }
 
 syncOwner(useSessionStore.getState().user?.id)
 useSessionStore.subscribe((state) => syncOwner(state.user?.id))
+
+// Another tab changed the cart: read it again so both tabs show the same.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === CART_STORAGE_KEY || event.key === null) {
+      void useCartStore.persist.rehydrate()
+    }
+  })
+}

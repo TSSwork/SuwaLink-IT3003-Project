@@ -2,6 +2,7 @@ import { Link, useRouter, useRouterState } from "@tanstack/react-router"
 import { LogInIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { homeFor } from "@/lib/guards"
+import { signOut } from "@/lib/signOut"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -45,7 +46,6 @@ export function AccountMenu() {
   const { t } = useTranslation()
   const router = useRouter()
   const user = useSessionStore((state) => state.user)
-  const clear = useSessionStore((state) => state.clear)
   const location = useRouterState({ select: (state) => state.location })
 
   if (!user) {
@@ -95,7 +95,7 @@ export function AccountMenu() {
         <DropdownMenuItem
           className="min-h-11"
           onSelect={() => {
-            clear()
+            signOut()
             void router.navigate({ to: "/" })
           }}
         >

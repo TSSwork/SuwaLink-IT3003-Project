@@ -7,7 +7,12 @@ import { useCartStore } from "@/stores/cartStore"
 import { useSessionStore } from "@/stores/sessionStore"
 
 vi.mock("sonner", () => ({
-  toast: { success: vi.fn(), info: vi.fn(), error: vi.fn() },
+  toast: {
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+  },
 }))
 
 const item = {
@@ -31,6 +36,7 @@ beforeEach(() => {
   vi.mocked(toast.success).mockClear()
   vi.mocked(toast.info).mockClear()
   vi.mocked(toast.error).mockClear()
+  vi.mocked(toast.warning).mockClear()
 })
 
 describe("AddToCartButton", () => {
@@ -99,6 +105,26 @@ describe("AddToCartButton", () => {
     expect(toast.error).toHaveBeenCalledWith(
       "A reservation can hold at most 20 different medicines from one pharmacy."
     )
+  })
+
+  it("warns when the offer replaces a quoted line for the same item", async () => {
+    useCartStore.getState().add({
+      ...item,
+      unitPrice: 11,
+      quantity: 2,
+      maxQuantity: 2,
+      prescriptionResponseItemId: "q1",
+      prescriptionRequestId: "rx1",
+    })
+    renderButton(5)
+    await userEvent.click(screen.getByRole("button", { name: "Add to cart" }))
+    expect(useCartStore.getState().lines).toEqual([
+      { ...item, quantity: 1, maxQuantity: 5 },
+    ])
+    expect(toast.warning).toHaveBeenCalledWith(
+      "This medicine was already in your cart at another price, so that line was replaced."
+    )
+    expect(toast.success).not.toHaveBeenCalled()
   })
 
   it("shows out of stock instead of the stepper", () => {

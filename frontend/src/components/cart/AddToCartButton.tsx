@@ -56,6 +56,8 @@ export function AddToCartButton({
       toast.error(t("cart.limit", { limit: CART_LINE_LIMIT }))
     } else if (result === "capped") {
       toast.info(t("cart.capped", { max }))
+    } else if (result === "replaced") {
+      toast.warning(t("cart.replaced"))
     } else {
       toast.success(t("cart.added"))
     }

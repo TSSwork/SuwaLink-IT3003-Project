@@ -11,7 +11,12 @@ import { fail, mockApi, raw } from "@/test/mockApi"
 import { renderRoutes } from "@/test/renderRoutes"
 
 vi.mock("sonner", () => ({
-  toast: { success: vi.fn(), info: vi.fn(), error: vi.fn() },
+  toast: {
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+  },
 }))
 
 let api: ReturnType<typeof mockApi>
@@ -80,6 +85,7 @@ beforeEach(() => {
   URL.createObjectURL = vi.fn(() => "blob:rx1")
   URL.revokeObjectURL = vi.fn()
   vi.mocked(toast.error).mockClear()
+  vi.mocked(toast.warning).mockClear()
   api = mockApi(handlers())
 })
 afterEach(() => api.restore())
@@ -188,6 +194,36 @@ describe("PrescriptionDetailPage", () => {
     expect(useCartStore.getState().lines).toHaveLength(20)
     expect(toast.error).toHaveBeenCalledWith(
       "Added 1 of 2 items. A reservation can hold at most 20 different medicines from one pharmacy."
+    )
+  })
+
+  it("warns when a quoted item replaces the same item already in the cart", async () => {
+    useCartStore.getState().add({
+      inventoryItemId: "inv1",
+      pharmacyId: "p1",
+      pharmacyName: "City Pharmacy",
+      medicineId: "m1",
+      medicineName: "Amoxil 250 mg",
+      strength: "",
+      unitPrice: 50,
+      quantity: 1,
+      maxQuantity: 30,
+      requiresPrescription: true,
+    })
+    await renderDetail()
+    await screen.findByRole("region", { name: "City Pharmacy" })
+    await userEvent.click(
+      within(reply("City Pharmacy")).getByRole("button", {
+        name: "Add all to cart",
+      })
+    )
+    expect(useCartStore.getState().lines[0]).toMatchObject({
+      inventoryItemId: "inv1",
+      unitPrice: 45,
+      prescriptionResponseItemId: "ri1",
+    })
+    expect(toast.warning).toHaveBeenCalledWith(
+      "This medicine was already in your cart at another price, so that line was replaced."
     )
   })
 

@@ -448,6 +448,7 @@
     "add": "Add to cart",
     "added": "Added to cart",
     "capped": "Only {{max}} can be reserved. Your cart now has {{max}}.",
+    "replaced": "This medicine was already in your cart at another price, so that line was replaced.",
     "decrease": "Decrease quantity",
     "increase": "Increase quantity",
     "inCart_one": "{{count}} in your cart",

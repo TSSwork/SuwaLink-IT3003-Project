@@ -1,4 +1,6 @@
+import { waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it } from "vitest"
+import { signOut } from "@/lib/signOut"
 import type { CartLine } from "@/stores/cartStore"
 import {
   CART_LINE_LIMIT,
@@ -26,9 +28,17 @@ function line(over: Partial<CartLine> = {}): CartLine {
 
 const cart = () => useCartStore.getState()
 
+const signIn = (id: string) =>
+  useSessionStore
+    .getState()
+    .setSession(`t-${id}`, { id, name: id, role: "CUSTOMER" })
+
+/** What a 401 does: the session ends without an explicit sign-out. */
+const expire = () => useSessionStore.getState().clear()
+
 beforeEach(() => {
   useSessionStore.getState().clear()
-  cart().clear()
+  cart().reset()
   localStorage.clear()
 })
 
@@ -73,7 +83,7 @@ describe("cartStore", () => {
           prescriptionRequestId: "rx1",
         })
       )
-    ).toBe("added")
+    ).toBe("replaced")
     expect(cart().lines).toEqual([
       line({
         quantity: 2,
@@ -83,6 +93,12 @@ describe("cartStore", () => {
         prescriptionRequestId: "rx1",
       }),
     ])
+  })
+
+  it("says when a regular offer replaces a quoted line", () => {
+    cart().add(line({ prescriptionResponseItemId: "q1", maxQuantity: 2 }))
+    expect(cart().add(line({ quantity: 3 }))).toBe("replaced")
+    expect(cart().lines).toEqual([line({ quantity: 3 })])
   })
 
   it("caps a quoted line at the quoted quantity", () => {
@@ -172,32 +188,83 @@ describe("cartStore", () => {
     expect(cart().ownerId).toBe("u1")
   })
 
-  it("clears the signed-in user's cart on sign-out, so the next visitor never sees it", () => {
-    useSessionStore
-      .getState()
-      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+  it("clears the signed-in user's cart on an explicit sign-out, so the next visitor never sees it", () => {
+    signIn("u1")
     cart().add(line())
-    useSessionStore.getState().clear()
+    signOut()
     expect(cart().lines).toEqual([])
     expect(cart().ownerId).toBeNull()
+    // Nothing comes back when the same person signs in again.
+    signIn("u1")
+    expect(cart().lines).toEqual([])
   })
 
   it("keeps a visitor's cart built after a sign-out when someone else signs in", () => {
-    useSessionStore
-      .getState()
-      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+    signIn("u1")
     cart().add(line())
-    useSessionStore.getState().clear()
+    signOut()
 
     cart().add(line({ inventoryItemId: "visitor" }))
-    useSessionStore
-      .getState()
-      .setSession("t2", { id: "u2", name: "B", role: "CUSTOMER" })
+    signIn("u2")
     expect(cart().lines.map((l) => l.inventoryItemId)).toEqual(["visitor"])
     expect(cart().ownerId).toBe("u2")
   })
 
-  it("drops a stored cart whose owner is no longer signed in", async () => {
+  describe("when the session expires", () => {
+    it("hides the cart from a visitor", () => {
+      signIn("u1")
+      cart().add(line())
+      expire()
+      expect(cart().lines).toEqual([])
+      expect(cart().groups()).toEqual([])
+      expect(cart().ownerId).toBeNull()
+    })
+
+    it("gives the cart back when the same person signs in again", () => {
+      signIn("u1")
+      cart().add(line())
+      expire()
+      signIn("u1")
+      expect(cart().lines).toEqual([line()])
+      expect(cart().ownerId).toBe("u1")
+    })
+
+    it("adds what was put in the cart meanwhile to the owner's cart", () => {
+      signIn("u1")
+      cart().add(line())
+      expire()
+      cart().add(line({ inventoryItemId: "meanwhile" }))
+      signIn("u1")
+      expect(cart().lines.map((l) => l.inventoryItemId)).toEqual([
+        "inv1",
+        "meanwhile",
+      ])
+    })
+
+    it("drops the cart when someone else signs in", () => {
+      signIn("u1")
+      cart().add(line())
+      expire()
+      signIn("u2")
+      expect(cart().lines).toEqual([])
+      expect(cart().ownerId).toBe("u2")
+      expire()
+      signIn("u1")
+      expect(cart().lines).toEqual([])
+    })
+
+    it("keeps the cart in storage across a reload while nobody is signed in", async () => {
+      signIn("u1")
+      cart().add(line())
+      expire()
+      await useCartStore.persist.rehydrate()
+      expect(cart().lines).toEqual([])
+      signIn("u1")
+      expect(cart().lines).toEqual([line()])
+    })
+  })
+
+  it("hides a stored cart whose owner is not signed in, and gives it back to them", async () => {
     localStorage.setItem(
       CART_STORAGE_KEY,
       JSON.stringify({ state: { lines: [line()], ownerId: "u1" }, version: 0 })
@@ -205,17 +272,64 @@ describe("cartStore", () => {
     await useCartStore.persist.rehydrate()
     expect(cart().lines).toEqual([])
     expect(cart().ownerId).toBeNull()
+    signIn("u1")
+    expect(cart().lines).toEqual([line()])
   })
 
-  it("keeps a stored cart for its signed-in owner", async () => {
-    useSessionStore
-      .getState()
-      .setSession("t1", { id: "u1", name: "A", role: "CUSTOMER" })
+  it("drops a stored cart owned by someone other than the one signed in", async () => {
+    signIn("u2")
     localStorage.setItem(
       CART_STORAGE_KEY,
       JSON.stringify({ state: { lines: [line()], ownerId: "u1" }, version: 0 })
     )
     await useCartStore.persist.rehydrate()
+    expect(cart().lines).toEqual([])
+    expect(cart().ownerId).toBe("u2")
+  })
+
+  it("keeps a stored cart for its signed-in owner", async () => {
+    signIn("u1")
+    localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify({ state: { lines: [line()], ownerId: "u1" }, version: 0 })
+    )
+    await useCartStore.persist.rehydrate()
+    expect(cart().lines).toEqual([line()])
+  })
+
+  it("follows a change made in another tab", async () => {
+    signIn("u1")
+    cart().add(line())
+    const other = JSON.stringify({
+      state: {
+        lines: [line(), line({ inventoryItemId: "tab2" })],
+        ownerId: "u1",
+        held: null,
+      },
+      version: 0,
+    })
+    localStorage.setItem(CART_STORAGE_KEY, other)
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: CART_STORAGE_KEY, newValue: other })
+    )
+    await waitFor(() =>
+      expect(cart().lines.map((l) => l.inventoryItemId)).toEqual([
+        "inv1",
+        "tab2",
+      ])
+    )
+  })
+
+  it("ignores other keys changing in another tab", async () => {
+    cart().add(line())
+    localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify({ state: { lines: [], ownerId: null }, version: 0 })
+    )
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: "suwalink.lang", newValue: "x" })
+    )
+    await new Promise((resolve) => setTimeout(resolve, 0))
     expect(cart().lines).toEqual([line()])
   })
 

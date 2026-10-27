@@ -282,6 +282,7 @@ function ReplyCard({
           limit: CART_LINE_LIMIT,
         })
       )
+    if (results.includes("replaced")) toast.warning(t("cart.replaced"))
   }
 
   return (
