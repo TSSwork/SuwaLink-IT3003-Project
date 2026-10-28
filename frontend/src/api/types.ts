@@ -516,6 +516,19 @@ export interface AdminPharmacy {
   demo: boolean
 }
 
+/** com.suwalink.entity.AccountStatus; DELETED accounts are anonymised and only listed with `status=DELETED`. */
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "DELETED"
+
+/** GET /api/admin/users item (UserResponse). */
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: Role
+  status: AccountStatus
+}
+
 /** GET / PUT /api/admin/settings (AppSettingsResponse, the same shape as the public one). */
 export type AdminSettings = PublicSettings
 

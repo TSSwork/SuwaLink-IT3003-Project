@@ -988,6 +988,60 @@
       "rejectBody": "The owner will not be able to sign in, and the pharmacy stays out of search. You can approve it later.",
       "rejected": "{{name}} rejected."
     },
+    "users": {
+      "title": "Users",
+      "subtitle": "Find an account by name or email, then suspend, reactivate or delete it.",
+      "searchLabel": "Search by name or email",
+      "searchPlaceholder": "Name or email",
+      "filtersLabel": "Filter by status",
+      "filter": {
+        "ALL": "All",
+        "ACTIVE": "Active",
+        "SUSPENDED": "Suspended"
+      },
+      "listLabel": "Users",
+      "loading": "Loading users…",
+      "loadError": "Could not load users",
+      "none": {
+        "ALL": "No accounts yet",
+        "ACTIVE": "No active accounts",
+        "SUSPENDED": "No suspended accounts"
+      },
+      "noneBody": "Try another status, or show every account.",
+      "noneAllBody": "Customers and pharmacy owners appear here as soon as they register.",
+      "showAll": "Show all accounts",
+      "noMatch": "No accounts match “{{q}}”",
+      "noMatchBody": "Check the spelling, or search by part of the email address.",
+      "clearSearch": "Clear search",
+      "role": {
+        "CUSTOMER": "Customer",
+        "PHARMACY_OWNER": "Pharmacy owner",
+        "ADMIN": "Admin"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "SUSPENDED": "Suspended",
+        "DELETED": "Deleted"
+      },
+      "adminNote": "Admin accounts can't be changed here.",
+      "suspend": "Suspend",
+      "suspendTitle": "Suspend {{name}}?",
+      "suspendBody": {
+        "CUSTOMER": "They can't sign in until you reactivate the account.",
+        "PHARMACY_OWNER": "The owner can't sign in and the pharmacy is hidden from search until you reactivate the account."
+      },
+      "suspended": "{{name}} suspended.",
+      "reactivate": "Reactivate",
+      "reactivated": "{{name}} can sign in again.",
+      "delete": "Delete",
+      "deleteTitle": "Delete {{name}}'s account?",
+      "deleteBody": {
+        "CUSTOMER": "The account is anonymised: the name, email and phone number are removed and it can no longer sign in. Open reservations are cancelled and prescription requests closed. It can't be restored.",
+        "PHARMACY_OWNER": "The account is anonymised: the name, email and phone number are removed and it can no longer sign in. The pharmacy is taken off SuwaLink. It can't be restored."
+      },
+      "deleted": "{{name}}'s account has been deleted.",
+      "openReservations": "This pharmacy still has confirmed reservations. They must be collected or cancelled before the account can be deleted."
+    },
     "settings": {
       "title": "Settings",
       "subtitle": "Demo data for showcasing SuwaLink.",

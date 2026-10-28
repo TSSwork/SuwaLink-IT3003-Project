@@ -1,5 +1,6 @@
 import type {
   AdminPharmacy,
+  AdminUser,
   Bookmark,
   CatalogMedicine,
   InventoryItem,
@@ -350,6 +351,18 @@ export function adminPharmacy(
     longitude: 79.8612,
     openingHours: "8am - 10pm",
     demo: false,
+    ...over,
+  }
+}
+
+export function adminUser(over: Partial<AdminUser> = {}): AdminUser {
+  return {
+    id: "u1",
+    name: "Nimal Perera",
+    email: "nimal@example.lk",
+    phone: "0771234567",
+    role: "CUSTOMER",
+    status: "ACTIVE",
     ...over,
   }
 }

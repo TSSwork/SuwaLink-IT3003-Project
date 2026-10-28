@@ -1,10 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { api } from "@/api/client"
 import { publicSettingsKey } from "@/api/settings"
 import type {
   AdminDashboard,
   AdminPharmacy,
   AdminSettings,
+  AdminUser,
+  AccountStatus,
   ApiResponse,
   CatalogMedicine,
   MedicineStatus,
@@ -98,4 +105,45 @@ export function useResetDemo() {
   return useAdminMutation(() => api.post("/admin/demo/reset"), {
     publicSettings: true,
   })
+}
+
+/** Accounts matching `q` (name or email); every account that isn't deleted when `status` is left out. Pass a debounced `q`. */
+export function useAdminUsers({
+  q,
+  status,
+}: {
+  q?: string
+  status?: AccountStatus
+}) {
+  const query = q?.trim() || undefined
+  return useQuery({
+    queryKey: [...adminKey, "users", { q: query, status }],
+    queryFn: async () =>
+      (
+        await api.get<ApiResponse<Array<AdminUser>>>("/admin/users", {
+          params: {
+            ...(query && { q: query }),
+            ...(status && { status }),
+          },
+        })
+      ).data.data,
+    // Keeps the list on screen while the next search loads.
+    placeholderData: keepPreviousData,
+  })
+}
+
+// Suspending or deleting changes the list and the dashboard's customer count.
+export function useSuspendUser() {
+  return useAdminMutation((id: string) => api.put(`/admin/users/${id}/suspend`))
+}
+
+export function useReactivateUser() {
+  return useAdminMutation((id: string) =>
+    api.put(`/admin/users/${id}/reactivate`)
+  )
+}
+
+/** Anonymises the account; it cannot be restored. */
+export function useDeleteUser() {
+  return useAdminMutation((id: string) => api.delete(`/admin/users/${id}`))
 }
