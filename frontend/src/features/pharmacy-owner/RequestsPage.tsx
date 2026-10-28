@@ -11,6 +11,10 @@ import { useMyReplies, usePharmacyRequests } from "@/api/pharmacyOwner"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { ScopeSummary } from "@/components/prescription/ScopeSummary"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,11 +32,16 @@ export function RequestsPage() {
   const replies = useMyReplies()
   const [filter, setFilter] = useState<Filter>("waiting")
 
-  const error = requests.error ?? replies.error
   const retry = () => {
     if (requests.isError) void requests.refetch()
     if (replies.isError) void replies.refetch()
   }
+  // An error replaces the list only while nothing has loaded; a failed
+  // refresh keeps the last list with a notice.
+  const error =
+    (requests.data === undefined ? requests.error : null) ??
+    (replies.data === undefined ? replies.error : null)
+  const stale = failedWithData(requests) || failedWithData(replies)
 
   // A request's status turns RESPONDED when any pharmacy replies, so "replied"
   // means one of this pharmacy's own replies points at it.
@@ -58,6 +67,7 @@ export function RequestsPage() {
         </p>
       </div>
 
+      {stale && <RefreshFailedNotice onRetry={retry} />}
       {error ? (
         <ErrorState
           title={t("pharmacyOwner.requests.loadError")}

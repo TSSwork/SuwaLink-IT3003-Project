@@ -7,6 +7,10 @@ import { usePharmacyReservations } from "@/api/pharmacyOwner"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { RxBadge } from "@/components/medicine/RxBadge"
 import { HoldCountdown } from "@/components/reservation/HoldCountdown"
 import { ReservationStatusBadge } from "@/components/reservation/ReservationStatusBadge"
@@ -53,12 +57,15 @@ export function ReservationsPage() {
         </Button>
       </div>
 
+      {failedWithData(reservations) && (
+        <RefreshFailedNotice onRetry={() => void reservations.refetch()} />
+      )}
       {reservations.isPending ? (
         <LoadingState
           label={t("pharmacyOwner.reservations.loading")}
           rows={4}
         />
-      ) : reservations.isError ? (
+      ) : reservations.data === undefined ? (
         <ErrorState
           title={t("pharmacyOwner.reservations.loadError")}
           description={translateError(t, reservations.error)}

@@ -513,6 +513,36 @@ describe("InventoryPage", { timeout: 15_000 }, () => {
     ).toHaveAttribute("href", "/pharmacy/suggest-medicine")
   })
 
+  it("keeps the list on screen when a background refresh fails", async () => {
+    let failing = false
+    api.restore()
+    api = mockApi(
+      handlers({
+        "/inventory": () => (failing ? fail(500, "INTERNAL_ERROR") : items),
+      })
+    )
+    const { queryClient } = renderInventory()
+    await screen.findByRole("list", { name: "Your stock" })
+    failing = true
+    await queryClient.invalidateQueries()
+    expect(
+      await screen.findByText(
+        "Couldn't refresh — showing the last loaded version."
+      )
+    ).toBeVisible()
+    expect(shownBrands()).toHaveLength(5)
+    expect(screen.queryByText("Your stock could not be loaded")).toBeNull()
+    failing = false
+    await user.click(screen.getByRole("button", { name: "Try again" }))
+    await waitFor(() =>
+      expect(
+        screen.queryByText(
+          "Couldn't refresh — showing the last loaded version."
+        )
+      ).toBeNull()
+    )
+  })
+
   it("offers a retry when the stock cannot be loaded", async () => {
     let failing = true
     api.restore()

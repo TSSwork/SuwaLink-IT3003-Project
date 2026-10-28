@@ -9,6 +9,10 @@ import {
 } from "@/components/feedback/ConfirmButton"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { translateError } from "@/lib/translateError"
@@ -49,9 +53,12 @@ export function SettingsPage() {
         </p>
       </div>
 
+      {failedWithData(settings) && (
+        <RefreshFailedNotice onRetry={() => void settings.refetch()} />
+      )}
       {settings.isPending ? (
         <LoadingState label={t("admin.settings.loading")} rows={2} />
-      ) : settings.isError ? (
+      ) : settings.data === undefined ? (
         <ErrorState
           title={t("admin.settings.loadError")}
           description={translateError(t, settings.error)}

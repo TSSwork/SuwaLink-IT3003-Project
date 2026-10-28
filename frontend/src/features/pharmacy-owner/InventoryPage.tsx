@@ -32,6 +32,10 @@ import { ConfirmButton } from "@/components/feedback/ConfirmButton"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { TextField } from "@/components/forms/TextField"
 import { RxBadge } from "@/components/medicine/RxBadge"
 import { StockIndicator } from "@/components/medicine/StockIndicator"
@@ -146,9 +150,12 @@ export function InventoryPage() {
         </Button>
       </div>
 
+      {failedWithData(inventory) && (
+        <RefreshFailedNotice onRetry={() => void inventory.refetch()} />
+      )}
       {inventory.isPending ? (
         <LoadingState label={t("pharmacyOwner.inventory.loading")} rows={5} />
-      ) : inventory.isError ? (
+      ) : inventory.data === undefined ? (
         <ErrorState
           title={t("pharmacyOwner.inventory.loadError")}
           description={translateError(t, inventory.error)}

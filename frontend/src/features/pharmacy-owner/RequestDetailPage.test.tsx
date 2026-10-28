@@ -390,6 +390,162 @@ describe("RequestDetailPage", { timeout: 15_000 }, () => {
     expect(screen.getByRole("button", { name: "Send reply" })).toBeDisabled()
   })
 
+  it("starts a fresh draft when moving to another request (B prefilled from its own reply)", async () => {
+    const u = user()
+    const other = prescriptionRequest({ id: "rx2", note: "Second request." })
+    api.restore()
+    api = mockApi({
+      ...handlers(),
+      "/prescriptions/rx2": () => other,
+      "/prescriptions/rx2/responses": () => [
+        prescriptionReply({
+          id: "resp2",
+          prescriptionRequestId: "rx2",
+          message: "B's reply.",
+          items: [
+            {
+              id: "ri2",
+              inventoryItemId: "inv2",
+              medicineBrandName: "Amoxil 250 mg",
+              quantity: 2,
+              unitPrice: 45,
+            },
+          ],
+        }),
+      ],
+      "/prescriptions/rx2/responses/mine": (call: Call) =>
+        prescriptionReply({
+          prescriptionRequestId: "rx2",
+          message: (call.data as { message: string }).message,
+        }),
+    })
+    // Visit B first so it is cached when the owner comes back to it.
+    const { router } = renderRoutes(
+      [
+        { path: "/pharmacy/requests/$id", component: RequestDetailPage },
+        { path: "/pharmacy/requests" },
+        { path: "/pharmacy/inventory" },
+      ],
+      "/pharmacy/requests/rx2"
+    )
+    await screen.findByText("Second request.")
+    await waitFor(() => line("Amoxil 250 mg"))
+
+    await router.navigate({
+      to: "/pharmacy/requests/$id",
+      params: { id: "rx1" },
+    })
+    await screen.findByText("Need the full course.")
+    await pick(/Panadol 500 mg/)
+    await u.type(
+      screen.getByRole("textbox", {
+        name: "Message to the customer (optional)",
+      }),
+      "Draft for A."
+    )
+
+    await router.navigate({
+      to: "/pharmacy/requests/$id",
+      params: { id: "rx2" },
+    })
+    await screen.findByText("Second request.")
+    expect(
+      screen.getByRole("textbox", {
+        name: "Message to the customer (optional)",
+      })
+    ).toHaveValue("B's reply.")
+    expect(line("Amoxil 250 mg")).toBeVisible()
+    expect(
+      within(
+        screen.getByRole("list", { name: "Items in your reply" })
+      ).queryByRole("listitem", { name: "Panadol 500 mg" })
+    ).toBeNull()
+
+    await u.click(screen.getByRole("button", { name: "Update reply" }))
+    await waitFor(() =>
+      expect(api.callsTo("/prescriptions/rx2/responses/mine")[0]).toMatchObject(
+        {
+          method: "put",
+          data: {
+            message: "B's reply.",
+            items: [{ inventoryItemId: "inv2", quantity: 2 }],
+          },
+        }
+      )
+    )
+    expect(api.callsTo("/prescriptions/rx1/responses/mine")).toHaveLength(0)
+    expect(
+      api
+        .callsTo("/prescriptions/rx1/responses")
+        .filter((call) => call.method === "post")
+    ).toHaveLength(0)
+  })
+
+  it("keeps the draft on screen when a background refresh fails", async () => {
+    const u = user()
+    let refreshFails = false
+    const failing =
+      <T,>(answer: () => T) =>
+      () =>
+        refreshFails ? fail(500, "INTERNAL_ERROR") : answer()
+    api.restore()
+    api = mockApi({
+      ...handlers(),
+      "/prescriptions/rx1": failing(() => request),
+      "/inventory": failing(() => inventory),
+      "/prescriptions/rx1/responses": failing(() => replies),
+    })
+    const { queryClient } = await renderDetail()
+    await pick(/Panadol 500 mg/)
+    const message = screen.getByRole("textbox", {
+      name: "Message to the customer (optional)",
+    })
+    await u.type(message, "Ready at 5 pm.")
+
+    refreshFails = true
+    await queryClient.invalidateQueries()
+
+    const notices = await screen.findAllByText(
+      "Couldn't refresh — showing the last loaded version."
+    )
+    // One for the request, one for the stock and reply under it.
+    expect(notices).toHaveLength(2)
+    expect(message).toHaveValue("Ready at 5 pm.")
+    expect(line("Panadol 500 mg")).toBeVisible()
+    expect(screen.queryByText("This request could not be loaded")).toBeNull()
+
+    refreshFails = false
+    for (const retry of screen.getAllByRole("button", { name: "Try again" })) {
+      await u.click(retry)
+    }
+    await waitFor(() =>
+      expect(
+        screen.queryByText(
+          "Couldn't refresh — showing the last loaded version."
+        )
+      ).toBeNull()
+    )
+    expect(message).toHaveValue("Ready at 5 pm.")
+  })
+
+  it("offers a retry when the pharmacy profile cannot be loaded", async () => {
+    const u = user()
+    let profileFails = true
+    api.restore()
+    api = mockApi({
+      ...handlers(),
+      "/pharmacies/me": () =>
+        profileFails ? fail(500, "INTERNAL_ERROR") : pharmacyProfile(),
+    })
+    await renderDetail()
+    expect(
+      await screen.findByText("Your reply could not be loaded")
+    ).toBeVisible()
+    profileFails = false
+    await u.click(screen.getByRole("button", { name: "Try again" }))
+    expect(await builder()).toBeVisible()
+  })
+
   it("says so when the request is not for this pharmacy", async () => {
     api.restore()
     api = mockApi({

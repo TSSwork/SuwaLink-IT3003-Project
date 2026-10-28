@@ -20,6 +20,7 @@ import { ApiError } from "@/api/client"
 import {
   pharmacyOwnerKey,
   useMyInventory,
+  useMyPharmacy,
   useMyReply,
   usePharmacyRequest,
   useSendReply,
@@ -29,6 +30,10 @@ import { QuantityStepper } from "@/components/cart/QuantityStepper"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { PrescriptionImage } from "@/components/prescription/PrescriptionImage"
 import { ScopeSummary } from "@/components/prescription/ScopeSummary"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -73,7 +78,8 @@ export function RequestDetailPage() {
   if (request.isPending) {
     return <LoadingState label={t("pharmacyOwner.request.loading")} rows={5} />
   }
-  if (request.isError) {
+  // A failed background refresh keeps the request (and the draft) on screen.
+  if (request.data === undefined) {
     const status = (request.error as { status?: number }).status
     // A request sent to other pharmacies answers 403; here it does not exist.
     return status === 403 || status === 404 ? (
@@ -100,7 +106,10 @@ export function RequestDetailPage() {
   return (
     // Phones: details, photo, reply. Desktop: photo on the left throughout.
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-      <div className="lg:col-start-2">
+      <div className="flex flex-col gap-4 lg:col-start-2">
+        {failedWithData(request) && (
+          <RefreshFailedNotice onRetry={() => void request.refetch()} />
+        )}
         <RequestSummary request={request.data} />
       </div>
       <div className="lg:sticky lg:top-24 lg:col-start-1 lg:row-span-2 lg:row-start-1">
@@ -161,22 +170,29 @@ function RequestSummary({ request }: { request: PrescriptionRequest }) {
 function ReplySection({ request }: { request: PrescriptionRequest }) {
   const { t } = useTranslation()
   const inventory = useMyInventory()
+  // useMyReply waits for the profile, so its failure must surface here.
+  const profile = useMyPharmacy()
   const mine = useMyReply(request.id)
+  const queries = [inventory, profile, mine]
+  const retry = () => {
+    for (const query of queries) if (query.isError) void query.refetch()
+  }
 
-  const error = inventory.error ?? mine.error
-  if (error) {
+  // An error replaces the builder only while there is nothing to show;
+  // a failed refresh keeps the draft on screen.
+  const missing = queries.find(
+    (query) => query.isError && query.data === undefined
+  )
+  if (missing?.error) {
     return (
       <ErrorState
         title={t(
-          inventory.isError
+          missing === inventory
             ? "pharmacyOwner.reply.inventoryError"
             : "pharmacyOwner.reply.loadError"
         )}
-        description={translateError(t, error)}
-        onRetry={() => {
-          if (inventory.isError) void inventory.refetch()
-          if (mine.isError) void mine.refetch()
-        }}
+        description={translateError(t, missing.error)}
+        onRetry={retry}
       />
     )
   }
@@ -184,11 +200,16 @@ function ReplySection({ request }: { request: PrescriptionRequest }) {
     return <LoadingState label={t("pharmacyOwner.reply.loading")} rows={4} />
   }
   return (
-    <ReplyBuilder
-      request={request}
-      inventory={inventory.data}
-      existing={mine.data}
-    />
+    <div className="flex flex-col gap-4">
+      {queries.some(failedWithData) && <RefreshFailedNotice onRetry={retry} />}
+      {/* Another request starts its own draft, even when its data is cached. */}
+      <ReplyBuilder
+        key={request.id}
+        request={request}
+        inventory={inventory.data}
+        existing={mine.data}
+      />
+    </div>
   )
 }
 

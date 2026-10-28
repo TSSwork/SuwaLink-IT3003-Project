@@ -14,6 +14,10 @@ import { ConfirmButton } from "@/components/feedback/ConfirmButton"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
@@ -67,9 +71,12 @@ export function SuggestionsPage() {
         ))}
       </div>
 
+      {failedWithData(suggestions) && (
+        <RefreshFailedNotice onRetry={() => void suggestions.refetch()} />
+      )}
       {suggestions.isPending ? (
         <LoadingState label={t("admin.suggestions.loading")} rows={3} />
-      ) : suggestions.isError ? (
+      ) : suggestions.data === undefined ? (
         <ErrorState
           title={t("admin.suggestions.loadError")}
           description={translateError(t, suggestions.error)}

@@ -47,5 +47,5 @@ export function renderRoutes(routes: Array<TestRoute>, initialPath: string) {
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   })
   const view = render(<RouterProvider router={router} />)
-  return { ...view, router }
+  return { ...view, router, queryClient }
 }

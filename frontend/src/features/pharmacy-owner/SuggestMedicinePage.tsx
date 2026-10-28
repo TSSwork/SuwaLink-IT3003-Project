@@ -22,6 +22,10 @@ import { useMySuggestions, useSuggestMedicine } from "@/api/pharmacyOwner"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { MedicineMasterFields } from "@/components/medicine/MedicineMasterFields"
 import {
   EMPTY_MEDICINE_MASTER,
@@ -162,9 +166,12 @@ function MySuggestions() {
       <h3 id={titleId} className="text-lg font-semibold">
         {t("pharmacyOwner.suggest.mineTitle")}
       </h3>
+      {failedWithData(suggestions) && (
+        <RefreshFailedNotice onRetry={() => void suggestions.refetch()} />
+      )}
       {suggestions.isPending ? (
         <LoadingState label={t("pharmacyOwner.suggest.mineLoading")} rows={3} />
-      ) : suggestions.isError ? (
+      ) : suggestions.data === undefined ? (
         <ErrorState
           title={t("pharmacyOwner.suggest.mineError")}
           description={translateError(t, suggestions.error)}

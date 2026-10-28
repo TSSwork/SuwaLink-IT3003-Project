@@ -25,6 +25,10 @@ import { ConfirmButton } from "@/components/feedback/ConfirmButton"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
@@ -217,9 +221,12 @@ function CatalogTab<TEntry extends { id: string }>({
         <div className="shrink-0">{add}</div>
       </div>
 
+      {failedWithData(entries) && (
+        <RefreshFailedNotice onRetry={() => void entries.refetch()} />
+      )}
       {entries.isPending ? (
         <LoadingState label={t(`admin.catalog.loading.${kind}`)} rows={4} />
-      ) : entries.isError ? (
+      ) : entries.data === undefined ? (
         <ErrorState
           title={t(`admin.catalog.loadError.${kind}`)}
           description={translateError(t, entries.error)}

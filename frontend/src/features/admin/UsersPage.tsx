@@ -17,6 +17,10 @@ import { ConfirmButton } from "@/components/feedback/ConfirmButton"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
+import {
+  RefreshFailedNotice,
+  failedWithData,
+} from "@/components/feedback/RefreshFailedNotice"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -107,9 +111,12 @@ export function UsersPage() {
         </div>
       </div>
 
+      {failedWithData(users) && (
+        <RefreshFailedNotice onRetry={() => void users.refetch()} />
+      )}
       {users.isPending ? (
         <LoadingState label={t("admin.users.loading")} rows={4} />
-      ) : users.isError ? (
+      ) : users.data === undefined ? (
         <ErrorState
           title={t("admin.users.loadError")}
           description={translateError(t, users.error)}

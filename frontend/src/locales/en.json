@@ -13,6 +13,7 @@
     "mainNavigation": "Main navigation",
     "close": "Close",
     "retry": "Try again",
+    "refreshFailed": "Couldn't refresh — showing the last loaded version.",
     "loading": "Loading…",
     "save": "Save",
     "cancel": "Cancel",
