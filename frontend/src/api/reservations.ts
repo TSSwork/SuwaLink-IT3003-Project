@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
+import { pharmacyOwnerKey } from "@/api/pharmacyOwner"
 import type { ApiResponse, Reservation } from "@/api/types"
 import { useSessionStore } from "@/stores/sessionStore"
 
@@ -61,6 +62,10 @@ export function useReservationByCode(code: string) {
   })
 }
 
+/**
+ * Also refetches the pharmacy owner's reservation list and overview, which
+ * live under their own key.
+ */
 function useReservationChange<TVariables>(
   request: (variables: TVariables) => Promise<Reservation>
 ) {
@@ -72,7 +77,10 @@ function useReservationChange<TVariables>(
         [...reservationsKey, reservation.id],
         reservation
       )
-      return queryClient.invalidateQueries({ queryKey: reservationsKey })
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: reservationsKey }),
+        queryClient.invalidateQueries({ queryKey: pharmacyOwnerKey }),
+      ])
     },
   })
 }

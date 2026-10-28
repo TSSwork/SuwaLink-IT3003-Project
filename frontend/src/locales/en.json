@@ -877,6 +877,48 @@
       "updated": "Reply updated",
       "locked": "A customer has already reserved from this reply, so it can no longer be changed.",
       "alreadyReplied": "You have already replied to this request. Your reply is shown again; update it instead."
+    },
+    "reservations": {
+      "title": "Reservations",
+      "subtitle": "Customers collect these at your counter. Open one to mark it collected or cancel it.",
+      "loading": "Loading reservations…",
+      "loadError": "Reservations could not be loaded",
+      "listLabel": "Reservations",
+      "filtersLabel": "Show reservations",
+      "emptyTitle": "No reservations yet",
+      "emptyBody": "When a customer reserves medicines at your pharmacy, they appear here and in your notifications. Keep your stock up to date so customers can find you.",
+      "updateStock": "Update stock",
+      "noneFiltered": {
+        "CONFIRMED": "Nothing is waiting for pickup",
+        "COMPLETED": "Nothing collected yet",
+        "CANCELLED": "No cancelled reservations",
+        "EXPIRED": "No expired reservations"
+      },
+      "noneFilteredBody": "Your other reservations are under the other filters.",
+      "showAll": "Show all reservations"
+    },
+    "scan": {
+      "title": "Scan a pickup code",
+      "subtitle": "Scan the QR on the customer's reservation, or type the code under it.",
+      "cameraTitle": "Camera",
+      "previewLabel": "Camera preview",
+      "start": "Start camera",
+      "starting": "Starting the camera…",
+      "aim": "Hold the QR code inside the frame.",
+      "stop": "Stop camera",
+      "notPickupCode": "This is not a SuwaLink pickup code. Scan the QR on the customer's reservation, or type the code below.",
+      "problemTitle": "The camera cannot be used",
+      "problems": {
+        "denied": "Camera access is blocked. Allow the camera for this site in your browser settings, or type the code below.",
+        "noCamera": "No camera was found on this device. Type the code below instead.",
+        "insecure": "The camera works only on a secure (https) page. Type the code below instead.",
+        "loadFailed": "The scanner could not be loaded. Check your connection and try again, or type the code below."
+      },
+      "manualTitle": "Type the code",
+      "codeLabel": "Pickup code",
+      "codeHint": "10 letters and numbers, shown under the customer's QR code.",
+      "invalidCode": "Enter the 10-character pickup code shown on the customer's reservation.",
+      "open": "Open reservation"
     }
   }
 }
