@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { AdminSettings } from "@/api/types"
 import { useAdminPharmacies, useDashboard } from "@/api/admin"
 import { getPublicSettings } from "@/api/auth"
+import { useCategories } from "@/api/catalog"
 import { publicSettingsKey } from "@/api/settings"
 import { SettingsPage } from "@/features/admin/SettingsPage"
 import { useLanguageStore } from "@/stores/languageStore"
@@ -32,6 +33,8 @@ function WithOtherPagesOpen() {
   useDashboard()
   useAdminPharmacies()
   useQuery({ queryKey: publicSettingsKey, queryFn: getPublicSettings })
+  // Customer pages (search, offers, categories) list demo pharmacies too.
+  useCategories()
   return <SettingsPage />
 }
 
@@ -47,13 +50,14 @@ async function renderSettings() {
   return toggle
 }
 
-/** Every query the page and the "other pages" hold has been fetched again. */
+/** Every query the page and the "other pages" (admin and customer) hold has been fetched again. */
 async function expectRefetched() {
   for (const url of [
     "/admin/settings",
     "/admin/dashboard",
     "/admin/pharmacies",
     "/settings/public",
+    "/categories",
   ]) {
     await waitFor(() =>
       expect(api.callsTo(url).filter((c) => c.method === "get")).toHaveLength(2)
@@ -84,6 +88,7 @@ beforeEach(() => {
     "/admin/dashboard": () => ({}),
     "/admin/pharmacies": () => [],
     "/settings/public": () => settings,
+    "/categories": () => [],
   })
 })
 afterEach(() => api.restore())
@@ -183,6 +188,7 @@ describe("admin SettingsPage", () => {
       "/admin/dashboard": () => ({}),
       "/admin/pharmacies": () => [],
       "/settings/public": () => settings,
+      "/categories": () => [],
     })
     const toggle = await renderSettings()
     await userEvent.click(toggle)

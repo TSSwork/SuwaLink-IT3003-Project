@@ -5,7 +5,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 import { api } from "@/api/client"
-import { publicSettingsKey } from "@/api/settings"
 import type {
   AdminCategory,
   AdminDashboard,
@@ -60,11 +59,15 @@ export function useAdminSuggestions(status?: MedicineStatus) {
 }
 
 interface AdminMutationOptions<TArgs> {
-  /** Also refetch the public settings the login page reads. */
-  publicSettings?: boolean
   /**
-   * Runs on success before the refetch. Unlike a `mutate(…, { onSuccess })`
-   * callback it still runs when the refetch removes the row that started it.
+   * Refetch every query, not just the admin ones: demo pharmacies appear in
+   * search, offers and categories too (and the login page's public settings).
+   */
+  everything?: boolean
+  /**
+   * Runs on success before the refetch. Put success toasts here, not in a
+   * `mutate(…, { onSuccess })` callback: that one is dropped when the row
+   * that started it unmounts first (e.g. the refetch removed it).
    */
   onSuccess?: (args: TArgs) => void
   /** Refetch after a failure too, e.g. when someone else got there first. */
@@ -75,19 +78,16 @@ interface AdminMutationOptions<TArgs> {
 function useAdminMutation<TArgs>(
   mutationFn: (args: TArgs) => Promise<unknown>,
   {
-    publicSettings = false,
+    everything = false,
     onSuccess,
     refetchOnError = false,
   }: AdminMutationOptions<TArgs> = {}
 ) {
   const queryClient = useQueryClient()
   const refetch = () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: adminKey }),
-      // The login page lists demo accounts only while demo mode is public.
-      publicSettings &&
-        queryClient.invalidateQueries({ queryKey: publicSettingsKey }),
-    ])
+    queryClient.invalidateQueries(
+      everything ? undefined : { queryKey: adminKey }
+    )
   return useMutation({
     mutationFn,
     onSuccess: (_data, args) => {
@@ -123,18 +123,21 @@ export function useAdminSettings() {
   })
 }
 
-/** Demo mode hides or shows demo pharmacies everywhere, so everything is refetched. */
+/**
+ * Demo mode hides or shows demo pharmacies everywhere (search, offers, the
+ * login page's demo accounts), so every query is refetched.
+ */
 export function useUpdateSettings() {
   return useAdminMutation(
     (body: UpdateAppSettingsRequest) => api.put("/admin/settings", body),
-    { publicSettings: true }
+    { everything: true }
   )
 }
 
-/** Deletes and re-seeds the demo data; counts and lists all change. */
+/** Deletes and re-seeds the demo data; every list that shows it changes. */
 export function useResetDemo() {
   return useAdminMutation(() => api.post("/admin/demo/reset"), {
-    publicSettings: true,
+    everything: true,
   })
 }
 
