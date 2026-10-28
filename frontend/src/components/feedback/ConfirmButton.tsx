@@ -31,16 +31,11 @@ interface ConfirmButtonProps {
 /** A button that asks before doing something that cannot be undone. */
 export function ConfirmButton({
   label,
-  title,
-  description,
   confirmLabel,
-  onConfirm,
-  children,
   variant = "outline",
-  destructive = false,
   disabled,
+  ...question
 }: ConfirmButtonProps) {
-  const { t } = useTranslation()
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -48,22 +43,64 @@ export function ConfirmButton({
           {label}
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        {children}
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            variant={destructive ? "destructive" : "default"}
-            onClick={onConfirm}
-          >
-            {confirmLabel ?? label}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
+      <ConfirmDialogContent
+        confirmLabel={confirmLabel ?? label}
+        {...question}
+      />
     </AlertDialog>
+  )
+}
+
+type ConfirmDialogProps = Pick<
+  ConfirmButtonProps,
+  "title" | "description" | "onConfirm" | "children" | "destructive"
+> & {
+  confirmLabel: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+/**
+ * ConfirmButton's question without its button, for a control that opens it
+ * itself (e.g. a switch that asks only when turned off).
+ */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  ...question
+}: ConfirmDialogProps) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <ConfirmDialogContent {...question} />
+    </AlertDialog>
+  )
+}
+
+function ConfirmDialogContent({
+  title,
+  description,
+  confirmLabel,
+  onConfirm,
+  children,
+  destructive = false,
+}: Omit<ConfirmDialogProps, "open" | "onOpenChange">) {
+  const { t } = useTranslation()
+  return (
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{title}</AlertDialogTitle>
+        <AlertDialogDescription>{description}</AlertDialogDescription>
+      </AlertDialogHeader>
+      {children}
+      <AlertDialogFooter>
+        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+        <AlertDialogAction
+          variant={destructive ? "destructive" : "default"}
+          onClick={onConfirm}
+        >
+          {confirmLabel}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
   )
 }

@@ -920,5 +920,93 @@
       "invalidCode": "Enter the 10-character pickup code shown on the customer's reservation.",
       "open": "Open reservation"
     }
+  },
+  "admin": {
+    "title": "Administration",
+    "nav": {
+      "label": "Admin sections",
+      "dashboard": "Dashboard",
+      "pharmacies": "Pharmacies",
+      "users": "Users",
+      "catalog": "Catalog",
+      "suggestions": "Suggestions",
+      "settings": "Settings"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "pharmacies": "Pharmacies",
+      "peopleAndCatalog": "People and catalogue",
+      "loadError": "Could not load the dashboard",
+      "suggestionsError": "Could not load the medicine suggestions",
+      "stats": {
+        "pending": "Waiting for approval",
+        "verified": "Verified",
+        "rejected": "Rejected",
+        "pharmacies": "All pharmacies",
+        "customers": "Customers",
+        "suggestions": "Medicine suggestions to review"
+      }
+    },
+    "pharmacies": {
+      "title": "Pharmacies",
+      "subtitle": "Check new pharmacies before they can sign in and appear in search.",
+      "filtersLabel": "Filter by status",
+      "filter": {
+        "PENDING": "Waiting",
+        "VERIFIED": "Verified",
+        "REJECTED": "Rejected",
+        "ALL": "All"
+      },
+      "listLabel": "Pharmacies",
+      "loading": "Loading pharmacies…",
+      "loadError": "Could not load pharmacies",
+      "none": {
+        "PENDING": "No pharmacies waiting for approval",
+        "VERIFIED": "No verified pharmacies",
+        "REJECTED": "No rejected pharmacies",
+        "ALL": "No pharmacies yet"
+      },
+      "noneBody": "Try another status, or check back when new pharmacies register.",
+      "noneAllBody": "Pharmacies appear here as soon as they register.",
+      "showAll": "Show all pharmacies",
+      "demo": "Demo",
+      "licence": "Licence {{licence}}",
+      "sheetBody": "Check the licence and the location before approving.",
+      "address": "Address",
+      "place": "City and district",
+      "phone": "Phone",
+      "hours": "Opening hours",
+      "licenceLabel": "Licence number",
+      "email": "Owner's email",
+      "notAdded": "Not added yet",
+      "location": "Location on the map",
+      "map": "Map of {{name}}",
+      "approve": "Approve",
+      "approved": "{{name}} approved. The owner can now sign in.",
+      "reject": "Reject",
+      "rejectTitle": "Reject {{name}}?",
+      "rejectBody": "The owner will not be able to sign in, and the pharmacy stays out of search. You can approve it later.",
+      "rejected": "{{name}} rejected."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Demo data for showcasing SuwaLink.",
+      "loading": "Loading settings…",
+      "loadError": "Could not load the settings",
+      "demoTitle": "Show demo data publicly",
+      "demoBody": "Demo pharmacies appear in search, and the demo accounts can sign in.",
+      "demoWarning": "While this is on, the demo accounts and their passwords are shown on the login page.",
+      "offTitle": "Turn off demo data?",
+      "offBody": "Demo pharmacies disappear from search and demo accounts can no longer sign in. Real pharmacies are not affected.",
+      "offConfirm": "Turn off",
+      "turnedOn": "Demo data is now public.",
+      "turnedOff": "Demo data is now hidden.",
+      "resetTitle": "Reset demo data",
+      "resetBody": "Deletes everything the demo accounts have done and seeds fresh demo data. Real data is left alone.",
+      "resetConfirmTitle": "Reset demo data?",
+      "resetConfirmBody": "All demo reservations, requests, stock and other demo changes are replaced with fresh demo data. This cannot be undone.",
+      "resetConfirm": "Reset",
+      "resetDone": "Demo data has been reset."
+    }
   }
 }

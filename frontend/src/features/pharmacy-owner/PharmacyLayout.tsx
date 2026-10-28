@@ -1,19 +1,10 @@
-import { useEffect, useRef } from "react"
-import { Link, Outlet, useRouterState } from "@tanstack/react-router"
+import { Outlet } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import { useMyPharmacy } from "@/api/pharmacyOwner"
+import { SectionNav } from "@/components/layout/SectionNav"
 import { Skeleton } from "@/components/ui/skeleton"
 
-type Section =
-  | "/pharmacy"
-  | "/pharmacy/requests"
-  | "/pharmacy/reservations"
-  | "/pharmacy/scan"
-  | "/pharmacy/inventory"
-  | "/pharmacy/suggest-medicine"
-  | "/pharmacy/settings"
-
-const SECTIONS: Array<[Section, string]> = [
+const SECTIONS = [
   ["/pharmacy", "pharmacyOwner.nav.overview"],
   ["/pharmacy/requests", "pharmacyOwner.nav.requests"],
   ["/pharmacy/reservations", "pharmacyOwner.nav.reservations"],
@@ -21,23 +12,12 @@ const SECTIONS: Array<[Section, string]> = [
   ["/pharmacy/inventory", "pharmacyOwner.nav.inventory"],
   ["/pharmacy/suggest-medicine", "pharmacyOwner.nav.suggest"],
   ["/pharmacy/settings", "pharmacyOwner.nav.settings"],
-]
+] as const
 
 /** Header and sub-navigation around every /pharmacy page. */
 export function PharmacyLayout() {
   const { t } = useTranslation()
   const pharmacy = useMyPharmacy()
-  const nav = useRef<HTMLElement>(null)
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-
-  // On phones the row scrolls; keep the current section in view.
-  useEffect(() => {
-    nav.current
-      ?.querySelector('[aria-current="page"]')
-      ?.scrollIntoView({ block: "nearest", inline: "nearest" })
-  }, [pathname])
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,23 +43,10 @@ export function PharmacyLayout() {
             </>
           )}
         </div>
-        <nav
-          ref={nav}
-          aria-label={t("pharmacyOwner.nav.label")}
-          // Scrolls sideways on phones; wraps from md up.
-          className="-mx-4 flex [scrollbar-width:none] gap-1 overflow-x-auto border-b px-4 md:mx-0 md:flex-wrap md:px-0"
-        >
-          {SECTIONS.map(([to, label]) => (
-            <Link
-              key={to}
-              to={to}
-              activeOptions={{ exact: to === "/pharmacy" }}
-              className="-mb-px inline-flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-3 text-sm font-medium whitespace-nowrap text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current=page]:border-primary aria-[current=page]:text-foreground"
-            >
-              {t(label)}
-            </Link>
-          ))}
-        </nav>
+        <SectionNav
+          label={t("pharmacyOwner.nav.label")}
+          sections={SECTIONS.map(([to, label]) => ({ to, label: t(label) }))}
+        />
       </header>
       <Outlet />
     </div>

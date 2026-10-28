@@ -486,3 +486,40 @@ export type UpdateInventoryRequest = Omit<
   CreateInventoryRequest,
   "medicineMasterId"
 >
+
+/** GET /api/admin/dashboard (DashboardResponse). */
+export interface AdminDashboard {
+  totalCustomers: number
+  totalPharmacies: number
+  verifiedPharmacies: number
+  pendingPharmacies: number
+  rejectedPharmacies: number
+}
+
+/** GET /api/admin/pharmacies item (PharmacyResponse): every pharmacy, any status. */
+export interface AdminPharmacy {
+  id: string
+  pharmacyName: string
+  /** The owner's sign-in email. */
+  email: string
+  licenceNo: string
+  address: string
+  status: PharmacyStatus
+  /** Null until the owner adds one (registration has no pharmacy phone). */
+  phone: string | null
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+  /** Seeded demo data, hidden from the public while demo mode is off. */
+  demo: boolean
+}
+
+/** GET / PUT /api/admin/settings (AppSettingsResponse, the same shape as the public one). */
+export type AdminSettings = PublicSettings
+
+/** PUT /api/admin/settings body (UpdateAppSettingsRequest). */
+export interface UpdateAppSettingsRequest {
+  demoModePublic: boolean
+}

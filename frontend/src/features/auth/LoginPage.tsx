@@ -8,6 +8,7 @@ import type { DemoAccount } from "@/api/types"
 import type { LoginValues } from "@/features/auth/schemas"
 import { ApiError } from "@/api/client"
 import { getPublicSettings, login } from "@/api/auth"
+import { publicSettingsKey } from "@/api/settings"
 import { TextField } from "@/components/forms/TextField"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -153,7 +154,7 @@ function DemoAccounts({
 }) {
   const { t } = useTranslation()
   const { data } = useQuery({
-    queryKey: ["settings", "public"],
+    queryKey: publicSettingsKey,
     queryFn: getPublicSettings,
   })
   const accounts = data?.demoAccounts ?? []

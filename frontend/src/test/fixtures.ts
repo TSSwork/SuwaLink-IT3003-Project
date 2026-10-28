@@ -1,4 +1,5 @@
 import type {
+  AdminPharmacy,
   Bookmark,
   CatalogMedicine,
   InventoryItem,
@@ -328,6 +329,27 @@ export function catalogMedicine(
     status: "APPROVED",
     rejectionReason: null,
     suggestedByPharmacyName: null,
+    ...over,
+  }
+}
+
+export function adminPharmacy(
+  over: Partial<AdminPharmacy> = {}
+): AdminPharmacy {
+  return {
+    id: "p1",
+    pharmacyName: "City Pharmacy",
+    email: "kamal@example.lk",
+    licenceNo: "PH-2024-0012",
+    address: "12 Galle Road",
+    status: "PENDING",
+    phone: "0112345678",
+    district: "COLOMBO",
+    city: "Colombo 03",
+    latitude: 6.9271,
+    longitude: 79.8612,
+    openingHours: "8am - 10pm",
+    demo: false,
     ...over,
   }
 }
