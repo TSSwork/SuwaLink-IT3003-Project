@@ -36,6 +36,8 @@ public class GlobalExceptionHandler {
 
     /** Unique key (request, pharmacy) on prescription_responses; see changeset 006. */
     private static final String DUPLICATE_RESPONSE_CONSTRAINT = "uk_presc_responses_request_pharmacy";
+    /** Unique key (pharmacy, medicine) on inventory; see changeset 015. Backs the service guard. */
+    private static final String DUPLICATE_INVENTORY_CONSTRAINT = "uk_inventory_pharmacy_medicine";
 
     private static boolean mentionsConstraint(Throwable ex, String constraint) {
         for (Throwable t = ex; t != null; t = t.getCause()) {
@@ -290,6 +292,13 @@ public class GlobalExceptionHandler {
                 .body(ApiErrorResponse.builder()
                     .code("DUPLICATE")
                     .message("You have already responded; update your response instead")
+                    .build());
+        }
+        if (mentionsConstraint(ex, DUPLICATE_INVENTORY_CONSTRAINT)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.builder()
+                    .code("DUPLICATE")
+                    .message("This medicine is already in your stock; edit that item instead")
                     .build());
         }
         return ResponseEntity.status(HttpStatus.CONFLICT)

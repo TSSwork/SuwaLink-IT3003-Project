@@ -76,12 +76,17 @@ class MedicineSearchControllerTest {
         LocalDate future = LocalDate.now().plusYears(1);
         stock(colombo, "12.00", 10, future, true);
         stock(kandy, "10.00", 5, future, true);
-        // rows that must never appear as offers
-        stock(colombo, "9.00", 5, LocalDate.now().minusDays(1), true); // expired
-        stock(colombo, "8.00", 0, future, true);                       // zero stock
-        stock(colombo, "7.00", 5, future, false);                      // unavailable
+        // rows that must never appear as offers (one stock line per pharmacy and medicine, so each
+        // hidden row sits at its own verified Colombo pharmacy, next to Colombo Care)
+        stock(colomboNeighbour("Colombo Expired"), "9.00", 5, LocalDate.now().minusDays(1), true);
+        stock(colomboNeighbour("Colombo Empty"), "8.00", 0, future, true);
+        stock(colomboNeighbour("Colombo Paused"), "7.00", 5, future, false);
         stock(pending, "5.00", 5, future, true);
         stock(demo, "6.00", 5, future, true);
+    }
+
+    private Pharmacy colomboNeighbour(String name) {
+        return pharmacy(name, District.COLOMBO, "Colombo", "6.927100", "79.861200", PharmacyStatus.VERIFIED, false);
     }
 
     private Pharmacy pharmacy(String name, District district, String city, String lat, String lng,
@@ -117,13 +122,6 @@ class MedicineSearchControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].pharmacyCount").value(2))
                 .andExpect(jsonPath("$.data.content[0].lowestPrice").value(10.00));
-    }
-
-    @Test
-    void searchCountsAPharmacyOnceForTwoBatches() throws Exception {
-        stock(kandy, "11.00", 3, LocalDate.now().plusYears(2), true);
-        mockMvc.perform(get("/api/medicines/search").param("q", "panadol"))
-                .andExpect(jsonPath("$.data.content[0].pharmacyCount").value(2));
     }
 
     @Test

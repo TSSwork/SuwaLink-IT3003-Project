@@ -134,6 +134,18 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void duplicateInventoryLineMapsTo409Duplicate() {
+        // the service guard normally answers first; this is the constraint catching a concurrent add
+        ResponseEntity<ApiErrorResponse> response = handler.handleDataIntegrityViolation(
+            new DataIntegrityViolationException("could not execute statement",
+                new RuntimeException("Duplicate entry for key 'inventory.uk_inventory_pharmacy_medicine'")));
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("DUPLICATE", response.getBody().getCode());
+        assertEquals("This medicine is already in your stock; edit that item instead", response.getBody().getMessage());
+    }
+
+    @Test
     void otherIntegrityViolationKeepsGenericMessageWithCode() {
         assertEquals("DATA_CONFLICT",
             handler.handleDataIntegrityViolation(new DataIntegrityViolationException("FK violation")).getBody().getCode());
