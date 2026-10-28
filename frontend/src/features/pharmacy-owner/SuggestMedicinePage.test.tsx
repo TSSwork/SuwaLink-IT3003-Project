@@ -188,6 +188,34 @@ describe("SuggestMedicinePage", { timeout: 15_000 }, () => {
     )
   })
 
+  it("offers every backend legal category, including Schedule III", async () => {
+    renderSuggest()
+    await screen.findByRole("combobox", { name: "Manufacturer" })
+    await user.click(screen.getByRole("combobox", { name: "Legal category" }))
+    expect(
+      (await screen.findAllByRole("option")).map((option) => option.textContent)
+    ).toEqual([
+      "Over the counter",
+      "Prescription only",
+      "Controlled",
+      "Schedule III",
+    ])
+    await user.click(screen.getByRole("option", { name: "Schedule III" }))
+    await user.type(screen.getByLabelText("Brand name"), "Valium")
+    await user.type(screen.getByLabelText("Generic name"), "Diazepam")
+    await user.type(screen.getByLabelText("Dosage form"), "Tablet")
+    await user.type(screen.getByLabelText("Strength"), "5 mg")
+    await choose("Unit", "Tablet")
+    await choose("Category", "Pain relief")
+    await choose("Manufacturer", "GSK")
+    await send()
+    await waitFor(() =>
+      expect(api.callsTo("/medicines/suggestions")[0]?.data).toMatchObject({
+        legalCategory: "SCHEDULE_III",
+      })
+    )
+  })
+
   it("lists my suggestions with their status and the rejection reason", async () => {
     renderSuggest()
     const list = await screen.findByRole("list", { name: "My suggestions" })

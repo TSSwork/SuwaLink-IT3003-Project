@@ -8,6 +8,7 @@ import com.suwalink.entity.Inventory;
 import com.suwalink.entity.MedicineMaster;
 import com.suwalink.entity.MedicineStatus;
 import com.suwalink.entity.Pharmacy;
+import com.suwalink.exception.DuplicateResourceException;
 import com.suwalink.exception.InventoryAccessDeniedException;
 import com.suwalink.exception.ResourceNotFoundException;
 import com.suwalink.repository.ImageRepository;
@@ -42,6 +43,10 @@ public class InventoryServiceImpl implements InventoryService {
                         "Medicine not found: " + request.getMedicineMasterId()));
         if (medicineMaster.getStatus() != MedicineStatus.APPROVED) {
             throw new ResourceNotFoundException("Medicine not found: " + request.getMedicineMasterId());
+        }
+        // One line per medicine: the owner edits its price, stock and expiry instead.
+        if (inventoryRepository.existsByPharmacyIdAndMedicineMasterId(pharmacy.getId(), medicineMaster.getId())) {
+            throw new DuplicateResourceException("This medicine is already in your stock; edit that item instead");
         }
 
         Image image = null;

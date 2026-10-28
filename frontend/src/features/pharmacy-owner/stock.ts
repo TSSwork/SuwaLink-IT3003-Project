@@ -31,7 +31,7 @@ const DECIMAL = /^\d+(\.\d+)?$/
 
 /**
  * Price, stock and expiry as typed, checked like Create/UpdateInventoryRequest:
- * unitPrice > 0, stockQuantity a whole number >= 0, expireDate after today
+ * unitPrice > 0 with at most 2 decimals, stockQuantity a whole number >= 0, expireDate after today
  * (@Future). Messages are i18n keys.
  */
 export const stockFieldsSchema = z.object({
@@ -42,7 +42,9 @@ export const stockFieldsSchema = z.object({
     .refine(
       (value) => DECIMAL.test(value) && Number(value) > 0,
       "validation.pricePositive"
-    ),
+    )
+    // unit_price is decimal(38,2): more decimals would be rounded silently.
+    .refine((value) => !/\.\d{3,}$/.test(value), "validation.priceDecimals"),
   stockQuantity: z
     .string()
     .trim()

@@ -139,7 +139,8 @@ export function InventoryPage() {
             {t("pharmacyOwner.inventory.subtitle")}
           </p>
         </div>
-        <Button onClick={() => setAdding(true)}>
+        {/* Waits for the stock so "In your stock" marks are reliable. */}
+        <Button onClick={() => setAdding(true)} disabled={!inventory.data}>
           <PlusIcon aria-hidden />
           {t("pharmacyOwner.inventory.add")}
         </Button>

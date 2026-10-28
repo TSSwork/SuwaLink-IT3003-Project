@@ -215,6 +215,29 @@ describe("InventoryPage", { timeout: 15_000 }, () => {
     expect(shownBrands()).toHaveLength(5)
   })
 
+  it("enables Add item only once the stock has loaded", async () => {
+    let release = () => {}
+    const loaded = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    api.restore()
+    api = mockApi(
+      handlers({
+        "/inventory": async () => {
+          await loaded
+          return items
+        },
+      })
+    )
+    renderInventory()
+    // Until then "In your stock" could not be marked reliably.
+    const add = await screen.findByRole("button", { name: "Add item" })
+    expect(add).toBeDisabled()
+    release()
+    await screen.findByRole("list", { name: "Your stock" })
+    expect(add).toBeEnabled()
+  })
+
   it("hides an item from customers with the availability switch", async () => {
     api.restore()
     api = mockApi(
@@ -328,9 +351,15 @@ describe("InventoryPage", { timeout: 15_000 }, () => {
     )
     expect(expiry).toHaveAccessibleDescription("Choose a date after today.")
 
+    await user.clear(price)
+    await user.type(price, "12.345")
     await user.clear(stock)
     await user.type(stock, "2.5")
     await user.click(save)
+    // Prices are stored with 2 decimal places.
+    await waitFor(() =>
+      expect(price).toHaveAccessibleDescription("Use at most 2 decimal places.")
+    )
     await waitFor(() =>
       expect(stock).toHaveAccessibleDescription(
         "Enter a whole number, 0 or more."

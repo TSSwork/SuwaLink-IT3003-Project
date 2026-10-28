@@ -20,7 +20,7 @@ import type {
 import { ApiError } from "@/api/client"
 import { useCategories, useManufacturers } from "@/api/catalog"
 import { useMySuggestions, useSuggestMedicine } from "@/api/pharmacyOwner"
-import { SUGGESTABLE_LEGAL_CATEGORIES, UNITS_OF_MEASURE } from "@/api/types"
+import { LEGAL_CATEGORIES, UNITS_OF_MEASURE } from "@/api/types"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
@@ -67,7 +67,7 @@ const suggestionSchema = z.object({
   manufacturerId: chosen,
   legalCategory: z
     .string()
-    .pipe(z.enum(SUGGESTABLE_LEGAL_CATEGORIES, "validation.required")),
+    .pipe(z.enum(LEGAL_CATEGORIES, "validation.required")),
 })
 type SuggestionInput = z.input<typeof suggestionSchema>
 type SuggestionValues = z.infer<typeof suggestionSchema>
@@ -236,7 +236,7 @@ function SuggestionForm({
           control={form.control}
           name="legalCategory"
           label={t("pharmacyOwner.suggest.legalCategory")}
-          options={SUGGESTABLE_LEGAL_CATEGORIES.map((category) => ({
+          options={LEGAL_CATEGORIES.map((category) => ({
             value: category,
             label: t(`pharmacyOwner.suggest.legal.${category}`),
           }))}

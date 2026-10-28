@@ -410,12 +410,13 @@ export const UNITS_OF_MEASURE = [
 ] as const
 export type UnitOfMeasure = (typeof UNITS_OF_MEASURE)[number]
 
-/** Legal categories a pharmacy may suggest (the backend also has SCHEDULE_III). */
-export const SUGGESTABLE_LEGAL_CATEGORIES = [
+/** Every PrescriptionStatus value, in the order the suggestion form offers them. */
+export const LEGAL_CATEGORIES = [
   "OTC",
   "PRESCRIPTION",
   "CONTROLLED",
-] as const
+  "SCHEDULE_III",
+] as const satisfies ReadonlyArray<LegalCategory>
 
 export type MedicineStatus = "APPROVED" | "PENDING" | "REJECTED"
 
@@ -454,7 +455,7 @@ export interface MedicineMasterRequest {
   description: string | null
   therapeuticCategoryId: string
   manufacturerId: string
-  legalCategory: (typeof SUGGESTABLE_LEGAL_CATEGORIES)[number]
+  legalCategory: LegalCategory
 }
 
 /** GET /api/manufacturers (public): active manufacturers, sorted by name. */

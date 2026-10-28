@@ -225,7 +225,8 @@
     "expiryFuture": "Choose a date after today.",
     "DecimalMin": "Enter a price above 0.",
     "PositiveOrZero": "Enter a whole number, 0 or more.",
-    "Future": "Choose a date after today."
+    "Future": "Choose a date after today.",
+    "priceDecimals": "Use at most 2 decimal places."
   },
   "districts": {
     "AMPARA": "Ampara",
@@ -787,7 +788,8 @@
       "legal": {
         "OTC": "Over the counter",
         "PRESCRIPTION": "Prescription only",
-        "CONTROLLED": "Controlled"
+        "CONTROLLED": "Controlled",
+        "SCHEDULE_III": "Schedule III"
       },
       "submit": "Send suggestion",
       "sending": "Sending…",
