@@ -9,5 +9,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     globals: false,
     css: false,
+    // Long Testing Library flows time out when every core runs a file on a
+    // loaded machine; four workers keep the full suite stable.
+    maxWorkers: 4,
   },
 })
