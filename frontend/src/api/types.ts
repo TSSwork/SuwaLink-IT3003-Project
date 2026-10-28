@@ -364,6 +364,14 @@ export interface PrescriptionReply {
   createdAt: string
 }
 
+/** CreatePrescriptionResponseRequest: the body of both POST and PUT …/responses(/mine). */
+export interface PrescriptionReplyRequest {
+  /** At most 1000 characters; blank is stored as none. */
+  message: string
+  /** At least one; quantity >= 1. Priced by the server from the inventory item. */
+  items: Array<{ inventoryItemId: string; quantity: number }>
+}
+
 export type PharmacyStatus = "PENDING" | "VERIFIED" | "REJECTED" | "DEACTIVATED"
 
 /** GET /api/pharmacies/me (PharmacyProfileResponse): the signed-in owner's pharmacy. */

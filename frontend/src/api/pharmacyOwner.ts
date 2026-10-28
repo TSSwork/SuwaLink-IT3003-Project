@@ -8,6 +8,7 @@ import type {
   MedicineMasterRequest,
   PharmacyProfile,
   PrescriptionReply,
+  PrescriptionReplyRequest,
   PrescriptionRequest,
   Reservation,
   UpdateInventoryRequest,
@@ -37,10 +38,12 @@ export function useUpdateMyPharmacy() {
   })
 }
 
+const requestsKey = [...pharmacyOwnerKey, "requests"] as const
+
 /** Open (PENDING / RESPONDED) requests sent to this pharmacy. */
 export function usePharmacyRequests() {
   return useQuery({
-    queryKey: [...pharmacyOwnerKey, "requests"],
+    queryKey: requestsKey,
     queryFn: async () =>
       (await api.get<ApiResponse<Array<PrescriptionRequest>>>("/prescriptions"))
         .data.data,
@@ -62,6 +65,72 @@ export function useMyReplies() {
         )
       ).data.data,
   })
+}
+
+/** One request sent to this pharmacy, in any status (403 if it was not sent here). */
+export function usePharmacyRequest(id: string) {
+  return useQuery({
+    queryKey: [...requestsKey, id],
+    queryFn: async () =>
+      (await api.get<ApiResponse<PrescriptionRequest>>(`/prescriptions/${id}`))
+        .data.data,
+  })
+}
+
+/** This pharmacy's reply to the request, or null before it replied. */
+export function useMyReply(requestId: string) {
+  const pharmacyId = useMyPharmacy().data?.id
+  return useQuery({
+    queryKey: [...requestsKey, requestId, "reply"],
+    queryFn: async () =>
+      (
+        await api.get<ApiResponse<Array<PrescriptionReply>>>(
+          `/prescriptions/${requestId}/responses`
+        )
+      ).data.data,
+    select: (replies) =>
+      replies.find((reply) => reply.pharmacyId === pharmacyId) ?? null,
+    enabled: pharmacyId !== undefined,
+  })
+}
+
+/**
+ * A reply changes the request (RESPONDED), this pharmacy's replies and the
+ * overview's "waiting" count, so everything the owner sees is refetched.
+ */
+function useReplyMutation(
+  mutationFn: (body: PrescriptionReplyRequest) => Promise<PrescriptionReply>
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: pharmacyOwnerKey }),
+  })
+}
+
+export function useSendReply(requestId: string) {
+  return useReplyMutation(
+    async (body) =>
+      (
+        await api.post<ApiResponse<PrescriptionReply>>(
+          `/prescriptions/${requestId}/responses`,
+          body
+        )
+      ).data.data
+  )
+}
+
+export function useUpdateReply(requestId: string) {
+  return useReplyMutation(
+    async (body) =>
+      (
+        await api.put<ApiResponse<PrescriptionReply>>(
+          `/prescriptions/${requestId}/responses/mine`,
+          body
+        )
+      ).data.data
+  )
 }
 
 /** Reservations made at this pharmacy, newest first. */
