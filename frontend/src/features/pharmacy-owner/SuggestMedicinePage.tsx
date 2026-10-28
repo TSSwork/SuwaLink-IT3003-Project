@@ -7,99 +7,35 @@ import {
   ClockIcon,
   LightbulbIcon,
 } from "lucide-react"
-import { Controller, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import { z } from "zod"
-import type { Control } from "react-hook-form"
+import type { CatalogMedicine, MedicineStatus } from "@/api/types"
+import type { SelectOption } from "@/components/forms/SelectField"
 import type {
-  CatalogMedicine,
-  MedicineMasterRequest,
-  MedicineStatus,
-} from "@/api/types"
+  MedicineMasterInput,
+  MedicineMasterValues,
+} from "@/components/medicine/medicineMasterSchema"
 import { ApiError } from "@/api/client"
 import { useCategories, useManufacturers } from "@/api/catalog"
 import { useMySuggestions, useSuggestMedicine } from "@/api/pharmacyOwner"
-import { LEGAL_CATEGORIES, UNITS_OF_MEASURE } from "@/api/types"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
-import { TextField } from "@/components/forms/TextField"
+import { MedicineMasterFields } from "@/components/medicine/MedicineMasterFields"
+import {
+  EMPTY_MEDICINE_MASTER,
+  MEDICINE_MASTER_FIELDS,
+  medicineMasterSchema,
+  toMedicineMasterRequest,
+} from "@/components/medicine/medicineMasterSchema"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import {
   applyFieldErrors,
   hasFieldErrorFor,
 } from "@/features/auth/applyFieldErrors"
 import { translateError } from "@/lib/translateError"
-
-/**
- * Mirrors MedicineMasterRequest: the @NotBlank / @NotNull fields are required;
- * 255 is the column length. Field names match the DTO so server field errors
- * land on them. Messages are i18n keys.
- */
-const text = z
-  .string()
-  .trim()
-  .min(1, "validation.required")
-  .max(255, "validation.tooLong")
-const chosen = z.string().min(1, "validation.required")
-
-const suggestionSchema = z.object({
-  brandName: text,
-  genericName: text,
-  dosageForm: text,
-  strength: text,
-  unitOfMeasure: z
-    .string()
-    .pipe(z.enum(UNITS_OF_MEASURE, "validation.required")),
-  description: z.string().trim(),
-  therapeuticCategoryId: chosen,
-  manufacturerId: chosen,
-  legalCategory: z
-    .string()
-    .pipe(z.enum(LEGAL_CATEGORIES, "validation.required")),
-})
-type SuggestionInput = z.input<typeof suggestionSchema>
-type SuggestionValues = z.infer<typeof suggestionSchema>
-type SuggestionControl = Control<SuggestionInput, unknown, SuggestionValues>
-
-const FIELDS = [
-  "brandName",
-  "genericName",
-  "dosageForm",
-  "strength",
-  "unitOfMeasure",
-  "description",
-  "therapeuticCategoryId",
-  "manufacturerId",
-  "legalCategory",
-] as const satisfies ReadonlyArray<keyof SuggestionInput>
-
-const EMPTY: SuggestionInput = {
-  brandName: "",
-  genericName: "",
-  dosageForm: "",
-  strength: "",
-  unitOfMeasure: "",
-  description: "",
-  therapeuticCategoryId: "",
-  manufacturerId: "",
-  legalCategory: "",
-}
-
-function toRequest(values: SuggestionValues): MedicineMasterRequest {
-  return { ...values, description: values.description || null }
-}
 
 export function SuggestMedicinePage() {
   const { t } = useTranslation()
@@ -156,39 +92,40 @@ function SuggestionFormSection() {
   )
 }
 
-interface Option {
-  value: string
-  label: string
-}
-
 function SuggestionForm({
   categories,
   manufacturers,
 }: {
-  categories: Array<Option>
-  manufacturers: Array<Option>
+  categories: Array<SelectOption>
+  manufacturers: Array<SelectOption>
 }) {
   const { t } = useTranslation()
   const suggest = useSuggestMedicine()
-  const form = useForm<SuggestionInput, unknown, SuggestionValues>({
-    resolver: zodResolver(suggestionSchema),
-    defaultValues: EMPTY,
+  const form = useForm<MedicineMasterInput, unknown, MedicineMasterValues>({
+    resolver: zodResolver(medicineMasterSchema),
+    defaultValues: EMPTY_MEDICINE_MASTER,
   })
 
   const submit = form.handleSubmit((values) =>
-    suggest.mutate(toRequest(values), {
+    suggest.mutate(toMedicineMasterRequest(values), {
       onSuccess: () => {
         toast.success(t("pharmacyOwner.suggest.sent"))
-        form.reset(EMPTY)
+        form.reset(EMPTY_MEDICINE_MASTER)
       },
       onError: (error) => {
         if (error instanceof ApiError) {
-          applyFieldErrors(error.fieldErrors, FIELDS, form.setError, t)
+          applyFieldErrors(
+            error.fieldErrors,
+            MEDICINE_MASTER_FIELDS,
+            form.setError,
+            t
+          )
         }
       },
     })
   )
-  const banner = suggest.error && !hasFieldErrorFor(suggest.error, FIELDS)
+  const banner =
+    suggest.error && !hasFieldErrorFor(suggest.error, MEDICINE_MASTER_FIELDS)
 
   return (
     <form
@@ -196,65 +133,11 @@ function SuggestionForm({
       onSubmit={submit}
       className="flex flex-col gap-5 rounded-3xl border bg-card p-4 sm:p-6"
     >
-      <div className="grid gap-5 sm:grid-cols-2">
-        <TextField
-          control={form.control}
-          name="brandName"
-          label={t("pharmacyOwner.suggest.brandName")}
-          autoComplete="off"
-        />
-        <TextField
-          control={form.control}
-          name="genericName"
-          label={t("pharmacyOwner.suggest.genericName")}
-          autoComplete="off"
-        />
-        <TextField
-          control={form.control}
-          name="dosageForm"
-          label={t("pharmacyOwner.suggest.dosageForm")}
-          description={t("pharmacyOwner.suggest.dosageFormHint")}
-          autoComplete="off"
-        />
-        <TextField
-          control={form.control}
-          name="strength"
-          label={t("pharmacyOwner.suggest.strength")}
-          description={t("pharmacyOwner.suggest.strengthHint")}
-          autoComplete="off"
-        />
-        <SelectField
-          control={form.control}
-          name="unitOfMeasure"
-          label={t("pharmacyOwner.suggest.unitOfMeasure")}
-          options={UNITS_OF_MEASURE.map((unit) => ({
-            value: unit,
-            label: t(`pharmacyOwner.suggest.units.${unit}`),
-          }))}
-        />
-        <SelectField
-          control={form.control}
-          name="legalCategory"
-          label={t("pharmacyOwner.suggest.legalCategory")}
-          options={LEGAL_CATEGORIES.map((category) => ({
-            value: category,
-            label: t(`pharmacyOwner.suggest.legal.${category}`),
-          }))}
-        />
-        <SelectField
-          control={form.control}
-          name="therapeuticCategoryId"
-          label={t("pharmacyOwner.suggest.category")}
-          options={categories}
-        />
-        <SelectField
-          control={form.control}
-          name="manufacturerId"
-          label={t("pharmacyOwner.suggest.manufacturer")}
-          options={manufacturers}
-        />
-      </div>
-      <DescriptionField control={form.control} />
+      <MedicineMasterFields
+        control={form.control}
+        categories={categories}
+        manufacturers={manufacturers}
+      />
       {banner && (
         <ErrorState
           title={t("pharmacyOwner.suggest.sendFailed")}
@@ -267,102 +150,6 @@ function SuggestionForm({
           : t("pharmacyOwner.suggest.submit")}
       </Button>
     </form>
-  )
-}
-
-function SelectField({
-  control,
-  name,
-  label,
-  options,
-}: {
-  control: SuggestionControl
-  name:
-    | "unitOfMeasure"
-    | "legalCategory"
-    | "therapeuticCategoryId"
-    | "manufacturerId"
-  label: string
-  options: Array<Option>
-}) {
-  const { t } = useTranslation()
-  const id = useId()
-  const errorId = `${id}-error`
-  return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field, fieldState }) => {
-        const message = fieldState.error?.message
-        return (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={id}>{label}</FieldLabel>
-            <Select
-              value={field.value}
-              onValueChange={field.onChange}
-              name={field.name}
-            >
-              <SelectTrigger
-                id={id}
-                ref={field.ref}
-                onBlur={field.onBlur}
-                className="w-full"
-                aria-invalid={fieldState.invalid}
-                aria-describedby={message ? errorId : undefined}
-              >
-                <SelectValue placeholder={t("pharmacyOwner.suggest.choose")} />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {message && (
-              <FieldError id={errorId}>
-                {t(message, { defaultValue: message })}
-              </FieldError>
-            )}
-          </Field>
-        )
-      }}
-    />
-  )
-}
-
-function DescriptionField({ control }: { control: SuggestionControl }) {
-  const { t } = useTranslation()
-  const id = useId()
-  const errorId = `${id}-error`
-  return (
-    <Controller
-      control={control}
-      name="description"
-      render={({ field, fieldState }) => {
-        const message = fieldState.error?.message
-        return (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={id}>
-              {t("pharmacyOwner.suggest.description")}
-            </FieldLabel>
-            <Textarea
-              id={id}
-              {...field}
-              rows={3}
-              aria-invalid={fieldState.invalid}
-              aria-describedby={message ? errorId : undefined}
-            />
-            {message && (
-              <FieldError id={errorId}>
-                {t(message, { defaultValue: message })}
-              </FieldError>
-            )}
-          </Field>
-        )
-      }}
-    />
   )
 }
 

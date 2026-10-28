@@ -453,7 +453,11 @@ export interface CatalogMedicine {
   suggestedByPharmacyName: string | null
 }
 
-/** POST /api/medicines/suggestions body (MedicineMasterRequest; imageUrl not offered). */
+/**
+ * POST /api/medicines/suggestions and POST / PUT /api/admin/medicines body
+ * (MedicineMasterRequest). The forms don't offer `imageUrl`; an admin edit
+ * sends the medicine's current one back, since PUT replaces it.
+ */
 export interface MedicineMasterRequest {
   brandName: string
   genericName: string
@@ -464,6 +468,7 @@ export interface MedicineMasterRequest {
   therapeuticCategoryId: string
   manufacturerId: string
   legalCategory: LegalCategory
+  imageUrl?: string | null
 }
 
 /** GET /api/manufacturers (public): active manufacturers, sorted by name. */
@@ -535,4 +540,46 @@ export type AdminSettings = PublicSettings
 /** PUT /api/admin/settings body (UpdateAppSettingsRequest). */
 export interface UpdateAppSettingsRequest {
   demoModePublic: boolean
+}
+
+/** GET /api/admin/categories item (CategoryResponse): every category, active or not. */
+export interface AdminCategory {
+  id: string
+  name: string
+  description: string | null
+  parentCategoryId: string | null
+  parentCategoryName: string | null
+  active: boolean
+}
+
+/** POST / PUT /api/admin/categories body (CategoryRequest). */
+export interface CategoryRequest {
+  name: string
+  description: string | null
+  parentCategoryId: string | null
+}
+
+/** GET /api/admin/manufacturers item (ManufacturerResponse): every manufacturer, active or not. */
+export interface AdminManufacturer {
+  id: string
+  name: string
+  licenseNumber: string | null
+  country: string
+  contactEmail: string | null
+  phone: string | null
+  active: boolean
+}
+
+/** POST / PUT /api/admin/manufacturers body (ManufacturerRequest). */
+export interface ManufacturerRequest {
+  name: string
+  licenseNumber: string | null
+  country: string
+  contactEmail: string | null
+  phone: string | null
+}
+
+/** PUT /api/admin/medicines/suggestions/{id}/reject body (RejectMedicineRequest): 1–500 characters. */
+export interface RejectMedicineRequest {
+  reason: string
 }

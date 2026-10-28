@@ -23,8 +23,6 @@
     "notFoundBody": "The requested page could not be found.",
     "language": "Language",
     "languageCurrent": "Language: {{name}}",
-    "comingSoonTitle": "Coming soon",
-    "comingSoonBody": "This area is still being built. Please check back later.",
     "chooseDistrict": "Choose a district"
   },
   "nav": {
@@ -1061,6 +1059,137 @@
       "resetConfirmBody": "All demo reservations, requests, stock and other demo changes are replaced with fresh demo data. This cannot be undone.",
       "resetConfirm": "Reset",
       "resetDone": "Demo data has been reset."
+    },
+    "medicineStatus": {
+      "PENDING": "Waiting for review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "catalog": {
+      "title": "Catalog",
+      "subtitle": "The medicines pharmacies can stock, with their categories and manufacturers.",
+      "tabsLabel": "Catalog lists",
+      "tab": {
+        "medicines": "Medicines",
+        "categories": "Categories",
+        "manufacturers": "Manufacturers"
+      },
+      "add": {
+        "medicines": "Add medicine",
+        "categories": "Add category",
+        "manufacturers": "Add manufacturer"
+      },
+      "addTitle": {
+        "medicines": "Add a medicine",
+        "categories": "Add a category",
+        "manufacturers": "Add a manufacturer"
+      },
+      "editTitle": "Edit {{name}}",
+      "formBody": {
+        "medicines": "Pharmacies can stock an approved medicine as soon as it is saved.",
+        "categories": "Categories group medicines in search. A category can sit under another one.",
+        "manufacturers": "The company that makes the medicine."
+      },
+      "search": {
+        "medicines": "Search medicines",
+        "categories": "Search categories",
+        "manufacturers": "Search manufacturers"
+      },
+      "searchPlaceholder": {
+        "medicines": "Brand, generic name or manufacturer",
+        "categories": "Category name",
+        "manufacturers": "Name, country or licence"
+      },
+      "loading": {
+        "medicines": "Loading medicines…",
+        "categories": "Loading categories…",
+        "manufacturers": "Loading manufacturers…"
+      },
+      "loadError": {
+        "medicines": "The medicines could not be loaded",
+        "categories": "The categories could not be loaded",
+        "manufacturers": "The manufacturers could not be loaded"
+      },
+      "none": {
+        "medicines": "No medicines yet",
+        "categories": "No categories yet",
+        "manufacturers": "No manufacturers yet"
+      },
+      "noneBody": {
+        "medicines": "Add a medicine, or approve one a pharmacy suggested.",
+        "categories": "Add a category so medicines can be grouped.",
+        "manufacturers": "Add a manufacturer before adding its medicines."
+      },
+      "noMatch": "Nothing matches “{{q}}”",
+      "noMatchBody": "Check the spelling, or search for another word.",
+      "clearSearch": "Clear search",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteBody": {
+        "medicines": "It is removed from the catalog for good. A medicine that pharmacies stock or customers reserved can't be deleted.",
+        "categories": "It is removed for good. A category that medicines or other categories still use can't be deleted.",
+        "manufacturers": "It is removed for good. A manufacturer whose medicines are in the catalog can't be deleted."
+      },
+      "deleted": "{{name}} deleted.",
+      "inUse": {
+        "medicines": "Pharmacies still stock this medicine or customers reserved it, so it can't be deleted.",
+        "categories": "Medicines or other categories still use this category, so it can't be deleted.",
+        "manufacturers": "Medicines still use this manufacturer, so it can't be deleted."
+      },
+      "inactive": "Inactive",
+      "inactiveOption": "{{name}} (inactive)",
+      "under": "Under {{name}}",
+      "saveFailed": "Could not save",
+      "saving": "Saving…",
+      "added": "{{name}} added.",
+      "saved": "{{name}} saved.",
+      "field": {
+        "name": "Name",
+        "parent": "Parent category (optional)",
+        "noParent": "None (top level)",
+        "description": "Description (optional)",
+        "country": "Country",
+        "licenseNumber": "Licence number (optional)",
+        "contactEmail": "Contact email (optional)",
+        "phone": "Phone (optional)"
+      }
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "subtitle": "Medicines pharmacies asked to add to the catalog. Approve them so pharmacies can stock them, or reject them with a reason.",
+      "filtersLabel": "Filter by status",
+      "filter": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "ALL": "All"
+      },
+      "listLabel": "Suggestions",
+      "loading": "Loading suggestions…",
+      "loadError": "The suggestions could not be loaded",
+      "none": {
+        "PENDING": "No suggestions waiting",
+        "APPROVED": "No approved suggestions",
+        "REJECTED": "No rejected suggestions",
+        "ALL": "No suggestions yet"
+      },
+      "noneBody": "Try another status, or check back when pharmacies suggest medicines.",
+      "noneAllBody": "Pharmacies suggest medicines that are not in the catalog yet; they appear here.",
+      "showAll": "Show all suggestions",
+      "suggestedBy": "Suggested by {{pharmacy}}",
+      "description": "Description",
+      "reasonGiven": "Reason given",
+      "approve": "Approve",
+      "approved": "{{name}} approved. {{pharmacy}} can stock it now.",
+      "reject": "Reject",
+      "rejectTitle": "Reject {{name}}?",
+      "rejectBody": "The pharmacy is told it was rejected, with your reason.",
+      "rejectConfirm": "Reject suggestion",
+      "rejected": "{{name}} rejected. {{pharmacy}} has been told why.",
+      "reason": "Reason",
+      "reasonRequired": "Tell the pharmacy why.",
+      "reasonHint": "Up to 500 characters. The pharmacy sees this."
     }
   }
 }

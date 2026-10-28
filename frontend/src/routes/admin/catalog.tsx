@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ComingSoonPage } from "@/features/admin/ComingSoonPage"
+import { CatalogPage } from "@/features/admin/CatalogPage"
+import { validateCatalogSearch } from "@/features/admin/catalogSearch"
 
-// Placeholder until its own task builds the page.
 export const Route = createFileRoute("/admin/catalog")({
-  component: ComingSoonPage,
+  validateSearch: validateCatalogSearch,
+  component: CatalogPage,
 })

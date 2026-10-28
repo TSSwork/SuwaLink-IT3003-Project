@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import type { ComponentProps, ReactNode } from "react"
+import type { ComponentProps, MouseEvent, ReactNode } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,8 @@ interface ConfirmButtonProps {
   description: string
   /** The confirming action's label; defaults to `label`. */
   confirmLabel?: string
-  onConfirm: () => void
+  /** Call `event.preventDefault()` to keep the dialog open, e.g. while a reason is missing. */
+  onConfirm: (event: MouseEvent<HTMLButtonElement>) => void
   /** Extra inputs inside the dialog, e.g. a reason field. */
   children?: ReactNode
   variant?: ComponentProps<typeof Button>["variant"]

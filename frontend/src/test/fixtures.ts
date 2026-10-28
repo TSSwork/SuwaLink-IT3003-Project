@@ -1,4 +1,6 @@
 import type {
+  AdminCategory,
+  AdminManufacturer,
   AdminPharmacy,
   AdminUser,
   Bookmark,
@@ -363,6 +365,35 @@ export function adminUser(over: Partial<AdminUser> = {}): AdminUser {
     phone: "0771234567",
     role: "CUSTOMER",
     status: "ACTIVE",
+    ...over,
+  }
+}
+
+export function adminCategory(
+  over: Partial<AdminCategory> = {}
+): AdminCategory {
+  return {
+    id: "c1",
+    name: "Pain relief",
+    description: null,
+    parentCategoryId: null,
+    parentCategoryName: null,
+    active: true,
+    ...over,
+  }
+}
+
+export function adminManufacturer(
+  over: Partial<AdminManufacturer> = {}
+): AdminManufacturer {
+  return {
+    id: "mf1",
+    name: "GSK",
+    licenseNumber: null,
+    country: "United Kingdom",
+    contactEmail: null,
+    phone: null,
+    active: true,
     ...over,
   }
 }
