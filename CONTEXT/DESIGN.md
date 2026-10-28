@@ -55,6 +55,15 @@ Patterns:
 - **Cart groups**: the cart is grouped by pharmacy because each pharmacy is one reservation. Each group has its own subtotal, prescription notice and "Reserve here"; "Reserve all" sends one request per group in turn. A group that fails stays in the cart with its translated error; nothing is dropped silently.
 - **Prices** always go through `formatPrice` (LKR in the reader's locale) and **distances** through `formatDistance`.
 
+### Pharmacy and admin building blocks
+
+- **Section layouts**: `/pharmacy` and `/admin` are layout routes. The route file holds the role guard (`requireRole("PHARMACY_OWNER")` / `requireRole("ADMIN")`), and the layout (`PharmacyLayout`, `AdminLayout`) renders the section heading and `SectionNav` (`components/layout/`) above an `<Outlet />`. `SectionNav` is a row of links: the section index matches only exactly, other links match their sub-pages too. On phones the row scrolls sideways and keeps the current link in view. New pages in a section get a link there and a route file under `routes/pharmacy/` or `routes/admin/`.
+- **List filters and tabs in the URL**: a filter (`status`) or tab (`tab`) is a search param. Its `validateSearch` always returns the key (undefined for the default) and falls back to the default on an unknown value, so a link never breaks. Tabs use `components/ui/tabs`, which has a 44 px touch edit.
+- **`parsePickupCode`** (`lib/pickupCode.ts`): the only way a typed or scanned value becomes a pickup code. It takes 10 characters from `ABCDEFGHJKMNPQRSTUVWXYZ23456789`, or an http(s) link whose path is exactly `/r/<code>`, and upper-cases the result. Callers navigate inside the app to `/r/<code>`, never to the scanned address. Anything else is "not a SuwaLink pickup code".
+- **Scanner** (`/pharmacy/scan`): the camera starts only when the owner taps it, and `qr-scanner` is loaded on demand. Each decoded value goes through `parsePickupCode`. A denied, missing or insecure-context camera gets a translated explanation, and manual code entry is always on the page, so the screen works without a camera.
+- **Stat cards** (pharmacy overview, admin dashboard): a whole-card link to the filtered list behind the number. It has an icon, a large `tabular-nums` count and a label. While loading it shows a skeleton, on a failed load a "—" next to an `ErrorState` with retry, and while something waits for action a primary tint.
+- **Admin actions that remove a row** (delete, approve or reject a pending item): put the success toast in the mutation hook's `onSuccess`, not in `mutate(…, { onSuccess })`. The admin refetch removes the row, and a per-call callback would not run once it unmounts. A conflict such as `ALREADY_REVIEWED` refetches the list, and `DATA_CONFLICT` on a catalog delete says what still uses the entry.
+
 ### Dark mode rules
 
 - Dark is a designed palette, not an inversion: olive-tinted near-black surfaces (low chroma, hue ~127), lighter surfaces for higher elevation (background < card < popover), Cornsilk text dimmed slightly, brand colours raised in lightness until text on them and them on the background pass AA.

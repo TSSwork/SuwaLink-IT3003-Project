@@ -1,8 +1,15 @@
 import type {
+  AdminCategory,
+  AdminManufacturer,
+  AdminPharmacy,
+  AdminUser,
   Bookmark,
+  CatalogMedicine,
+  InventoryItem,
   MedicineDetail,
   MedicineSearchResult,
   Offer,
+  PharmacyProfile,
   PublicPharmacy,
   PrescriptionReply,
   PrescriptionRequest,
@@ -155,6 +162,55 @@ export function publicPharmacy(
   }
 }
 
+export function inventoryItem(
+  over: Partial<InventoryItem> = {}
+): InventoryItem {
+  return {
+    id: "inv1",
+    unitPrice: 12.5,
+    currency: "LKR",
+    stockQuantity: 40,
+    expireDate: "2027-12-31",
+    available: true,
+    imageUrl: null,
+    medicine: {
+      id: "m1",
+      brandName: "Panadol",
+      genericName: "Paracetamol",
+      dosageForm: "Tablet",
+      strength: "500 mg",
+      unitOfMeasure: "TABLET",
+      legalCategory: "OTC",
+      category: "Pain relief",
+      manufacturer: "GSK",
+    },
+    pharmacy: { id: "p1", name: "City Pharmacy", address: "12 Galle Road" },
+    ...over,
+  }
+}
+
+/** GET /api/pharmacies/me for the signed-in owner. */
+export function pharmacyProfile(
+  over: Partial<PharmacyProfile> = {}
+): PharmacyProfile {
+  return {
+    id: "p1",
+    name: "City Pharmacy",
+    phone: "0112345678",
+    address: "12 Galle Road",
+    district: "COLOMBO",
+    city: "Colombo 03",
+    latitude: 6.9271,
+    longitude: 79.8612,
+    openingHours: "8am - 10pm",
+    licenceNo: "PH-2024-0012",
+    status: "VERIFIED",
+    ownerName: "Kamal Silva",
+    ownerEmail: "kamal@example.lk",
+    ...over,
+  }
+}
+
 export function bookmark(
   over: { id?: string; inventory?: Partial<Bookmark["inventory"]> } = {}
 ): Bookmark {
@@ -245,4 +301,99 @@ export function localIso(msFromNow: number): string {
   const d = new Date(Date.now() + msFromNow)
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+/** A LocalDate string ("YYYY-MM-DD"), `days` from today in local time. */
+export function localDate(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** A catalogue medicine (MedicineMasterResponse), APPROVED unless overridden. */
+export function catalogMedicine(
+  over: Partial<CatalogMedicine> = {}
+): CatalogMedicine {
+  return {
+    id: "m1",
+    brandName: "Panadol",
+    genericName: "Paracetamol",
+    dosageForm: "Tablet",
+    strength: "500 mg",
+    unitOfMeasure: "TABLET",
+    description: null,
+    legalCategory: "OTC",
+    imageUrl: null,
+    therapeuticCategoryId: "c1",
+    therapeuticCategoryName: "Pain relief",
+    manufacturerId: "mf1",
+    manufacturerName: "GSK",
+    status: "APPROVED",
+    rejectionReason: null,
+    suggestedByPharmacyName: null,
+    ...over,
+  }
+}
+
+export function adminPharmacy(
+  over: Partial<AdminPharmacy> = {}
+): AdminPharmacy {
+  return {
+    id: "p1",
+    pharmacyName: "City Pharmacy",
+    email: "kamal@example.lk",
+    licenceNo: "PH-2024-0012",
+    address: "12 Galle Road",
+    status: "PENDING",
+    phone: "0112345678",
+    district: "COLOMBO",
+    city: "Colombo 03",
+    latitude: 6.9271,
+    longitude: 79.8612,
+    openingHours: "8am - 10pm",
+    demo: false,
+    ...over,
+  }
+}
+
+export function adminUser(over: Partial<AdminUser> = {}): AdminUser {
+  return {
+    id: "u1",
+    name: "Nimal Perera",
+    email: "nimal@example.lk",
+    phone: "0771234567",
+    role: "CUSTOMER",
+    status: "ACTIVE",
+    ...over,
+  }
+}
+
+export function adminCategory(
+  over: Partial<AdminCategory> = {}
+): AdminCategory {
+  return {
+    id: "c1",
+    name: "Pain relief",
+    description: null,
+    parentCategoryId: null,
+    parentCategoryName: null,
+    active: true,
+    ...over,
+  }
+}
+
+export function adminManufacturer(
+  over: Partial<AdminManufacturer> = {}
+): AdminManufacturer {
+  return {
+    id: "mf1",
+    name: "GSK",
+    licenseNumber: null,
+    country: "United Kingdom",
+    contactEmail: null,
+    phone: null,
+    active: true,
+    ...over,
+  }
 }

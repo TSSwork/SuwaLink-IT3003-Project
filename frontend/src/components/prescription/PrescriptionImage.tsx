@@ -11,7 +11,14 @@ import { translateError } from "@/lib/translateError"
  * (object-contain), pinch / wheel / drag to zoom, with buttons and +, -, 0
  * keys for the same.
  */
-export function PrescriptionImage({ imageUrl }: { imageUrl: string }) {
+export function PrescriptionImage({
+  imageUrl,
+  alt,
+}: {
+  imageUrl: string
+  /** Defaults to "Your prescription", the customer's view. */
+  alt?: string
+}) {
   const { t } = useTranslation()
   const image = usePrescriptionImage(imageUrl)
 
@@ -54,7 +61,7 @@ export function PrescriptionImage({ imageUrl }: { imageUrl: string }) {
             >
               <img
                 src={image.src}
-                alt={t("prescriptions.imageAlt")}
+                alt={alt ?? t("prescriptions.imageAlt")}
                 className="size-full object-contain"
               />
             </TransformComponent>

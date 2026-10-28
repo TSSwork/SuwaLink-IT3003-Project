@@ -19,6 +19,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     List<Inventory> findByPharmacyId(UUID pharmacyId);
 
+    boolean existsByPharmacyIdAndMedicineMasterId(UUID pharmacyId, UUID medicineMasterId);
+
     Optional<Inventory> findByIdAndPharmacyId(UUID id, UUID pharmacyId);
 
     /** Offers: available, in stock, unexpired, at a publicly visible pharmacy. Every filter is optional. */

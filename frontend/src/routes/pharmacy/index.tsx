@@ -1,22 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ConstructionIcon } from "lucide-react"
-import { useTranslation } from "react-i18next"
-import { EmptyState } from "@/components/feedback/EmptyState"
-import { requireRole } from "@/lib/guards"
+import { OverviewPage } from "@/features/pharmacy-owner/OverviewPage"
 
 export const Route = createFileRoute("/pharmacy/")({
-  beforeLoad: requireRole("PHARMACY_OWNER"),
-  component: ComingSoon,
+  component: OverviewPage,
 })
-
-// Content arrives in Phase 2C.
-function ComingSoon() {
-  const { t } = useTranslation()
-  return (
-    <EmptyState
-      icon={ConstructionIcon}
-      title={t("common.comingSoonTitle")}
-      description={t("common.comingSoonBody")}
-    />
-  )
-}

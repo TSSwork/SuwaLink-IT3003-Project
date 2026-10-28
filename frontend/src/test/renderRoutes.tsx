@@ -14,6 +14,8 @@ export interface TestRoute {
   path: string
   component?: () => React.ReactNode
   validateSearch?: (search: Record<string, unknown>) => object
+  /** A route guard, e.g. the real route file's `Route.options.beforeLoad`. */
+  beforeLoad?: (context: { location: { href: string } }) => void
 }
 
 /**
@@ -30,18 +32,20 @@ export function renderRoutes(routes: Array<TestRoute>, initialPath: string) {
       </QueryClientProvider>
     ),
   })
-  const children = routes.map(({ path, component, validateSearch }) =>
-    createRoute({
-      getParentRoute: () => root,
-      path,
-      validateSearch,
-      component: component ?? (() => <p>page:{path}</p>),
-    })
+  const children = routes.map(
+    ({ path, component, validateSearch, beforeLoad }) =>
+      createRoute({
+        getParentRoute: () => root,
+        path,
+        validateSearch,
+        beforeLoad,
+        component: component ?? (() => <p>page:{path}</p>),
+      })
   )
   const router = createRouter({
     routeTree: root.addChildren(children),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   })
   const view = render(<RouterProvider router={router} />)
-  return { ...view, router }
+  return { ...view, router, queryClient }
 }

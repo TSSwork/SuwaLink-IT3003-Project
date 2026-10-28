@@ -35,6 +35,14 @@ export function formatDateTime(iso: string, lang: Language): string {
   }).format(new Date(iso))
 }
 
+/** A LocalDate ("YYYY-MM-DD"), read as that calendar day, e.g. "31 Dec 2027". */
+export function formatDate(localDate: string, lang: Language): string {
+  const [year, month, day] = localDate.split("-").map(Number)
+  return new Intl.DateTimeFormat(locale(lang), { dateStyle: "medium" }).format(
+    new Date(year, month - 1, day)
+  )
+}
+
 const STEPS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
   ["day", 86_400],
   ["hour", 3_600],

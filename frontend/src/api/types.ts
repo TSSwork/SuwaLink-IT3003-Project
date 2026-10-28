@@ -284,7 +284,7 @@ export interface PublicPharmacy {
   items: Array<PublicPharmacyItem>
 }
 
-/** InventoryResponse, as nested in a bookmark. */
+/** InventoryResponse: GET /api/inventory item, also nested in a bookmark. */
 export interface InventoryItem {
   id: string
   unitPrice: number
@@ -362,4 +362,224 @@ export interface PrescriptionReply {
     unitPrice: number
   }>
   createdAt: string
+}
+
+/** CreatePrescriptionResponseRequest: the body of both POST and PUT …/responses(/mine). */
+export interface PrescriptionReplyRequest {
+  /** At most 1000 characters; blank is stored as none. */
+  message: string
+  /** At least one; quantity >= 1. Priced by the server from the inventory item. */
+  items: Array<{ inventoryItemId: string; quantity: number }>
+}
+
+export type PharmacyStatus = "PENDING" | "VERIFIED" | "REJECTED" | "DEACTIVATED"
+
+/** GET /api/pharmacies/me (PharmacyProfileResponse): the signed-in owner's pharmacy. */
+export interface PharmacyProfile {
+  id: string
+  name: string
+  /** Null until the owner adds one (registration has no pharmacy phone). */
+  phone: string | null
+  address: string
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+  licenceNo: string
+  status: PharmacyStatus
+  ownerName: string
+  ownerEmail: string
+}
+
+/** PUT /api/pharmacies/me body (UpdatePharmacyProfileRequest): replaces every field. */
+export interface UpdatePharmacyProfileRequest {
+  name: string
+  phone: string
+  address: string
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+}
+
+/** UnitOfMeasure: how a medicine is counted. */
+export const UNITS_OF_MEASURE = [
+  "TABLET",
+  "CAPSULE",
+  "ML",
+  "MG",
+  "G",
+  "BOTTLE",
+  "STRIP",
+  "VIAL",
+  "TUBE",
+] as const
+export type UnitOfMeasure = (typeof UNITS_OF_MEASURE)[number]
+
+/** Every PrescriptionStatus value, in the order the suggestion form offers them. */
+export const LEGAL_CATEGORIES = [
+  "OTC",
+  "PRESCRIPTION",
+  "CONTROLLED",
+  "SCHEDULE_III",
+] as const satisfies ReadonlyArray<LegalCategory>
+
+export type MedicineStatus = "APPROVED" | "PENDING" | "REJECTED"
+
+/**
+ * MedicineMasterResponse: an entry in the medicine catalogue. GET /api/medicines
+ * returns the APPROVED ones; GET /api/medicines/suggestions/mine the owner's own
+ * suggestions in any status, newest first.
+ */
+export interface CatalogMedicine {
+  id: string
+  brandName: string
+  genericName: string
+  dosageForm: string
+  strength: string
+  unitOfMeasure: UnitOfMeasure
+  description: string | null
+  legalCategory: LegalCategory
+  imageUrl: string | null
+  therapeuticCategoryId: string
+  therapeuticCategoryName: string
+  manufacturerId: string
+  manufacturerName: string
+  status: MedicineStatus
+  /** Set when an admin rejected the suggestion. */
+  rejectionReason: string | null
+  suggestedByPharmacyName: string | null
+}
+
+/**
+ * POST /api/medicines/suggestions and POST / PUT /api/admin/medicines body
+ * (MedicineMasterRequest). The forms don't offer `imageUrl`; an admin edit
+ * sends the medicine's current one back, since PUT replaces it.
+ */
+export interface MedicineMasterRequest {
+  brandName: string
+  genericName: string
+  dosageForm: string
+  strength: string
+  unitOfMeasure: UnitOfMeasure
+  description: string | null
+  therapeuticCategoryId: string
+  manufacturerId: string
+  legalCategory: LegalCategory
+  imageUrl?: string | null
+}
+
+/** GET /api/manufacturers (public): active manufacturers, sorted by name. */
+export interface ManufacturerOption {
+  id: string
+  name: string
+}
+
+/** POST /api/inventory body (CreateInventoryRequest; imageId not offered). */
+export interface CreateInventoryRequest {
+  medicineMasterId: string
+  unitPrice: number
+  stockQuantity: number
+  /** LocalDate, strictly after today. */
+  expireDate: string
+}
+
+/** PUT /api/inventory/{id} body (UpdateInventoryRequest). */
+export type UpdateInventoryRequest = Omit<
+  CreateInventoryRequest,
+  "medicineMasterId"
+>
+
+/** GET /api/admin/dashboard (DashboardResponse). */
+export interface AdminDashboard {
+  totalCustomers: number
+  totalPharmacies: number
+  verifiedPharmacies: number
+  pendingPharmacies: number
+  rejectedPharmacies: number
+}
+
+/** GET /api/admin/pharmacies item (PharmacyResponse): every pharmacy, any status. */
+export interface AdminPharmacy {
+  id: string
+  pharmacyName: string
+  /** The owner's sign-in email. */
+  email: string
+  licenceNo: string
+  address: string
+  status: PharmacyStatus
+  /** Null until the owner adds one (registration has no pharmacy phone). */
+  phone: string | null
+  district: District
+  city: string
+  latitude: number
+  longitude: number
+  openingHours: string | null
+  /** Seeded demo data, hidden from the public while demo mode is off. */
+  demo: boolean
+}
+
+/** com.suwalink.entity.AccountStatus; DELETED accounts are anonymised and only listed with `status=DELETED`. */
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "DELETED"
+
+/** GET /api/admin/users item (UserResponse). */
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: Role
+  status: AccountStatus
+}
+
+/** GET / PUT /api/admin/settings (AppSettingsResponse, the same shape as the public one). */
+export type AdminSettings = PublicSettings
+
+/** PUT /api/admin/settings body (UpdateAppSettingsRequest). */
+export interface UpdateAppSettingsRequest {
+  demoModePublic: boolean
+}
+
+/** GET /api/admin/categories item (CategoryResponse): every category, active or not. */
+export interface AdminCategory {
+  id: string
+  name: string
+  description: string | null
+  parentCategoryId: string | null
+  parentCategoryName: string | null
+  active: boolean
+}
+
+/** POST / PUT /api/admin/categories body (CategoryRequest). */
+export interface CategoryRequest {
+  name: string
+  description: string | null
+  parentCategoryId: string | null
+}
+
+/** GET /api/admin/manufacturers item (ManufacturerResponse): every manufacturer, active or not. */
+export interface AdminManufacturer {
+  id: string
+  name: string
+  licenseNumber: string | null
+  country: string
+  contactEmail: string | null
+  phone: string | null
+  active: boolean
+}
+
+/** POST / PUT /api/admin/manufacturers body (ManufacturerRequest). */
+export interface ManufacturerRequest {
+  name: string
+  licenseNumber: string | null
+  country: string
+  contactEmail: string | null
+  phone: string | null
+}
+
+/** PUT /api/admin/medicines/suggestions/{id}/reject body (RejectMedicineRequest): 1–500 characters. */
+export interface RejectMedicineRequest {
+  reason: string
 }

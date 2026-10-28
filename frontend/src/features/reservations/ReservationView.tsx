@@ -1,6 +1,7 @@
 import { useId, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import {
+  ArrowLeftIcon,
   ClockIcon,
   ExternalLinkIcon,
   FileTextIcon,
@@ -55,11 +56,42 @@ export function ReservationQueryView({
   }
 }) {
   const { t } = useTranslation()
+  const isOwner = useSessionStore(
+    (state) => state.user?.role === "PHARMACY_OWNER"
+  )
   if (query.isPending) {
     return <LoadingState label={t("reservations.loading")} rows={5} />
   }
   if (query.isError || !query.data) {
-    return isNotFound(query.error) ? (
+    if (!isNotFound(query.error)) {
+      return (
+        <ErrorState
+          title={t("reservations.detailError")}
+          description={translateError(t, query.error as Error)}
+          onRetry={() => void query.refetch()}
+        />
+      )
+    }
+    // A pharmacy at the counter: an unknown code, or another pharmacy's.
+    return isOwner ? (
+      <EmptyState
+        icon={SearchXIcon}
+        title={t("reservations.notFoundPharmacy")}
+        description={t("reservations.notFoundPharmacyBody")}
+        action={
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button asChild>
+              <Link to="/pharmacy/scan">{t("reservations.scanAnother")}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/pharmacy/reservations">
+                {t("reservations.pharmacyList")}
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+    ) : (
       <EmptyState
         icon={SearchXIcon}
         title={t("reservations.notFound")}
@@ -69,12 +101,6 @@ export function ReservationQueryView({
             <Link to="/reservations">{t("home.seeAll")}</Link>
           </Button>
         }
-      />
-    ) : (
-      <ErrorState
-        title={t("reservations.detailError")}
-        description={translateError(t, query.error as Error)}
-        onRetry={() => void query.refetch()}
       />
     )
   }
@@ -93,6 +119,14 @@ export function ReservationView({ reservation }: { reservation: Reservation }) {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      {(isOwner || role === "CUSTOMER") && (
+        <Button asChild variant="ghost" className="-ml-3 self-start">
+          <Link to={isOwner ? "/pharmacy/reservations" : "/reservations"}>
+            <ArrowLeftIcon data-icon="inline-start" aria-hidden />
+            {t("reservations.back")}
+          </Link>
+        </Button>
+      )}
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">

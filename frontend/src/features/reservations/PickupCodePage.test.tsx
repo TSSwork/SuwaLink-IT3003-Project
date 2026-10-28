@@ -21,6 +21,8 @@ function renderCode(code: string) {
       { path: "/r/$code", component: PickupCodePage },
       { path: "/pharmacies/$id" },
       { path: "/reservations" },
+      { path: "/pharmacy/scan" },
+      { path: "/pharmacy/reservations" },
     ],
     `/r/${code}`
   )
@@ -48,9 +50,30 @@ describe("PickupCodePage", () => {
     ).toBeVisible()
   })
 
-  it("says not found for an unknown or someone else's code", async () => {
+  it("tells the pharmacy an unknown or foreign code isn't theirs, with a way on", async () => {
+    renderCode("NOPE")
+    expect(
+      await screen.findByText("This code isn't one of your reservations")
+    ).toBeVisible()
+    expect(
+      screen.getByRole("link", { name: "Scan another code" })
+    ).toHaveAttribute("href", "/pharmacy/scan")
+    expect(
+      screen.getByRole("link", { name: "See your reservations" })
+    ).toHaveAttribute("href", "/pharmacy/reservations")
+    expect(screen.queryByText("Reservation not found")).toBeNull()
+  })
+
+  it("tells a customer the reservation was not found and links to theirs", async () => {
+    useSessionStore
+      .getState()
+      .setSession("t", { id: "u1", name: "Nimal", role: "CUSTOMER" })
     renderCode("NOPE")
     expect(await screen.findByText("Reservation not found")).toBeVisible()
+    expect(
+      screen.getByRole("link", { name: "See all reservations" })
+    ).toHaveAttribute("href", "/reservations")
+    expect(screen.queryByRole("link", { name: "Scan another code" })).toBeNull()
   })
 
   it("sends signed-out visitors to sign in and back", () => {

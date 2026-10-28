@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 /** At or below this, the exact count is shown so customers hurry or look elsewhere. */
 export const LOW_STOCK = 5
 
-/** "In stock", or "Only N left" when stock is low; a dot marks it beyond colour. */
+/** "In stock", "Only N left" when stock is low, or "Out of stock"; a dot marks it beyond colour. */
 export function StockIndicator({
   stock,
   className,
@@ -28,7 +28,11 @@ export function StockIndicator({
           low ? "bg-highlight" : "bg-primary"
         )}
       />
-      {low ? t("medicine.onlyLeft", { count: stock }) : t("medicine.inStock")}
+      {stock <= 0
+        ? t("medicine.outOfStock")
+        : low
+          ? t("medicine.onlyLeft", { count: stock })
+          : t("medicine.inStock")}
     </span>
   )
 }
