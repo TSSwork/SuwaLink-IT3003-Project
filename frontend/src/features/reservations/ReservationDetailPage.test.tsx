@@ -228,4 +228,19 @@ describe("ReservationDetailPage", () => {
     )
     expect(await screen.findByText("Reservation not found")).toBeVisible()
   })
+
+  it("links the customer back to their reservations", async () => {
+    await renderDetail()
+    expect(
+      screen.getByRole("link", { name: "Back to reservations" })
+    ).toHaveAttribute("href", "/reservations")
+  })
+
+  it("links the pharmacy owner back to the pharmacy's reservations", async () => {
+    signIn("PHARMACY_OWNER")
+    await renderDetail()
+    expect(
+      screen.getByRole("link", { name: "Back to reservations" })
+    ).toHaveAttribute("href", "/pharmacy/reservations")
+  })
 })
