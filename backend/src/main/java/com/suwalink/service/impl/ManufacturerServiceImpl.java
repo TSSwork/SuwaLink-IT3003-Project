@@ -43,6 +43,12 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ManufacturerResponse> listActive() {
+        return manufacturerRepository.findByIsActiveTrueOrderByNameAsc().stream().map(this::toResponse).toList();
+    }
+
+    @Override
     public ManufacturerResponse get(UUID id) {
         return toResponse(findOrThrow(id));
     }

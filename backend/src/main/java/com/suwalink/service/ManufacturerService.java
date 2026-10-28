@@ -11,6 +11,8 @@ public interface ManufacturerService {
 
     List<ManufacturerResponse> list();
 
+    List<ManufacturerResponse> listActive();
+
     ManufacturerResponse get(UUID id);
 
     ManufacturerResponse update(UUID id, ManufacturerRequest request);

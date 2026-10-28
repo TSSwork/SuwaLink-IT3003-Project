@@ -28,22 +28,15 @@ import { ErrorState } from "@/components/feedback/ErrorState"
 import { LoadingState } from "@/components/feedback/LoadingState"
 import { HoldCountdown } from "@/components/reservation/HoldCountdown"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  isLowStock,
+  needsExpiryAttention,
+} from "@/features/pharmacy-owner/stock"
 import { formatRelative } from "@/lib/format"
 import { translateError } from "@/lib/translateError"
 import { useLanguageStore } from "@/stores/languageStore"
 
-/** Matches StockIndicator's "Only N left". */
-const LOW_STOCK_MAX = 5
-const EXPIRY_WARNING_DAYS = 30
 const LIST_SIZE = 5
-
-/** A LocalDate ("YYYY-MM-DD") `days` from today, in local time. */
-function localDate(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() + days)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
 
 /** Requests this pharmacy has not replied to yet, oldest first (longest waiting). */
 function waitingRequests(
@@ -64,11 +57,9 @@ function pickups(reservations: Array<Reservation>): Array<Reservation> {
 }
 
 function stockCounts(items: Array<InventoryItem>) {
-  // Already expired items count too: they need the same attention.
-  const limit = localDate(EXPIRY_WARNING_DAYS)
   return {
-    low: items.filter((item) => item.stockQuantity <= LOW_STOCK_MAX).length,
-    expiring: items.filter((item) => item.expireDate <= limit).length,
+    low: items.filter(isLowStock).length,
+    expiring: items.filter(needsExpiryAttention).length,
   }
 }
 

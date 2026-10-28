@@ -1,5 +1,6 @@
 import type {
   Bookmark,
+  CatalogMedicine,
   InventoryItem,
   MedicineDetail,
   MedicineSearchResult,
@@ -304,4 +305,29 @@ export function localDate(days: number): string {
   d.setDate(d.getDate() + days)
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** A catalogue medicine (MedicineMasterResponse), APPROVED unless overridden. */
+export function catalogMedicine(
+  over: Partial<CatalogMedicine> = {}
+): CatalogMedicine {
+  return {
+    id: "m1",
+    brandName: "Panadol",
+    genericName: "Paracetamol",
+    dosageForm: "Tablet",
+    strength: "500 mg",
+    unitOfMeasure: "TABLET",
+    description: null,
+    legalCategory: "OTC",
+    imageUrl: null,
+    therapeuticCategoryId: "c1",
+    therapeuticCategoryName: "Pain relief",
+    manufacturerId: "mf1",
+    manufacturerName: "GSK",
+    status: "APPROVED",
+    rejectionReason: null,
+    suggestedByPharmacyName: null,
+    ...over,
+  }
 }

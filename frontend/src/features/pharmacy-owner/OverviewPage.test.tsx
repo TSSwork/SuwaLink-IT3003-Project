@@ -100,7 +100,7 @@ describe("OverviewPage", () => {
     await waitFor(() =>
       expect(stat(/Items low on stock/)).toHaveTextContent("2")
     )
-    expect(stat(/Items expiring within 30 days/)).toHaveTextContent("2")
+    expect(stat(/Expired or expiring within 30 days/)).toHaveTextContent("2")
   })
 
   it("links each count to its page", async () => {
@@ -120,7 +120,7 @@ describe("OverviewPage", () => {
       "href",
       "/pharmacy/inventory"
     )
-    expect(stat(/Items expiring within 30 days/)).toHaveAttribute(
+    expect(stat(/Expired or expiring within 30 days/)).toHaveAttribute(
       "href",
       "/pharmacy/inventory"
     )

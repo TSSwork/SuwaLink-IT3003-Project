@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  formatDate,
   formatDateTime,
   formatDistance,
   formatPrice,
@@ -64,5 +65,14 @@ describe("formatDateTime and formatRelative", () => {
     expect(formatRelative("2026-10-21T14:00:00Z", "en", now)).toBe("in 2 hours")
     expect(formatRelative("2026-10-19T12:00:00Z", "en", now)).toBe("2 days ago")
     expect(formatRelative("2026-10-21T12:00:10Z", "en", now)).toBe("now")
+  })
+})
+
+describe("formatDate", () => {
+  it("shows a LocalDate as that calendar day, without a time", () => {
+    const text = formatDate("2027-01-01", "en")
+    expect(text).toContain("2027")
+    expect(text).toMatch(/Jan/)
+    expect(text).not.toMatch(/\d{1,2}:\d{2}/)
   })
 })

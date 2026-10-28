@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ComingSoonPage } from "@/features/pharmacy-owner/ComingSoonPage"
+import { InventoryPage } from "@/features/pharmacy-owner/InventoryPage"
 
-// Placeholder so links are typed; replaced by its Phase 2C task.
 export const Route = createFileRoute("/pharmacy/inventory")({
-  component: ComingSoonPage,
+  component: InventoryPage,
 })

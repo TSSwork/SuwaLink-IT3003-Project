@@ -284,7 +284,7 @@ export interface PublicPharmacy {
   items: Array<PublicPharmacyItem>
 }
 
-/** InventoryResponse, as nested in a bookmark. */
+/** InventoryResponse: GET /api/inventory item, also nested in a bookmark. */
 export interface InventoryItem {
   id: string
   unitPrice: number
@@ -395,3 +395,85 @@ export interface UpdatePharmacyProfileRequest {
   longitude: number
   openingHours: string | null
 }
+
+/** UnitOfMeasure: how a medicine is counted. */
+export const UNITS_OF_MEASURE = [
+  "TABLET",
+  "CAPSULE",
+  "ML",
+  "MG",
+  "G",
+  "BOTTLE",
+  "STRIP",
+  "VIAL",
+  "TUBE",
+] as const
+export type UnitOfMeasure = (typeof UNITS_OF_MEASURE)[number]
+
+/** Legal categories a pharmacy may suggest (the backend also has SCHEDULE_III). */
+export const SUGGESTABLE_LEGAL_CATEGORIES = [
+  "OTC",
+  "PRESCRIPTION",
+  "CONTROLLED",
+] as const
+
+export type MedicineStatus = "APPROVED" | "PENDING" | "REJECTED"
+
+/**
+ * MedicineMasterResponse: an entry in the medicine catalogue. GET /api/medicines
+ * returns the APPROVED ones; GET /api/medicines/suggestions/mine the owner's own
+ * suggestions in any status, newest first.
+ */
+export interface CatalogMedicine {
+  id: string
+  brandName: string
+  genericName: string
+  dosageForm: string
+  strength: string
+  unitOfMeasure: UnitOfMeasure
+  description: string | null
+  legalCategory: LegalCategory
+  imageUrl: string | null
+  therapeuticCategoryId: string
+  therapeuticCategoryName: string
+  manufacturerId: string
+  manufacturerName: string
+  status: MedicineStatus
+  /** Set when an admin rejected the suggestion. */
+  rejectionReason: string | null
+  suggestedByPharmacyName: string | null
+}
+
+/** POST /api/medicines/suggestions body (MedicineMasterRequest; imageUrl not offered). */
+export interface MedicineMasterRequest {
+  brandName: string
+  genericName: string
+  dosageForm: string
+  strength: string
+  unitOfMeasure: UnitOfMeasure
+  description: string | null
+  therapeuticCategoryId: string
+  manufacturerId: string
+  legalCategory: (typeof SUGGESTABLE_LEGAL_CATEGORIES)[number]
+}
+
+/** GET /api/manufacturers (public): active manufacturers, sorted by name. */
+export interface ManufacturerOption {
+  id: string
+  name: string
+}
+
+/** POST /api/inventory body (CreateInventoryRequest; imageId not offered). */
+export interface CreateInventoryRequest {
+  medicineMasterId: string
+  unitPrice: number
+  stockQuantity: number
+  /** LocalDate, strictly after today. */
+  expireDate: string
+}
+
+/** PUT /api/inventory/{id} body (UpdateInventoryRequest). */
+export type UpdateInventoryRequest = Omit<
+  CreateInventoryRequest,
+  "medicineMasterId"
+>
