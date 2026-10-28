@@ -25,6 +25,7 @@ import {
   useApprovedMedicines,
   useDeleteInventory,
   useMyInventory,
+  useRefreshApprovedMedicinesOnMount,
   useSetAvailability,
   useUpdateInventory,
 } from "@/api/pharmacyOwner"
@@ -103,6 +104,7 @@ function displayName(medicine: { brandName: string; strength: string }) {
 export function InventoryPage() {
   const { t, i18n } = useTranslation()
   const inventory = useMyInventory()
+  useRefreshApprovedMedicinesOnMount()
   const [filter, setFilter] = useState<Filter>("all")
   const [query, setQuery] = useState("")
   const [adding, setAdding] = useState(false)
@@ -284,10 +286,15 @@ function InventoryRow({
 }) {
   const { t } = useTranslation()
   const language = useLanguageStore((state) => state.language)
-  const availability = useSetAvailability(item.id)
-  const remove = useDeleteInventory(item.id)
-  const headingId = useId()
   const name = displayName(item.medicine)
+  const availability = useSetAvailability(item.id)
+  const remove = useDeleteInventory(item.id, {
+    onSuccess: () =>
+      toast.success(
+        t("pharmacyOwner.inventory.deleted", { name, ...unescaped })
+      ),
+  })
+  const headingId = useId()
 
   const toggle = (available: boolean) =>
     availability.mutate(available, {
@@ -299,10 +306,6 @@ function InventoryRow({
 
   const confirmDelete = () =>
     remove.mutate(undefined, {
-      onSuccess: () =>
-        toast.success(
-          t("pharmacyOwner.inventory.deleted", { name, ...unescaped })
-        ),
       onError: (error) =>
         toast.error(t("pharmacyOwner.inventory.deleteFailed"), {
           description: translateError(t, error),

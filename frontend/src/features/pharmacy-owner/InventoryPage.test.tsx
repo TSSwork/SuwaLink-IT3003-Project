@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { toast } from "sonner"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { InventoryItem } from "@/api/types"
 import { InventoryPage } from "@/features/pharmacy-owner/InventoryPage"
@@ -153,6 +154,7 @@ beforeEach(() => {
     .getState()
     .setSession("t", { id: "o1", name: "Kamal", role: "PHARMACY_OWNER" })
   items = [panadol, amoxil, zyrtec, ventolin, oldSyrup]
+  vi.mocked(toast.success).mockClear()
   api = mockApi(handlers())
 })
 afterEach(() => api.restore())
@@ -310,6 +312,65 @@ describe("InventoryPage", { timeout: 15_000 }, () => {
       ])
     )
     await waitFor(() => expect(shownBrands()).toHaveLength(4))
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Amoxil 250 mg deleted.")
+    )
+  })
+
+  it("confirms a delete even when the row is gone before it answers", async () => {
+    let answer = () => {}
+    api.restore()
+    api = mockApi(
+      handlers({
+        "/inventory/inv2": () =>
+          new Promise<null>((resolve) => {
+            answer = () => resolve(null)
+          }),
+      })
+    )
+    const { queryClient } = renderInventory()
+    await screen.findByRole("list", { name: "Your stock" })
+    await user.click(
+      within(row("Amoxil")).getByRole("button", { name: "Delete" })
+    )
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Delete",
+      })
+    )
+    await waitFor(() => expect(api.callsTo("/inventory/inv2")).toHaveLength(1))
+    // Another refresh (e.g. a second tab's change) drops the row first.
+    items = items.filter((item) => item.id !== "inv2")
+    await queryClient.invalidateQueries()
+    await waitFor(() => expect(shownBrands()).toHaveLength(4))
+    answer()
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Amoxil 250 mg deleted.")
+    )
+  })
+
+  it("refetches the catalogue each time the inventory page opens", async () => {
+    const { router } = renderRoutes(
+      [
+        { path: "/pharmacy/inventory", component: InventoryPage },
+        { path: "/pharmacy" },
+        { path: "/pharmacy/suggest-medicine" },
+      ],
+      "/pharmacy/inventory"
+    )
+    await screen.findByRole("list", { name: "Your stock" })
+    await user.click(screen.getByRole("button", { name: "Add item" }))
+    await screen.findByRole("dialog", { name: "Add a medicine to your stock" })
+    await waitFor(() => expect(api.callsTo("/medicines")).toHaveLength(1))
+    await user.keyboard("{Escape}")
+
+    // A suggestion approved meanwhile must be pickable when the owner comes back.
+    await router.navigate({ to: "/pharmacy" })
+    await router.navigate({ to: "/pharmacy/inventory" })
+    await screen.findByRole("list", { name: "Your stock" })
+    await user.click(screen.getByRole("button", { name: "Add item" }))
+    await screen.findByRole("dialog", { name: "Add a medicine to your stock" })
+    await waitFor(() => expect(api.callsTo("/medicines")).toHaveLength(2))
   })
 
   it("checks an edit like the backend does before sending it", async () => {

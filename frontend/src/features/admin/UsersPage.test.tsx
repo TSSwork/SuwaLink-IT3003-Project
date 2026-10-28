@@ -234,6 +234,64 @@ describe("admin UsersPage", () => {
     await waitFor(async () =>
       expect(names(await list())).toEqual(["Kamal Silva", "Site Admin"])
     )
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Nimal Perera's account has been deleted."
+      )
+    )
+  })
+
+  /** Holds the server's answer until `answer()`, while another refresh drops the row. */
+  async function actWhileRowDisappears(
+    url: string,
+    action: "Suspend" | "Delete",
+    status: AdminUser["status"]
+  ) {
+    let answer = () => {}
+    api.restore()
+    api = mockApi({
+      "/admin/users": search,
+      [url]: () =>
+        new Promise<void>((resolve) => {
+          answer = () => resolve()
+        }),
+    })
+    const { queryClient } = renderAt("/admin/users?status=ACTIVE")
+    await userEvent.click(
+      within(await row("Nimal Perera")).getByRole("button", { name: action })
+    )
+    await userEvent.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: action,
+      })
+    )
+    await waitFor(() => expect(api.callsTo(url)).toHaveLength(1))
+    setStatus("u1", status)
+    await queryClient.invalidateQueries()
+    await waitFor(async () =>
+      expect(names(await list())).toEqual(["Site Admin"])
+    )
+    answer()
+  }
+
+  it("confirms a suspension even when the row is gone before it answers", async () => {
+    await actWhileRowDisappears(
+      "/admin/users/u1/suspend",
+      "Suspend",
+      "SUSPENDED"
+    )
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Nimal Perera suspended.")
+    )
+  })
+
+  it("confirms a deletion even when the row is gone before it answers", async () => {
+    await actWhileRowDisappears("/admin/users/u1", "Delete", "DELETED")
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Nimal Perera's account has been deleted."
+      )
+    )
   })
 
   it("offers no actions on admin accounts", async () => {

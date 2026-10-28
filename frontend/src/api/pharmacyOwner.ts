@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
 import type {
@@ -154,14 +155,27 @@ export function useMyInventory() {
   })
 }
 
+interface InventoryMutationOptions {
+  /**
+   * Runs on success before the refetch. Put success toasts here, not in a
+   * `mutate(…, { onSuccess })` callback: that one is dropped when the row
+   * that started it unmounts first (e.g. the refetch removed it).
+   */
+  onSuccess?: () => void
+}
+
 /** Every stock change refetches the list, which the overview counts come from. */
 function useInventoryMutation<TBody, TResult>(
-  mutationFn: (body: TBody) => Promise<TResult>
+  mutationFn: (body: TBody) => Promise<TResult>,
+  { onSuccess }: InventoryMutationOptions = {}
 ) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: inventoryKey }),
+    onSuccess: () => {
+      onSuccess?.()
+      return queryClient.invalidateQueries({ queryKey: inventoryKey })
+    },
   })
 }
 
@@ -193,20 +207,24 @@ export function useSetAvailability(id: string) {
   )
 }
 
-export function useDeleteInventory(id: string) {
+export function useDeleteInventory(
+  id: string,
+  options: InventoryMutationOptions = {}
+) {
   return useInventoryMutation(async () => {
     await api.delete(`/inventory/${id}`)
-  })
+  }, options)
 }
+
+const approvedMedicinesKey = [...pharmacyOwnerKey, "catalog"] as const
 
 /** The APPROVED catalogue, the only medicines a pharmacy can stock. */
 export function useApprovedMedicines() {
   return useQuery({
-    queryKey: [...pharmacyOwnerKey, "catalog"],
+    queryKey: approvedMedicinesKey,
     queryFn: async () =>
       (await api.get<ApiResponse<Array<CatalogMedicine>>>("/medicines")).data
         .data,
-    staleTime: 5 * 60_000,
   })
 }
 
@@ -238,4 +256,15 @@ export function useSuggestMedicine() {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: suggestionsKey }),
   })
+}
+
+/**
+ * Marks the catalogue stale when the inventory page opens, so a suggestion
+ * approved since it was last read can be stocked right away.
+ */
+export function useRefreshApprovedMedicinesOnMount() {
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: approvedMedicinesKey })
+  }, [queryClient])
 }

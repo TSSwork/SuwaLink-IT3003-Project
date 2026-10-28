@@ -179,11 +179,19 @@ function actionError(t: TFunction, error: TranslatableError) {
 
 function UserRow({ user }: { user: AdminUser }) {
   const { t } = useTranslation()
-  const suspend = useSuspendUser()
-  const reactivate = useReactivateUser()
-  const remove = useDeleteUser()
-  const busy = suspend.isPending || reactivate.isPending || remove.isPending
   const name = { name: user.name, interpolation: { escapeValue: false } }
+  // Hook-level toasts: the refetch can remove this row (a status filter, a
+  // deletion) before a per-call callback would run.
+  const suspend = useSuspendUser({
+    onSuccess: () => toast.success(t("admin.users.suspended", name)),
+  })
+  const reactivate = useReactivateUser({
+    onSuccess: () => toast.success(t("admin.users.reactivated", name)),
+  })
+  const remove = useDeleteUser({
+    onSuccess: () => toast.success(t("admin.users.deleted", name)),
+  })
+  const busy = suspend.isPending || reactivate.isPending || remove.isPending
   const onError = (error: Error) => toast.error(actionError(t, error))
   // The backend refuses both for admins; they are not offered.
   const manageable = user.role !== "ADMIN"
@@ -218,13 +226,7 @@ function UserRow({ user }: { user: AdminUser }) {
             <Button
               variant="outline"
               disabled={busy}
-              onClick={() =>
-                reactivate.mutate(user.id, {
-                  onSuccess: () =>
-                    toast.success(t("admin.users.reactivated", name)),
-                  onError,
-                })
-              }
+              onClick={() => reactivate.mutate(user.id, { onError })}
             >
               {t("admin.users.reactivate")}
             </Button>
@@ -235,13 +237,7 @@ function UserRow({ user }: { user: AdminUser }) {
               description={t(`admin.users.suspendBody.${roleKey}`)}
               destructive
               disabled={busy}
-              onConfirm={() =>
-                suspend.mutate(user.id, {
-                  onSuccess: () =>
-                    toast.success(t("admin.users.suspended", name)),
-                  onError,
-                })
-              }
+              onConfirm={() => suspend.mutate(user.id, { onError })}
             />
           )}
           <ConfirmButton
@@ -251,12 +247,7 @@ function UserRow({ user }: { user: AdminUser }) {
             variant="ghost"
             destructive
             disabled={busy}
-            onConfirm={() =>
-              remove.mutate(user.id, {
-                onSuccess: () => toast.success(t("admin.users.deleted", name)),
-                onError,
-              })
-            }
+            onConfirm={() => remove.mutate(user.id, { onError })}
           />
         </div>
       ) : (

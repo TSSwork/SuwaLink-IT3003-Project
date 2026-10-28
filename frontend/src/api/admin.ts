@@ -166,20 +166,29 @@ export function useAdminUsers({
   })
 }
 
+type UserActionOptions = Pick<AdminMutationOptions<string>, "onSuccess">
+
 // Suspending or deleting changes the list and the dashboard's customer count.
-export function useSuspendUser() {
-  return useAdminMutation((id: string) => api.put(`/admin/users/${id}/suspend`))
+export function useSuspendUser(options: UserActionOptions = {}) {
+  return useAdminMutation(
+    (id: string) => api.put(`/admin/users/${id}/suspend`),
+    options
+  )
 }
 
-export function useReactivateUser() {
-  return useAdminMutation((id: string) =>
-    api.put(`/admin/users/${id}/reactivate`)
+export function useReactivateUser(options: UserActionOptions = {}) {
+  return useAdminMutation(
+    (id: string) => api.put(`/admin/users/${id}/reactivate`),
+    options
   )
 }
 
 /** Anonymises the account; it cannot be restored. */
-export function useDeleteUser() {
-  return useAdminMutation((id: string) => api.delete(`/admin/users/${id}`))
+export function useDeleteUser(options: UserActionOptions = {}) {
+  return useAdminMutation(
+    (id: string) => api.delete(`/admin/users/${id}`),
+    options
+  )
 }
 
 /** What each catalog list holds and what its add and edit forms send. */
