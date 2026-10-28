@@ -10,7 +10,7 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-project_containers="$(docker compose ps -q 2>/dev/null || true)"
+project_containers="$(docker compose -f docker-compose.dev.yml ps -q 2>/dev/null || true)"
 
 docker ps -q | while read -r id; do
   if ! grep -qx "$id" <<< "$project_containers"; then
@@ -21,5 +21,5 @@ docker ps -q | while read -r id; do
 done
 
 echo "Starting SuwaLink MySQL..."
-docker compose up -d
-docker compose ps
+docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml ps

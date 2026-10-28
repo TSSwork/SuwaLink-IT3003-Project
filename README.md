@@ -18,7 +18,7 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 ```bash
 # 1. Database
-docker compose up -d                     # MySQL on localhost:3308, Mailpit on localhost:8025
+docker compose -f docker-compose.dev.yml up -d                     # MySQL on localhost:3308, Mailpit on localhost:8025
 
 # 2. Backend (needs JDK 25; the dev profile is the default, no extra config needed)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
@@ -28,7 +28,7 @@ cd frontend && npm install && npm run dev   # http://localhost:3000
 ```
 
 > **Migrations were squashed into a single baseline.** If your local database was created before that change, reset
-> it once after pulling: `docker compose down -v && docker compose up -d` (this wipes local dev data).
+> it once after pulling: `docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d` (this wipes local dev data).
 
 Open `http://localhost:8080/swagger-ui/index.html` to
 call every endpoint directly and inspect real request/response shapes.

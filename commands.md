@@ -5,15 +5,15 @@ Reference for every day-to-day command needed to run and debug this project (DB,
 ## Database (MySQL via Docker)
 
 ```bash
-docker compose up -d          # start MySQL + Mailpit (MySQL port 3308, db suwalink_db, user/pass suwalink_user/suwalink_password)
+docker compose -f docker-compose.dev.yml up -d          # start MySQL + Mailpit (MySQL port 3308, db suwalink_db, user/pass suwalink_user/suwalink_password)
 ./scripts/dev-up.sh           # same, but first stops other Docker containers hogging ports (e.g. 8080)
-docker compose ps             # check container status
-docker compose down -v        # wipe DB volume — REQUIRED after changing creds in docker-compose.yml
+docker compose -f docker-compose.dev.yml ps             # check container status
+docker compose -f docker-compose.dev.yml down -v        # wipe DB volume — REQUIRED after changing creds in docker-compose.dev.yml
                                # (the MySQL image only applies MYSQL_USER/DATABASE on first init of an empty volume)
 ```
 
 After pulling the Liquibase squash (migrations collapsed into one baseline), reset your local DB once:
-`docker compose down -v && docker compose up -d`.
+`docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d`.
 
 ## Backend (Spring Boot, needs JDK 25)
 
@@ -82,5 +82,5 @@ curl http://localhost:8080/api/users/me -H "Authorization: Bearer <token>"
 ```bash
 docker ps                                              # confirm mysql container is up
 docker exec -it <mysql_container_name> mysql -u suwalink_user -psuwalink_password suwalink_db   # open MySQL client inside the container
-docker compose logs -f mysql                           # tail MySQL container logs
+docker compose -f docker-compose.dev.yml logs -f mysql                           # tail MySQL container logs
 ```

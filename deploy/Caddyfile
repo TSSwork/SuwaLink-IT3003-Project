@@ -23,6 +23,12 @@
 
 	import security_headers
 
+	# The backend's actuator is for the container healthcheck only. It is never proxied,
+	# and without this the SPA fallback would answer it with 200 HTML.
+	handle /actuator* {
+		error 404
+	}
+
 	handle /api/* {
 		# Backend multipart limit is 5 MB; leave room for the form overhead
 		request_body {
