@@ -2,10 +2,14 @@
 #   cp .env.example .env    # fill it in
 #   docker compose up -d --build
 # Caddy is the only public entry; db and backend publish no ports. Local development uses
-# docker-compose.dev.yml instead.
+# docker-compose.dev.yml instead (project "suwalink"), so the two never share containers
+# or volumes. Volumes are named <project>_<volume>, e.g. suwalink-prod_uploads.
 #
-# ENV_FILE (default .env) lets an isolated test run point the backend at another env file:
-#   docker compose --env-file .env.prodtest -p suwalink-prod-test up -d   (with ENV_FILE=.env.prodtest inside it)
+# Values come from .env through interpolation. Only the variables listed under each
+# service reach its container (the backend never sees MYSQL_ROOT_PASSWORD or BACKUP_*).
+# An isolated test run: docker compose --env-file .env.prodtest -p suwalink-prod-test up -d
+
+name: suwalink-prod
 
 x-defaults: &defaults
   restart: unless-stopped
@@ -38,13 +42,27 @@ services:
   backend:
     <<: *defaults
     build: ./backend
-    env_file: ${ENV_FILE:-.env}
+    # Exactly the variables application*.properties reads; required ones stop compose with a message
     environment:
       DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (openssl rand -base64 48)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ADMIN_NAME: ${ADMIN_NAME:-SuwaLink Admin}
+      MAIL_HOST: ${MAIL_HOST:?set MAIL_HOST in .env (mailpit for a local showcase)}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@suwalink.lk}
+      DEMO_MAIL_REDIRECT: ${DEMO_MAIL_REDIRECT:-}
+      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${SITE_ADDRESS:-http://localhost}}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-${SITE_ADDRESS:-http://localhost}}
+      # SPRING_PROFILES_ACTIVE=prod, TZ=Asia/Colombo and UPLOAD_DIR=/app/uploads come from the image
     volumes:
       - uploads:/app/uploads
     depends_on:

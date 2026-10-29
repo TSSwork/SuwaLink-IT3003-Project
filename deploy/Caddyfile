@@ -35,8 +35,16 @@
 			max_size 6MB
 		}
 		reverse_proxy backend:8080 {
-			# Replace (not append) so a client cannot inject addresses the backend trusts
+			# The backend (server.forward-headers-strategy=framework) trusts every forwarding
+			# header it gets, and reads RFC 7239 Forwarded before X-Forwarded-*. Caddy replaces
+			# X-Forwarded-For/-Proto/-Host with its own values, but passes any other header
+			# through as sent. Drop the rest, so a client cannot pick its own IP (login rate
+			# limit), port, scheme or path prefix.
 			header_up X-Forwarded-For {remote_host}
+			header_up -Forwarded
+			header_up -X-Forwarded-Port
+			header_up -X-Forwarded-Prefix
+			header_up -X-Forwarded-Ssl
 		}
 	}
 

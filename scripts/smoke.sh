@@ -6,7 +6,7 @@
 #
 # Uses curl only. Stops at the first failing check and exits non-zero.
 #
-# The last check spends the login rate limit of this machine's IP (10 failed logins per
+# The last checks spend the login rate limit of this machine's IP (10 failed logins per
 # 5 minutes). Running the script again within 5 minutes fails at the admin login with 429.
 set -euo pipefail
 
@@ -91,16 +91,25 @@ request GET /api/admin/dashboard -H "Authorization: Bearer $TOKEN"
 expect_status 200 "GET /api/admin/dashboard"
 pass "GET /api/admin/dashboard (authenticated) -> 200"
 
-# 8. A forged X-Forwarded-For must not reset the per-IP login limit. Each attempt uses a
-# new email, so only the IP bucket (10 failures) can stop the 11th.
-run_id="$(date +%s)-$$"
-for i in $(seq 1 11); do
-  request POST /api/auth/login -H 'Content-Type: application/json' \
-    -H "X-Forwarded-For: 203.0.113.$i" \
-    --data-binary "{\"email\":\"smoke-$run_id-$i@example.invalid\",\"password\":\"wrong-password\"}"
-  [[ "$STATUS" == "401" || "$STATUS" == "429" ]] || fail "failed login $i: expected 401 or 429, got $STATUS"
-done
-expect_status 429 "11th failed login with forged X-Forwarded-For"
-pass "11 failed logins with forged X-Forwarded-For -> 11th is 429"
+# 8–9. A forged client-IP header must not reset the per-IP login limit. Each attempt uses
+# a new email, so only the IP bucket (10 failures) can stop the 11th.
+#   spoofed_logins LABEL HEADER_PREFIX   (the attempt number is appended to the header)
+spoofed_logins() {
+  local label="$1" header="$2" run_id i
+  run_id="$(date +%s)-$$-$RANDOM"
+  for i in $(seq 1 11); do
+    request POST /api/auth/login -H 'Content-Type: application/json' \
+      -H "$header$i" \
+      --data-binary "{\"email\":\"smoke-$run_id-$i@example.invalid\",\"password\":\"wrong-password\"}"
+    [[ "$STATUS" == "401" || "$STATUS" == "429" ]] || fail "$label failed login $i: expected 401 or 429, got $STATUS"
+  done
+  expect_status 429 "11th failed login with forged $label"
+  pass "11 failed logins with forged $label -> 11th is 429"
+}
+
+# The X-Forwarded-For loop fills the IP bucket, so the Forwarded loop checks that a forged
+# RFC 7239 header cannot move this client into a fresh bucket.
+spoofed_logins X-Forwarded-For "X-Forwarded-For: 203.0.113."
+spoofed_logins Forwarded "Forwarded: for=203.0.113."
 
 echo "RESULT: all smoke checks passed"
