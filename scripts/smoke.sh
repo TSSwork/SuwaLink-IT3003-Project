@@ -6,6 +6,9 @@
 #
 # Uses curl only. Stops at the first failing check and exits non-zero.
 #
+# If docker is available and the env file exists (ENV_FILE, default .env next to
+# docker-compose.yml), it also checks that links in emails get an http(s) base URL.
+#
 # The last checks spend the login rate limit of this machine's IP (10 failed logins per
 # 5 minutes). Running the script again within 5 minutes fails at the admin login with 429.
 set -euo pipefail
@@ -47,6 +50,20 @@ json_string() {
   printf '"%s"' "$s"
 }
 
+# 0. Links in emails: FRONTEND_BASE_URL as compose resolves it (default SITE_ADDRESS)
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-$ROOT/.env}"
+if command -v docker >/dev/null 2>&1 && [[ -f "$ENV_FILE" ]]; then
+  LINK_BASE="$(docker compose -f "$ROOT/docker-compose.yml" --env-file "$ENV_FILE" config 2>/dev/null \
+    | sed -n -E "s/^[[:space:]]+FRONTEND_BASE_URL:[[:space:]]*['\"]?([^'\"]*)['\"]?[[:space:]]*$/\1/p" | head -n1)" \
+    || fail "docker compose config failed for $ENV_FILE"
+  [[ "$LINK_BASE" =~ ^https?:// ]] \
+    || fail "email links: FRONTEND_BASE_URL is '$LINK_BASE'; write SITE_ADDRESS with its scheme, e.g. https://suwalink.example.lk"
+  pass "email links start with $LINK_BASE"
+else
+  echo "SKIP  email link base (no docker or no $ENV_FILE)"
+fi
+
 # 1. Home page
 request GET /
 expect_status 200 "GET /"
@@ -65,6 +82,13 @@ expect_status 200 "GET /api/settings/public"
 expect_type application/json "GET /api/settings/public"
 grep -q '"success":true' "$BODY" || fail "GET /api/settings/public: body lacks \"success\":true"
 pass "GET /api/settings/public -> 200 JSON success:true"
+
+# 3b. The app calls /api on its own origin, which needs no CORS entry; other origins are refused
+request GET /api/settings/public -H "Origin: $BASE_URL"
+expect_status 200 "GET /api/settings/public from the site's own origin"
+request GET /api/settings/public -H "Origin: https://other-site.example.invalid"
+expect_status 403 "GET /api/settings/public from another origin"
+pass "same-origin API call allowed, another origin refused (403)"
 
 # 4. Actuator stays internal
 request GET /actuator/health
