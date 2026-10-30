@@ -10,8 +10,12 @@
 # 3. Runs scripts/backup.sh, and checks the retention rule on an old backup file.
 # 4. Removes the stack with its volumes and starts it again on fresh volumes.
 # 5. Runs scripts/restore.sh (a refused confirmation first, then --yes).
-# 6. Checks the marker can sign in, the photo is identical, and scripts/smoke.sh passes.
-# 7. Tears everything down: containers, volumes, .env.prodtest and the backup files.
+# 6. Checks the marker can sign in and the photo is identical.
+# 7. Failed restores: a dump with bad SQL is refused with the live data untouched; a dump
+#    that fails during the live load prints a command that undoes it, which is run and
+#    checked; and backup.sh's retention keeps the pre-restore files.
+# 8. Runs scripts/smoke.sh.
+# Then tears everything down: containers, volumes, .env.prodtest and the backup files.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -185,6 +189,9 @@ login "$MARKER_EMAIL" "$MARKER_PASSWORD"
 pass "refused confirmation aborts without changes"
 
 scripts/restore.sh --yes --env-file "$ENV_FILE" -p "$PROJECT" "$DB_DUMP" "$UPLOADS_TAR"
+PRE_FILES=("$BACKUP_DIR"/pre-restore-db-*.sql.gz "$BACKUP_DIR"/pre-restore-uploads-*.tar.gz)
+[[ -s "${PRE_FILES[0]}" && -s "${PRE_FILES[1]}" ]] || fail "restore did not save the data it replaced (pre-restore-*)"
+pass "restore saved the replaced data first: $(basename "${PRE_FILES[0]}") $(basename "${PRE_FILES[1]}")"
 
 # ---- 6. Verify -----------------------------------------------------------------------
 step "6. verify"
@@ -204,4 +211,60 @@ api POST /api/prescriptions -H "Authorization: Bearer $TOKEN" \
 [[ "$STATUS" == 201 ]] || { cat "$BODY" >&2; fail "new prescription after restore: HTTP $STATUS"; }
 pass "backend writes new uploads after restore"
 
-ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" scripts/smoke.sh "$BASE_URL"
+# ---- 7. Failed restores ---------------------------------------------------------------
+step "7a. restore a dump that does not load (valid gzip and trailer, bad SQL)"
+BAD_DUMP="$WORK/db-bad-sql.sql.gz"
+gzip -dc "$DB_DUMP" | awk '/^CREATE TABLE /{n++} n==10 && !done {print "THIS IS NOT SQL;"; done=1} {print}' \
+  | gzip > "$BAD_DUMP"
+gzip -dc "$BAD_DUMP" | tail -n1 | grep -q '^-- Dump completed' || fail "test dump lost its trailer"
+if scripts/restore.sh --yes --env-file "$ENV_FILE" -p "$PROJECT" "$BAD_DUMP" "$UPLOADS_TAR" >"$WORK/bad.out" 2>&1; then
+  cat "$WORK/bad.out"; fail "restore.sh succeeded with a dump that does not load"
+fi
+cat "$WORK/bad.out"
+grep -q 'does not load' "$WORK/bad.out" && grep -q 'Nothing was changed' "$WORK/bad.out" \
+  || fail "failed restore did not say that nothing was changed"
+login "$MARKER_EMAIL" "$MARKER_PASSWORD"
+[[ "$STATUS" == 200 ]] || fail "marker login after the refused dump: HTTP $STATUS"
+fetch_photo "$WORK/photo-bad"
+[[ "$STATUS" == 200 && "$(sha256sum "$WORK/photo-bad" | cut -d' ' -f1)" == "$PHOTO_SHA" ]] \
+  || fail "photo changed by the refused dump"
+# shellcheck disable=SC2016
+LEFTOVER="$(compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root -N -B -e "SHOW DATABASES LIKE '"'"'%restore_check'"'"'"')"
+[[ -z "$LEFTOVER" ]] || fail "scratch database left behind: $LEFTOVER"
+pass "bad dump refused before the backend was stopped; live data intact, scratch database dropped"
+
+step "7b. restore a dump that fails only once the live data is replaced, then undo it"
+# The extra table loads into the scratch database during the test load, but the scratch
+# database is gone by the time the live load reaches that statement
+LATE_DUMP="$WORK/db-fails-late.sql.gz"
+{ gzip -dc "$DB_DUMP" | sed '$d'
+  echo 'CREATE TABLE `suwalink_db_restore_check`.`drill_late_failure` (id int);'
+  gzip -dc "$DB_DUMP" | tail -n1
+} | gzip > "$LATE_DUMP"
+if scripts/restore.sh --yes --env-file "$ENV_FILE" -p "$PROJECT" "$LATE_DUMP" "$UPLOADS_TAR" >"$WORK/late.out" 2>&1; then
+  cat "$WORK/late.out"; fail "restore.sh succeeded although the live load failed"
+fi
+cat "$WORK/late.out"
+grep -q 'FAILED while: loading' "$WORK/late.out" && grep -q 'the backend is STOPPED' "$WORK/late.out" \
+  || fail "late failure did not name the step and the stopped backend"
+UNDO="$(grep -A1 'put that data back with:' "$WORK/late.out" | tail -n1)"
+[[ "$UNDO" == *"scripts/restore.sh --yes"*pre-restore-db-*pre-restore-uploads-* ]] || fail "no undo command printed"
+echo "running the printed command:$UNDO"
+eval "$UNDO"
+login "$MARKER_EMAIL" "$MARKER_PASSWORD"
+[[ "$STATUS" == 200 ]] || fail "marker login after running the printed undo command: HTTP $STATUS"
+fetch_photo "$WORK/photo-undo"
+[[ "$STATUS" == 200 && "$(sha256sum "$WORK/photo-undo" | cut -d' ' -f1)" == "$PHOTO_SHA" ]] \
+  || fail "photo not back after the undo command"
+pass "late failure names the step; the printed command brings the marker and photo back"
+
+step "7c. retention never deletes pre-restore files"
+touch -d '20 days ago' "$BACKUP_DIR"/pre-restore-*
+scripts/backup.sh --env-file "$ENV_FILE" -p "$PROJECT" >/dev/null
+PRE_LEFT="$(find "$BACKUP_DIR" -maxdepth 1 -name 'pre-restore-*' | wc -l)"
+(( PRE_LEFT >= 4 )) || fail "retention deleted pre-restore files ($PRE_LEFT left)"
+pass "$PRE_LEFT pre-restore files older than BACKUP_KEEP_DAYS kept"
+
+# ---- 8. Smoke ------------------------------------------------------------------------
+step "8. smoke"
+ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" ENV_FILE="$ENV_FILE" scripts/smoke.sh "$BASE_URL"

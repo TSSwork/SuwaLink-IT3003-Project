@@ -2,7 +2,7 @@
 # Variables set here (SHIFT_BY, HELPER_IMAGE, ...) are read by the sourcing script.
 # shellcheck disable=SC2034
 #
-# Shared by scripts/backup.sh and scripts/restore.sh; source it, do not run it.
+# Shared by scripts/backup.sh, scripts/restore.sh and scripts/test-lib.sh; source it, do not run it.
 #
 # Compose resolves variables as usual: the shell environment first, then the env file
 # (.env in the repo root, or the one given with --env-file / ENV_FILE). A project name
@@ -41,7 +41,9 @@ enter_stack() {
 
 compose() { docker compose --env-file "$ENV_FILE" "${PROJECT_ARGS[@]}" "$@"; }
 
-# env_value KEY [DEFAULT]: the shell environment wins, as in compose; then the env file
+# env_value KEY [DEFAULT]: the shell environment wins, as in compose; then the env file.
+# Parsed like compose: a quoted value ends at its closing quote; an unquoted one ends at
+# the first " #" (inline comment) and is trimmed. Escapes inside quotes are not handled.
 env_value() {
   local key="$1" default="${2:-}" line value
   if [[ -n "${!key:-}" ]]; then printf '%s' "${!key}"; return; fi
@@ -49,7 +51,13 @@ env_value() {
   if [[ -z "$line" ]]; then printf '%s' "$default"; return; fi
   value="${line#*=}"
   value="${value%$'\r'}"
-  if [[ "$value" =~ ^\"(.*)\"$ || "$value" =~ ^\'(.*)\'$ ]]; then value="${BASH_REMATCH[1]}"; fi
+  value="${value#"${value%%[![:space:]]*}"}"
+  if [[ "$value" =~ ^\"([^\"]*)\" || "$value" =~ ^\'([^\']*)\' ]]; then
+    value="${BASH_REMATCH[1]}"
+  else
+    value="${value%% #*}"
+    value="${value%"${value##*[![:space:]]}"}"
+  fi
   printf '%s' "${value:-$default}"
 }
 
@@ -72,3 +80,28 @@ uploads_volume() {
 
 # Throwaway container used to read and write the uploads volume
 HELPER_IMAGE=docker.io/library/alpine:3.20
+
+# dump_database FILE: gzipped mysqldump of MYSQL_DATABASE. Written as FILE.partial and
+# renamed only when the dump is complete, so a failure leaves nothing that looks usable.
+# The password is expanded inside the db container from its own environment, so it never
+# appears in this host's process list.
+dump_database() {
+  local out="$1"
+  # shellcheck disable=SC2016
+  compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump --single-transaction \
+    --routines --triggers -u root "$MYSQL_DATABASE"' | gzip > "$out.partial" \
+    || { rm -f "$out.partial"; die "database dump failed"; }
+  gzip -dc "$out.partial" | tail -n1 | grep -q '^-- Dump completed' \
+    || { rm -f "$out.partial"; die "database dump is incomplete"; }
+  mv "$out.partial" "$out"
+}
+
+# dump_uploads VOLUME FILE: the volume's contents as a .tar.gz, streamed out of a throwaway
+# container (no bind mount, so no SELinux relabelling or host-permission issues). Numeric
+# owners are kept for the restore.
+dump_uploads() {
+  local volume="$1" out="$2"
+  docker run --rm -v "$volume":/data:ro "$HELPER_IMAGE" tar czf - -C /data . > "$out.partial" \
+    || { rm -f "$out.partial"; die "uploads archive failed"; }
+  mv "$out.partial" "$out"
+}
