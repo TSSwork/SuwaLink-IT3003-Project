@@ -99,7 +99,7 @@ Set at least these:
 
 | Setting | What to put |
 |---|---|
-| `SITE_ADDRESS` | Your domain, e.g. `suwalink.example.lk` (no `http://`), for automatic HTTPS. With no domain, `http://` plus the server's IP, e.g. `http://203.0.113.10`. Keep `http://localhost` only on your own computer. |
+| `SITE_ADDRESS` | Your domain with `https://`, e.g. `https://suwalink.example.lk`, for automatic HTTPS. With no domain, `http://` plus the server's IP, e.g. `http://203.0.113.10`. Keep `http://localhost` only on your own computer. Always write the `https://` or `http://`: links in emails are built from this value, and the backend refuses to start without it. |
 | `ADMIN_EMAIL` | The email address you will sign in with as administrator. |
 | `ADMIN_PASSWORD` | Its first password, **at least 12 characters**. Use letters, digits and `-_.!@%`; avoid spaces and `$ # ' " \`, which `.env` treats specially. You will change it after the first sign-in. |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | Your outgoing mail (SMTP) provider, used for password-reset codes and notifications. Port `587` with `MAIL_SMTP_AUTH=true` and `MAIL_SMTP_STARTTLS=true` suits most providers. For a showcase without real mail, see [section 3](#3-showcase-on-localhost). |
@@ -167,7 +167,7 @@ in `.env` later has no effect. `ADMIN_PASSWORD` must stay filled in (compose req
 you have reset the password, the value in `.env` no longer signs anyone in.
 
 Optional self-test, from the server: `scripts/smoke.sh` checks the home page, deep links, the API,
-admin sign-in and the rate limiter. Pass it your site address and the admin login (as typed in
+admin sign-in, that email links start with `http://` or `https://`, and the rate limiter. Pass it your site address and the admin login (as typed in
 `.env`; use the current password if you have changed it):
 
 ```bash
@@ -176,8 +176,11 @@ ADMIN_EMAIL='you@example.com' ADMIN_PASSWORD='the-admin-password' scripts/smoke.
 
 It ends with `RESULT: all smoke checks passed`. **Note:** its last checks use up the login limit for
 the server's own IP address on purpose, so for about 5 minutes logins coming from the server itself
-are refused with "too many attempts". Visitors from other addresses are not affected. To run it again
-sooner, restart the backend first (`docker compose restart backend`), which clears the limit.
+are refused with "too many attempts". With Docker Engine (as installed in [section 1](#1-requirements)),
+visitors from other addresses are not affected. On **rootless podman** every visitor shares one
+address, so this locks everyone out: do not run `smoke.sh` against a live podman server (see
+[Rootless podman](#rootless-podman)). To run it again sooner, restart the backend first
+(`docker compose restart backend`), which clears the limit.
 
 ---
 
@@ -195,8 +198,13 @@ the same stack with a built-in fake mail inbox, Mailpit.
    MAIL_PORT=1025
    MAIL_SMTP_AUTH=false
    MAIL_SMTP_STARTTLS=false
+   DEMO_MAIL_REDIRECT=showcase@example.invalid
    COMPOSE_PROFILES=demo
    ```
+
+   Demo accounts never get mail at their own address: it goes to `DEMO_MAIL_REDIRECT`, or nowhere
+   when that is empty. Mailpit catches every address, so with this line the demo customers' and
+   pharmacies' mail shows up in the Mailpit inbox too.
 
    `COMPOSE_PROFILES=demo` makes every `docker compose` command include the `mailpit` service, so
    you do not need to type `--profile demo` each time. (The equivalent one-off form is
@@ -228,8 +236,8 @@ On Linux with **rootless podman** instead of Docker (e.g. Fedora), see
 
 ## 4. HTTPS and domains
 
-- **With a domain:** set `SITE_ADDRESS=suwalink.example.lk` in `.env` (DNS A record pointing at the
-  server, ports 80 and 443 open) and run `docker compose up -d`. Caddy then gets a free certificate
+- **With a domain:** set `SITE_ADDRESS=https://suwalink.example.lk` in `.env` (DNS A record pointing
+  at the server, ports 80 and 443 open) and run `docker compose up -d`. Caddy then gets a free certificate
   from Let's Encrypt on its own, renews it automatically, and redirects HTTP to HTTPS. Certificates
   are kept in the `caddy_data` volume. If the certificate is not issued, check
   `docker compose logs web`: the usual causes are DNS not pointing at the server yet, or port 80
@@ -240,7 +248,12 @@ On Linux with **rootless podman** instead of Docker (e.g. Fedora), see
   under the QR code by hand, or scan the QR code with the phone's own camera app, which opens the
   link the QR code contains.
 - **Changing the address later:** edit `SITE_ADDRESS` and run `docker compose up -d`. Links in emails
-  and the browser origin the backend accepts follow `SITE_ADDRESS` automatically.
+  and the browser origin the backend accepts follow `SITE_ADDRESS` automatically, unless `.env` also
+  sets `FRONTEND_BASE_URL` or `CORS_ALLOWED_ORIGINS` (as in [Rootless podman](#rootless-podman)): those
+  override it, so change them to the new address as well.
+- **Always include the scheme** (`https://` or `http://`). If `SITE_ADDRESS` (or `FRONTEND_BASE_URL`)
+  has none, the backend stops at start-up with `FRONTEND_BASE_URL must start with http:// or https://`
+  in `docker compose logs backend`, because every link in its emails would be broken.
 
 ---
 
@@ -334,8 +347,20 @@ ls backups/                       # pick the pair (same date and time) you want 
 ```
 
 The script first checks both files are complete and readable, and stops without changing anything if
-they are not. It then asks you to type `yes`, stops the backend, loads the database and photos,
-starts the backend again and waits until it is healthy (a few minutes). It ends with `restore: done`.
+they are not. After you type `yes` it:
+
+1. saves the current database and photos as `backups/pre-restore-db-<stamp>.sql.gz` and
+   `backups/pre-restore-uploads-<stamp>.tar.gz` (the nightly clean-up never deletes these; remove
+   them yourself once the restore is confirmed good);
+2. test-loads the backup into a scratch copy of the database while the site keeps running. If the
+   backup does not load, it stops here with `Nothing was changed` and the MySQL error. (This needs
+   free disk space for a second copy of the database for a moment.);
+3. stops the backend, loads the database and photos, starts the backend again and waits until it is
+   healthy (a few minutes). It ends with `restore: done`.
+
+If something fails during step 3, the script says which step failed, that the backend is stopped,
+and prints the exact `./scripts/restore.sh --yes … pre-restore-…` command that puts the saved data
+back. Fix the cause it shows (for example a full disk), then run that command.
 
 **Restoring onto a new server:** do the whole [first-time setup](#2-first-time-setup) there first
 (a new `.env` is fine; the admin and other accounts come back from the backup), copy the two backup
@@ -354,8 +379,10 @@ cd /opt/suwalink
 ./scripts/test-backup-restore.sh
 ```
 
-It needs `curl`, `openssl` and `python3`, free ports 8088, 8443 and 18025, and takes about 5–10
-minutes. It ends with `RESULT: backup/restore drill passed`, or names the step that failed. Doing it once after setup, and after big updates, is a good habit.
+It needs `curl`, `openssl` and `python3`, free ports 8088, 8443 and 18025, and takes about 10–15
+minutes. It ends with `RESULT: backup/restore drill passed`, or names the step that failed.
+
+Run it once after setup, and again after big updates.
 
 ---
 
@@ -407,9 +434,10 @@ Start with `docker compose ps` to see which service is unhealthy, then read its 
 
 ### `docker compose` refuses to run: "required variable … is missing a value"
 
-A required setting in `.env` is empty or missing; the message names it. This blocks `up`, `build` and
-`config` (and, with some Compose versions, other commands such as `down` too). Fill it in ([2.2](#22-create-the-settings-file-env)) and
-run the command again.
+A required setting in `.env` is empty or missing; the message names it. It always stops `up`,
+`build` and `config`, and with some Compose versions other commands such as `down` or `logs` too: if
+you see this message, fix `.env` first ([2.2](#22-create-the-settings-file-env)), then run the command
+again.
 
 ### The backend will not start, or keeps restarting
 
@@ -428,8 +456,22 @@ Common causes:
 - **`ADMIN_PASSWORD must be at least 12 characters`**: on the first start only; use a longer one.
 - **`Cannot add uk_inventory_pharmacy_medicine: inventory has more than one row …`**: only when
   updating a database created by an older version. A migration now allows one stock line per medicine
-  per pharmacy and refuses to run while duplicates exist, so nothing is deleted. The message says what
-  to merge or delete. Fix the data (or ask a developer to), then `docker compose restart backend`.
+  per pharmacy and refuses to run while duplicates exist, so nothing is deleted. Find the message with
+
+  ```bash
+  docker compose logs backend | grep -m1 -o "Cannot add uk_inventory_pharmacy_medicine.*then restart\."
+  ```
+
+  and list the duplicate stock lines (each row is one pharmacy and medicine with its stock-line ids):
+
+  ```bash
+  docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root "$MYSQL_DATABASE" -e "
+    SELECT BIN_TO_UUID(pharmacy_id) AS pharmacy, medicine_master_id AS medicine,
+           COUNT(*) AS stock_lines, GROUP_CONCAT(BIN_TO_UUID(id)) AS inventory_ids
+    FROM inventory GROUP BY pharmacy_id, medicine_master_id HAVING COUNT(*) > 1"'
+  ```
+
+  Merge or delete the extra lines (or ask a developer to), then `docker compose restart backend`.
 - **`Communications link failure` or `Access denied for user`**: the backend cannot reach or sign in
   to the database. Check `docker compose ps db` is `healthy` and `docker compose logs db`. "Access
   denied" usually means the `MYSQL_*` values were changed after the database was created (see
@@ -500,8 +542,18 @@ port 80 whatever the host port is), and add the real address so links in emails 
 
 ```
 FRONTEND_BASE_URL=http://localhost:8088
-CORS_ALLOWED_ORIGINS=http://localhost:8088
 ```
+
+(No CORS setting is needed: the app calls `/api` on its own address, which the backend always
+accepts.)
+
+**Rootless podman hides visitors' IP addresses.** Its port forwarding hands every connection to
+Caddy from one internal address, so the backend sees all visitors as the same IP. The per-address
+login limit (ten failed sign-ins in 5 minutes) is then shared by everyone: one person mistyping
+their password, or anyone guessing, can lock all users out for 5 minutes. This is fine for a
+showcase on your own computer, but **for a real server use rootful Docker Engine** as in
+[section 1](#1-requirements), which passes the real address through. For the same reason, never run
+`scripts/smoke.sh` against a live podman server: its last checks fill that shared limit on purpose.
 
 ---
 

@@ -1,6 +1,7 @@
 # SuwaLink web entry: serves the SPA from /srv and proxies /api to the backend.
-# SITE_ADDRESS=http://localhost serves plain HTTP; a real domain (e.g. suwalink.example.lk)
-# makes Caddy obtain and renew an HTTPS certificate automatically.
+# SITE_ADDRESS=http://localhost serves plain HTTP; a real domain with its scheme
+# (e.g. https://suwalink.example.lk) makes Caddy obtain and renew an HTTPS certificate
+# automatically. The backend builds email links from the same value, so it needs the scheme.
 # No Content-Security-Policy yet: Leaflet tiles and inline styles need a tested policy first.
 
 (security_headers) {
