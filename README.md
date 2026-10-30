@@ -18,7 +18,7 @@ reserve. See [`CONTEXT/PITCH_MVP.md`](CONTEXT/PITCH_MVP.md) for the full product
 
 ```bash
 # 1. Database
-docker compose up -d                     # MySQL on localhost:3308, Mailpit on localhost:8025
+docker compose -f docker-compose.dev.yml up -d                     # MySQL on localhost:3308, Mailpit on localhost:8025
 
 # 2. Backend (needs JDK 25; the dev profile is the default, no extra config needed)
 cd backend && ./mvnw spring-boot:run     # http://localhost:8080
@@ -28,7 +28,7 @@ cd frontend && npm install && npm run dev   # http://localhost:3000
 ```
 
 > **Migrations were squashed into a single baseline.** If your local database was created before that change, reset
-> it once after pulling: `docker compose down -v && docker compose up -d` (this wipes local dev data).
+> it once after pulling: `docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d` (this wipes local dev data).
 
 Open `http://localhost:8080/swagger-ui/index.html` to
 call every endpoint directly and inspect real request/response shapes.
@@ -47,6 +47,14 @@ Change `app.cors.allowed-origins` in `backend/src/main/resources/application-dev
 More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 [`commands.md`](commands.md).
 
+## Deployment
+
+To run SuwaLink on a server, or as a showcase on your laptop, follow
+[`README/DEPLOYMENT.md`](README/DEPLOYMENT.md): first-time setup with `docker compose up -d --build`,
+HTTPS, updates, backups and restore, operations and troubleshooting. The production stack
+(`docker-compose.yml`, project `suwalink-prod`) is separate from the dev stack above
+(`docker-compose.dev.yml`, project `suwalink`).
+
 ## Documentation
 
 | Doc | Covers |
@@ -60,6 +68,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 | [`README/READ_RESERVATION_MODULE.md`](README/READ_RESERVATION_MODULE.md) | Reservations, pickup codes, hold and expiry |
 | [`README/READ_ADMIN_MODULE.md`](README/READ_ADMIN_MODULE.md) | Admin dashboard, pharmacy verification |
 | [`README/READ_NOTIFICATION_MODULE.md`](README/READ_NOTIFICATION_MODULE.md) | Notification events |
+| [`README/DEPLOYMENT.md`](README/DEPLOYMENT.md) | Server setup, showcase, HTTPS, updates, backups, operations |
 | [`README/DIAGRAMS.md`](README/DIAGRAMS.md) | ER, use case, class, sequence, activity, state diagrams |
 
 ## Project structure

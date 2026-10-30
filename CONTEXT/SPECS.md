@@ -36,7 +36,7 @@ Database
 
 Development Database
 
-- MySQL 8 via docker compose (H2 is used only for tests)
+- MySQL 8 via docker compose (`docker-compose.dev.yml` in dev; the root `docker-compose.yml` is the production stack). H2 is used only for tests
 
 ORM
 

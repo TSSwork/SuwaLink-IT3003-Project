@@ -1,25 +1,124 @@
-version: '3.8'
+# SuwaLink production stack: MySQL, the Spring Boot backend and Caddy (SPA + /api proxy).
+#   cp .env.example .env    # fill it in
+#   docker compose up -d --build
+# Caddy is the only public entry; db and backend publish no ports. Local development uses
+# docker-compose.dev.yml instead (project "suwalink"), so the two never share containers
+# or volumes. Volumes are named <project>_<volume>, e.g. suwalink-prod_uploads.
+#
+# Values come from .env through interpolation. Only the variables listed under each
+# service reach its container (the backend never sees MYSQL_ROOT_PASSWORD or BACKUP_*).
+# An isolated test run: docker compose --env-file .env.prodtest -p suwalink-prod-test up -d
+
+name: suwalink-prod
+
+x-defaults: &defaults
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
 
 services:
-  mysql:
-    image: mysql/mysql-server:8.0
-    restart: no
+  db:
+    <<: *defaults
+    image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: suwalink_password
-      MYSQL_DATABASE: suwalink_db
-      MYSQL_USER: suwalink_user
-      MYSQL_PASSWORD: suwalink_password
-    ports:
-      - "3308:3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?set MYSQL_DATABASE in .env}
+      MYSQL_USER: ${MYSQL_USER:?set MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - db_data:/var/lib/mysql
+    healthcheck:
+      # TCP, not the socket: during first-time init the entrypoint runs a temporary server
+      # without networking, which must not count as healthy. MYSQL_PWD keeps the password
+      # out of the process list.
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h 127.0.0.1 -u root --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
-  mailpit:
-    image: axllent/mailpit:v1.21
-    restart: no
+  backend:
+    <<: *defaults
+    build: ./backend
+    # Exactly the variables application*.properties reads; required ones stop compose with a message
+    environment:
+      DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (openssl rand -base64 48)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ADMIN_NAME: ${ADMIN_NAME:-SuwaLink Admin}
+      MAIL_HOST: ${MAIL_HOST:?set MAIL_HOST in .env (mailpit for a local showcase)}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@suwalink.lk}
+      DEMO_MAIL_REDIRECT: ${DEMO_MAIL_REDIRECT:-}
+      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${SITE_ADDRESS:-http://localhost}}
+      # Links in emails; the backend refuses to start unless it begins with http:// or https://
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-${SITE_ADDRESS:-http://localhost}}
+      # SPRING_PROFILES_ACTIVE=prod, TZ=Asia/Colombo and UPLOAD_DIR=/app/uploads come from the image
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Declared here as well as in the Dockerfile: some builders (buildx into podman) drop it
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+  web:
+    <<: *defaults
+    build:
+      context: ./frontend
+      additional_contexts:
+        deploy: ./deploy
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-http://localhost}
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # Caddy's admin API on localhost answers whatever SITE_ADDRESS is
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Showcase only: catches all mail. Start with --profile demo and set MAIL_HOST=mailpit.
+  mailpit:
+    <<: *defaults
+    image: axllent/mailpit:v1.21
+    profiles: ["demo"]
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
-  mysql_data:
+  db_data:
+  uploads:
+  caddy_data:
+  caddy_config:

@@ -94,7 +94,7 @@ class ExpiryJobsIntegrationTest {
     private Pharmacy pharmacy;
     private Manufacturer manufacturer;
     private Category category;
-    private MedicineMaster medicine;
+    private final List<UUID> medicineIds = new ArrayList<>();
     private Image image;
     private final List<UUID> inventoryIds = new ArrayList<>();
     private final List<UUID> requestIds = new ArrayList<>();
@@ -119,16 +119,6 @@ class ExpiryJobsIntegrationTest {
         manufacturer = manufacturerRepository.save(Manufacturer.builder()
                 .name("Exp-" + suffix).country("Sri Lanka").isActive(true).build());
         category = categoryRepository.save(Category.builder().name("Exp-" + suffix).active(true).build());
-        medicine = medicineMasterRepository.save(MedicineMaster.builder()
-                .brandName("Panadol")
-                .genericName("Paracetamol")
-                .dosageForm("Tablet")
-                .strength("500mg")
-                .unitOfMeasure(UnitOfMeasure.TABLET)
-                .manufacturer(manufacturer)
-                .therapeuticCategory(category)
-                .legalCategory(PrescriptionStatus.OTC)
-                .build());
         image = imageRepository.save(Image.builder()
                 .url("/x").originalFilename("x.png").generatedFilename("x-" + suffix + ".webp")
                 .filePath(uploadDir + "/x-" + suffix + ".webp").mimeType("image/webp").imageType(ImageType.PRESCRIPTION)
@@ -145,7 +135,7 @@ class ExpiryJobsIntegrationTest {
             notificationRepository.deleteByRecipient_Id(patient.getId());
             notificationRepository.deleteByRecipient_Id(pharmacyUser.getId());
             inventoryIds.forEach(inventoryRepository::deleteById);
-            medicineMasterRepository.deleteById(medicine.getId());
+            medicineIds.forEach(medicineMasterRepository::deleteById);
             categoryRepository.deleteById(category.getId());
             manufacturerRepository.deleteById(manufacturer.getId());
             pharmacyRepository.deleteById(pharmacy.getId());
@@ -301,7 +291,19 @@ class ExpiryJobsIntegrationTest {
                 status.name(), java.sql.Timestamp.valueOf(LocalDateTime.now().minusDays(daysAgo)), request.getId());
     }
 
+    /** Each line gets its own medicine: a pharmacy stocks a medicine at most once. */
     private Inventory inventory(int stock) {
+        MedicineMaster medicine = medicineMasterRepository.save(MedicineMaster.builder()
+                .brandName("Panadol")
+                .genericName("Paracetamol")
+                .dosageForm("Tablet")
+                .strength((500 + medicineIds.size()) + "mg")
+                .unitOfMeasure(UnitOfMeasure.TABLET)
+                .manufacturer(manufacturer)
+                .therapeuticCategory(category)
+                .legalCategory(PrescriptionStatus.OTC)
+                .build());
+        medicineIds.add(medicine.getId());
         Inventory saved = inventoryRepository.save(Inventory.builder()
                 .medicineMaster(medicine)
                 .pharmacy(pharmacy)

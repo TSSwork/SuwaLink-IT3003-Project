@@ -189,10 +189,10 @@ Role gating: use Spring Security annotations rather than manual `if` checks, e.g
 
 ## Running it locally
 
-1. **Database**: `docker compose up -d` (starts MySQL on the port/credentials in
-   `docker-compose.yml`, currently `3308` / `suwalink_user` / `suwalink_db`). If you ever change
-   those values in `docker-compose.yml` after the container's already been created once, you
-   must `docker compose down -v && docker compose up -d` — Docker's MySQL image only applies
+1. **Database**: `docker compose -f docker-compose.dev.yml up -d` (starts MySQL on the port/credentials in
+   `docker-compose.dev.yml`, currently `3308` / `suwalink_user` / `suwalink_db`). If you ever change
+   those values in `docker-compose.dev.yml` after the container's already been created once, you
+   must `docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d` — Docker's MySQL image only applies
    `MYSQL_USER`/`MYSQL_DATABASE`/etc. on first init of an empty volume, not on every restart.
 2. **Backend**: `cd backend && ./mvnw spring-boot:run`. Needs JDK 25 — if your default `java`
    isn't 25, set `JAVA_HOME` to whichever JDK 25 install you have before running Maven.

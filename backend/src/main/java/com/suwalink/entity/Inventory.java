@@ -10,7 +10,8 @@ import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Audited
-@Table(name = "inventory")
+@Table(name = "inventory", uniqueConstraints = @UniqueConstraint(
+        name = "uk_inventory_pharmacy_medicine", columnNames = {"pharmacy_id", "medicine_master_id"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Inventory extends BaseAuditEntity {
 

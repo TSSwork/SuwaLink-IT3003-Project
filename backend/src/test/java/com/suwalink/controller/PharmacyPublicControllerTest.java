@@ -76,10 +76,11 @@ class PharmacyPublicControllerTest {
         LocalDate future = LocalDate.now().plusYears(1);
         stock(colombo, "12.00", 10, future, true);
         stock(kandy, "10.00", 5, future, true);
-        // rows that must never appear as offers
-        stock(colombo, "9.00", 5, LocalDate.now().minusDays(1), true); // expired
-        stock(colombo, "8.00", 0, future, true);                       // zero stock
-        stock(colombo, "7.00", 5, future, false);                      // unavailable
+        // rows that must never appear as offers (one stock line per pharmacy and medicine, so each
+        // hidden row is a different Panadol strength at Colombo Care)
+        stock(colombo, variant("250mg"), "9.00", 5, LocalDate.now().minusDays(1), true); // expired
+        stock(colombo, variant("650mg"), "8.00", 0, future, true);                       // zero stock
+        stock(colombo, variant("1g"), "7.00", 5, future, false);                         // unavailable
         stock(pending, "5.00", 5, future, true);
         stock(demo, "6.00", 5, future, true);
     }
@@ -95,9 +96,22 @@ class PharmacyPublicControllerTest {
                 .licenceNo("LIC-" + UUID.randomUUID()).status(status).demo(isDemo).user(user).build());
     }
 
+    private MedicineMaster variant(String strength) {
+        return medicineMasterRepository.save(MedicineMaster.builder()
+                .brandName("Panadol").genericName("Paracetamol").dosageForm("Tablet").strength(strength)
+                .unitOfMeasure(UnitOfMeasure.TABLET).manufacturer(panadol.getManufacturer())
+                .therapeuticCategory(panadol.getTherapeuticCategory())
+                .legalCategory(PrescriptionStatus.OTC).build());
+    }
+
     private Inventory stock(Pharmacy pharmacy, String price, int qty, LocalDate expiry, boolean available) {
+        return stock(pharmacy, panadol, price, qty, expiry, available);
+    }
+
+    private Inventory stock(Pharmacy pharmacy, MedicineMaster medicine, String price, int qty, LocalDate expiry,
+                            boolean available) {
         return inventoryRepository.save(Inventory.builder()
-                .medicineMaster(panadol).pharmacy(pharmacy).unitPrice(new BigDecimal(price))
+                .medicineMaster(medicine).pharmacy(pharmacy).unitPrice(new BigDecimal(price))
                 .currency(Currency.LKR).stockQuantity(qty).expireDate(expiry).available(available).build());
     }
 

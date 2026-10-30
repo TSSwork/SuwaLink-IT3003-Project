@@ -8,3 +8,8 @@ presentation
 group_8_IT3003_MiniProject_Suwalink
 group_8_IT3003_MiniProject_Suwalink.zip
 .env
+.env.*
+!.env.example
+
+# Local backups written by scripts/backup.sh
+backups/

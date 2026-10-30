@@ -182,7 +182,7 @@ Both paths are `permitAll()`'d in `SecurityConfig` — otherwise the JWT filter 
 
 ## Running it locally
 
-1. **Database**: `docker compose up -d` from the repo root (or `./scripts/dev-up.sh`, which also stops any other container hogging a port SuwaLink needs, e.g. 8080).
+1. **Database**: `docker compose -f docker-compose.dev.yml up -d` from the repo root (or `./scripts/dev-up.sh`, which also stops any other container hogging a port SuwaLink needs, e.g. 8080).
 2. **Backend**: `cd backend && ./mvnw spring-boot:run` — needs JDK 25. Schema is managed by **Liquibase**, not Hibernate (`spring.jpa.hibernate.ddl-auto=validate`) — migrations in `backend/src/main/resources/db/changelog/` apply automatically on every boot, including seed reference data (categories, manufacturers, three sample medicines). A bootstrap admin (`admin@suwalink.local`, dev-only password in `application-dev.properties`) is created at startup by `AdminBootstrap`.
 
 ### Adding a new migration

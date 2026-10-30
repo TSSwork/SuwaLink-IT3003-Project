@@ -86,6 +86,6 @@ Real data is not touched, with these exceptions:
 
 ## Mail
 
-In dev, all mail goes to Mailpit (`docker compose up -d`). The inbox is at http://localhost:8025.
+In dev, all mail goes to Mailpit (`docker compose -f docker-compose.dev.yml up -d`). The inbox is at http://localhost:8025.
 Mail addressed to demo users is redirected to `DEMO_MAIL_REDIRECT` (`app.mail.demo-redirect`) when that is
 set. Otherwise it is skipped. Demo accounts never receive real mail.

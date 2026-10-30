@@ -1,0 +1,27 @@
+# Local development: MySQL on :3308 and Mailpit. The project name is pinned so the
+# existing dev volume stays suwalink_mysql_data; the prod stack is docker-compose.yml.
+name: suwalink
+
+services:
+  mysql:
+    image: mysql/mysql-server:8.0
+    restart: no
+    environment:
+      MYSQL_ROOT_PASSWORD: suwalink_password
+      MYSQL_DATABASE: suwalink_db
+      MYSQL_USER: suwalink_user
+      MYSQL_PASSWORD: suwalink_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: no
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  mysql_data:

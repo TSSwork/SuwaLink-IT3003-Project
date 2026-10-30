@@ -61,4 +61,14 @@
         <sqlFile path="sql/014-otp-attempts.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="015-inventory-unique-medicine" author="suwalink">
+        <preConditions onFail="HALT"
+                onFailMessage="Cannot add uk_inventory_pharmacy_medicine: inventory has more than one row for the same (pharmacy_id, medicine_master_id). Merge or delete the duplicate stock lines, then restart.">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM (SELECT 1 FROM inventory GROUP BY pharmacy_id, medicine_master_id HAVING COUNT(*) &gt; 1) dup
+            </sqlCheck>
+        </preConditions>
+        <sqlFile path="sql/015-inventory-unique-medicine.sql" relativeToChangelogFile="true" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

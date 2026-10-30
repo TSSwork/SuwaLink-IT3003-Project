@@ -1,0 +1,81 @@
+# SuwaLink web entry: serves the SPA from /srv and proxies /api to the backend.
+# SITE_ADDRESS=http://localhost serves plain HTTP; a real domain with its scheme
+# (e.g. https://suwalink.example.lk) makes Caddy obtain and renew an HTTPS certificate
+# automatically. The backend builds email links from the same value, so it needs the scheme.
+# No Content-Security-Policy yet: Leaflet tiles and inline styles need a tested policy first.
+
+(security_headers) {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(self), geolocation=(self), microphone=()"
+		-Server
+	}
+}
+
+{$SITE_ADDRESS:http://localhost} {
+	encode zstd gzip
+
+	log {
+		output stdout
+		format json
+	}
+
+	import security_headers
+
+	# The backend's actuator is for the container healthcheck only. It is never proxied,
+	# and without this the SPA fallback would answer it with 200 HTML.
+	handle /actuator* {
+		error 404
+	}
+
+	handle /api/* {
+		# Backend multipart limit is 5 MB; leave room for the form overhead
+		request_body {
+			max_size 6MB
+		}
+		reverse_proxy backend:8080 {
+			# The backend (server.forward-headers-strategy=framework) trusts every forwarding
+			# header it gets, and reads RFC 7239 Forwarded before X-Forwarded-*. Caddy replaces
+			# X-Forwarded-For/-Proto/-Host with its own values, but passes any other header
+			# through as sent. Drop the rest, so a client cannot pick its own IP (login rate
+			# limit), port, scheme or path prefix.
+			header_up X-Forwarded-For {remote_host}
+			header_up -Forwarded
+			header_up -X-Forwarded-Port
+			header_up -X-Forwarded-Prefix
+			header_up -X-Forwarded-Ssl
+		}
+	}
+
+	handle {
+		root * /srv
+
+		# route keeps the written order, so the no-cache header below sees the
+		# path after a deep link has been rewritten to /_shell.html
+		route {
+			@assets path /assets/*
+			header @assets Cache-Control "public, max-age=31536000, immutable"
+
+			# Anything that is not a file is an app route. A missing /assets/* file
+			# stays a 404 so HTML is never cached as an immutable asset.
+			@spa {
+				not path /assets/*
+				not file {path}
+			}
+			rewrite @spa /_shell.html
+			header /_shell.html Cache-Control "no-cache"
+
+			file_server
+		}
+	}
+
+	# Errors Caddy raises itself (a missing /assets/* file, an oversized upload) skip the
+	# headers set above, so set them again and make sure an error is never cached.
+	handle_errors {
+		import security_headers
+		header Cache-Control "no-store"
+		respond "{err.status_code} {err.status_text}"
+	}
+}
