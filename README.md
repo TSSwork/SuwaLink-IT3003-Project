@@ -47,6 +47,14 @@ Change `app.cors.allowed-origins` in `backend/src/main/resources/application-dev
 More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 [`commands.md`](commands.md).
 
+## Deployment
+
+To run SuwaLink on a server, or as a showcase on your laptop, follow
+[`README/DEPLOYMENT.md`](README/DEPLOYMENT.md): first-time setup with `docker compose up -d --build`,
+HTTPS, updates, backups and restore, operations and troubleshooting. The production stack
+(`docker-compose.yml`, project `suwalink-prod`) is separate from the dev stack above
+(`docker-compose.dev.yml`, project `suwalink`).
+
 ## Documentation
 
 | Doc | Covers |
@@ -60,6 +68,7 @@ More commands (tests, Liquibase, Docker debugging, smoke-test curls) are in
 | [`README/READ_RESERVATION_MODULE.md`](README/READ_RESERVATION_MODULE.md) | Reservations, pickup codes, hold and expiry |
 | [`README/READ_ADMIN_MODULE.md`](README/READ_ADMIN_MODULE.md) | Admin dashboard, pharmacy verification |
 | [`README/READ_NOTIFICATION_MODULE.md`](README/READ_NOTIFICATION_MODULE.md) | Notification events |
+| [`README/DEPLOYMENT.md`](README/DEPLOYMENT.md) | Server setup, showcase, HTTPS, updates, backups, operations |
 | [`README/DIAGRAMS.md`](README/DIAGRAMS.md) | ER, use case, class, sequence, activity, state diagrams |
 
 ## Project structure
